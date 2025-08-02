@@ -36,13 +36,20 @@ import Chart from "chart.js/auto";
 
 interface Meta {
   id: number;
-  titulo: string;
+  titulo_da_meta: string;
   descricao: string;
-  valorAlvo: number;
-  valorAtual: number;
-  prazo: string;
+  valor_alvo: number;
+  valor_hoje: number;
+  data_limite: string;
   categoria: string;
-  status: "ativa" | "pausada" | "concluida";
+}
+
+interface ResumoMetas {
+  total_economizado: number;
+  metas_totais: number;
+  metas_ativas: number;
+  metas_concluidas: number;
+  progresso_geral: number;
 }
 
 interface SliderValues {
@@ -58,22 +65,23 @@ export default function Metas() {
   const { isAuthenticated } = useAuth();
   const { t, formatCurrency } = useTranslation();
   const [metas, setMetas] = useState<Meta[]>([]);
+  const [resumoMetas, setResumoMetas] = useState<ResumoMetas | null>(null);
   const [isNovaMetaOpen, setIsNovaMetaOpen] = useState(false);
   const [isEditMetaOpen, setIsEditMetaOpen] = useState(false);
   const [editingMeta, setEditingMeta] = useState<Meta | null>(null);
   const [novaMeta, setNovaMeta] = useState({
-    titulo: "",
+    titulo_da_meta: "",
     descricao: "",
-    valorAlvo: "",
-    prazo: "",
+    valor_alvo: "",
+    data_limite: "",
     categoria: "",
   });
   const [editMeta, setEditMeta] = useState({
-    titulo: "",
+    titulo_da_meta: "",
     descricao: "",
-    valorAlvo: "",
-    valorAtual: "",
-    prazo: "",
+    valor_alvo: "",
+    valor_hoje: "",
+    data_limite: "",
     categoria: "",
   });
   const [sliderValues, setSliderValues] = useState<SliderValues>({
@@ -98,12 +106,26 @@ export default function Metas() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadMockMetas();
+      loadMetas();
       loadOrcamentoDomestico();
     }
   }, [isAuthenticated]);
 
-  // Carregar dados do orçamento doméstico
+  // Carregar metas da API
+  const loadMetas = async () => {
+    setLoading(true);
+    try {
+      const response = await budgetApi.getMetasPersonalizadas();
+      setMetas(response.metas_personalizadas || []);
+      setResumoMetas(response.resumo || null);
+    } catch (error) {
+      console.error("Erro ao carregar metas:", error);
+      setMetas([]);
+      setResumoMetas(null);
+    } finally {
+      setLoading(false);
+    }
+  };
   const loadOrcamentoDomestico = async () => {
     try {
       const response = await budgetApi.getOrcamentoDomestico();
@@ -134,52 +156,6 @@ export default function Metas() {
     }
   };
 
-  // Carregar metas mock (em produção, você faria chamadas para API)
-  const loadMockMetas = () => {
-    setMetas([
-      {
-        id: 1,
-        titulo: t("emergency_reserve"),
-        descricao: t("save_six_months_expenses"),
-        valorAlvo: 18000,
-        valorAtual: 12500,
-        prazo: "2024-12-31",
-        categoria: t("emergency"),
-        status: "ativa",
-      },
-      {
-        id: 2,
-        titulo: t("europe_trip"),
-        descricao: t("save_vacation_money"),
-        valorAlvo: 8000,
-        valorAtual: 3200,
-        prazo: "2024-06-30",
-        categoria: t("leisure"),
-        status: "ativa",
-      },
-      {
-        id: 3,
-        titulo: t("specialization_course"),
-        descricao: t("finance_mba"),
-        valorAlvo: 15000,
-        valorAtual: 15000,
-        prazo: "2024-01-31",
-        categoria: t("education"),
-        status: "concluida",
-      },
-      {
-        id: 4,
-        titulo: t("apartment_down_payment"),
-        descricao: t("twenty_percent_property_value"),
-        valorAlvo: 50000,
-        valorAtual: 25000,
-        prazo: "2025-03-31",
-        categoria: t("housing"),
-        status: "ativa",
-      },
-    ]);
-  };
-
   // Função para lidar com mudanças nos sliders
   const handleSliderChange = (name: keyof SliderValues, value: number[]) => {
     const newValues = { ...sliderValues, [name]: value[0] };
@@ -198,11 +174,11 @@ export default function Metas() {
   const handleEditMeta = (meta: Meta) => {
     setEditingMeta(meta);
     setEditMeta({
-      titulo: meta.titulo,
+      titulo_da_meta: meta.titulo_da_meta,
       descricao: meta.descricao,
-      valorAlvo: meta.valorAlvo.toString(),
-      valorAtual: meta.valorAtual.toString(),
-      prazo: meta.prazo,
+      valor_alvo: meta.valor_alvo.toString(),
+      valor_hoje: meta.valor_hoje.toString(),
+      data_limite: meta.data_limite,
       categoria: meta.categoria,
     });
     setIsEditMetaOpen(true);
@@ -216,9 +192,9 @@ export default function Metas() {
     }
 
     if (
-      !editMeta.titulo ||
-      !editMeta.valorAlvo ||
-      !editMeta.prazo ||
+      !editMeta.titulo_da_meta ||
+      !editMeta.valor_alvo ||
+      !editMeta.data_limite ||
       !editMeta.categoria
     ) {
       alert(t("fill_required_fields"));
@@ -228,11 +204,11 @@ export default function Metas() {
     try {
       const metaAtualizada = {
         ...editingMeta,
-        titulo: editMeta.titulo,
+        titulo_da_meta: editMeta.titulo_da_meta,
         descricao: editMeta.descricao,
-        valorAlvo: parseFloat(editMeta.valorAlvo),
-        valorAtual: parseFloat(editMeta.valorAtual),
-        prazo: editMeta.prazo,
+        valor_alvo: parseFloat(editMeta.valor_alvo),
+        valor_hoje: parseFloat(editMeta.valor_hoje),
+        data_limite: editMeta.data_limite,
         categoria: editMeta.categoria,
       };
 
@@ -245,11 +221,11 @@ export default function Metas() {
 
       // Limpar formulário e fechar modal
       setEditMeta({
-        titulo: "",
+        titulo_da_meta: "",
         descricao: "",
-        valorAlvo: "",
-        valorAtual: "",
-        prazo: "",
+        valor_alvo: "",
+        valor_hoje: "",
+        data_limite: "",
         categoria: "",
       });
       setEditingMeta(null);
@@ -270,9 +246,9 @@ export default function Metas() {
     }
 
     if (
-      !novaMeta.titulo ||
-      !novaMeta.valorAlvo ||
-      !novaMeta.prazo ||
+      !novaMeta.titulo_da_meta ||
+      !novaMeta.valor_alvo ||
+      !novaMeta.data_limite ||
       !novaMeta.categoria
     ) {
       alert(t("fill_required_fields"));
@@ -280,26 +256,29 @@ export default function Metas() {
     }
 
     try {
+      setLoading(true);
+      
       const novaMetaData = {
-        titulo: novaMeta.titulo,
+        titulo_da_meta: novaMeta.titulo_da_meta,
         descricao: novaMeta.descricao,
-        valorAlvo: parseFloat(novaMeta.valorAlvo),
-        valorAtual: 0,
-        prazo: novaMeta.prazo,
+        valor_alvo: parseFloat(novaMeta.valor_alvo),
+        valor_hoje: 0,
+        data_limite: novaMeta.data_limite,
         categoria: novaMeta.categoria,
-        status: "ativa" as const,
       };
 
-      // Simular criação da meta (substitua pela chamada API real)
-      const novaMeta = { ...novaMetaData, id: Date.now() };
-      setMetas((prev) => [...prev, novaMeta]);
+      // Enviar para API
+      await budgetApi.cadastrarMeta(novaMetaData);
+
+      // Recarregar metas após cadastrar
+      await loadMetas();
 
       // Limpar formulário e fechar modal
       setNovaMeta({
-        titulo: "",
+        titulo_da_meta: "",
         descricao: "",
-        valorAlvo: "",
-        prazo: "",
+        valor_alvo: "",
+        data_limite: "",
         categoria: "",
       });
       setIsNovaMetaOpen(false);
@@ -308,6 +287,8 @@ export default function Metas() {
     } catch (error) {
       console.error("Erro ao criar meta:", error);
       alert(t("error_creating_goal"));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -411,17 +392,14 @@ export default function Metas() {
     };
   }, [sliderValues, t]);
 
-  const metasAtivas = metas.filter((m) => m.status === "ativa");
-  const metasConcluidas = metas.filter((m) => m.status === "concluida");
-  const totalEconomizado = metas.reduce(
-    (sum, meta) => sum + meta.valorAtual,
-    0,
-  );
-  const totalObjetivos = metas.reduce((sum, meta) => sum + meta.valorAlvo, 0);
+  // Usar dados do resumo da API ao invés de calcular localmente
+  const metasAtivas = resumoMetas?.metas_ativas || 0;
+  const metasConcluidas = resumoMetas?.metas_concluidas || 0;
+  const totalEconomizado = resumoMetas?.total_economizado || 0;
+  const totalObjetivos = metas.reduce((sum, meta) => sum + meta.valor_alvo, 0);
 
   const getProgressoGeral = () => {
-    if (totalObjetivos === 0) return 0;
-    return (totalEconomizado / totalObjetivos) * 100;
+    return resumoMetas?.progresso_geral || 0;
   };
 
   const getDiasRestantes = (prazo: string) => {
@@ -469,7 +447,7 @@ export default function Metas() {
             <Target className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metasAtivas.length}</div>
+            <div className="text-2xl font-bold">{metasAtivas}</div>
             <p className="text-xs text-muted-foreground">
               {metas.length} {t("total_goals")}
             </p>
@@ -484,10 +462,10 @@ export default function Metas() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metasConcluidas.length}</div>
+            <div className="text-2xl font-bold">{metasConcluidas}</div>
             <p className="text-xs text-muted-foreground">
-              {metasConcluidas.length > 0
-                ? `${((metasConcluidas.length / metas.length) * 100).toFixed(0)}% ${t("completed").toLowerCase()}`
+              {metasConcluidas > 0 && metas.length > 0
+                ? `${((metasConcluidas / metas.length) * 100).toFixed(0)}% ${t("completed").toLowerCase()}`
                 : t("none_completed")}
             </p>
           </CardContent>
@@ -637,9 +615,9 @@ export default function Metas() {
                 <Label htmlFor="titulo">{t("goal_title_required")}</Label>
                 <Input
                   id="titulo"
-                  value={novaMeta.titulo}
+                  value={novaMeta.titulo_da_meta}
                   onChange={(e) =>
-                    setNovaMeta((prev) => ({ ...prev, titulo: e.target.value }))
+                    setNovaMeta((prev) => ({ ...prev, titulo_da_meta: e.target.value }))
                   }
                   placeholder={t("goal_title_placeholder")}
                 />
@@ -666,11 +644,11 @@ export default function Metas() {
                 <Input
                   id="valorAlvo"
                   type="number"
-                  value={novaMeta.valorAlvo}
+                  value={novaMeta.valor_alvo}
                   onChange={(e) =>
                     setNovaMeta((prev) => ({
                       ...prev,
-                      valorAlvo: e.target.value,
+                      valor_alvo: e.target.value,
                     }))
                   }
                   placeholder="0,00"
@@ -684,9 +662,9 @@ export default function Metas() {
                 <Input
                   id="prazo"
                   type="date"
-                  value={novaMeta.prazo}
+                  value={novaMeta.data_limite}
                   onChange={(e) =>
-                    setNovaMeta((prev) => ({ ...prev, prazo: e.target.value }))
+                    setNovaMeta((prev) => ({ ...prev, data_limite: e.target.value }))
                   }
                 />
               </div>
@@ -739,9 +717,9 @@ export default function Metas() {
                 <Label htmlFor="edit-titulo">{t("goal_title_required")}</Label>
                 <Input
                   id="edit-titulo"
-                  value={editMeta.titulo}
+                  value={editMeta.titulo_da_meta}
                   onChange={(e) =>
-                    setEditMeta((prev) => ({ ...prev, titulo: e.target.value }))
+                    setEditMeta((prev) => ({ ...prev, titulo_da_meta: e.target.value }))
                   }
                   placeholder={t("goal_title_placeholder")}
                 />
@@ -771,11 +749,11 @@ export default function Metas() {
                   <Input
                     id="edit-valorAlvo"
                     type="number"
-                    value={editMeta.valorAlvo}
+                    value={editMeta.valor_alvo}
                     onChange={(e) =>
                       setEditMeta((prev) => ({
                         ...prev,
-                        valorAlvo: e.target.value,
+                        valor_alvo: e.target.value,
                       }))
                     }
                     placeholder="0,00"
@@ -789,11 +767,11 @@ export default function Metas() {
                   <Input
                     id="edit-valorAtual"
                     type="number"
-                    value={editMeta.valorAtual}
+                    value={editMeta.valor_hoje}
                     onChange={(e) =>
                       setEditMeta((prev) => ({
                         ...prev,
-                        valorAtual: e.target.value,
+                        valor_hoje: e.target.value,
                       }))
                     }
                     placeholder="0,00"
@@ -808,9 +786,9 @@ export default function Metas() {
                 <Input
                   id="edit-prazo"
                   type="date"
-                  value={editMeta.prazo}
+                  value={editMeta.data_limite}
                   onChange={(e) =>
-                    setEditMeta((prev) => ({ ...prev, prazo: e.target.value }))
+                    setEditMeta((prev) => ({ ...prev, data_limite: e.target.value }))
                   }
                 />
               </div>
@@ -856,29 +834,30 @@ export default function Metas() {
       {/* Grid de Metas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {metas.map((meta) => {
-          const progresso = (meta.valorAtual / meta.valorAlvo) * 100;
-          const statusPrazo = getStatusPrazo(meta.prazo);
-          const diasRestantes = getDiasRestantes(meta.prazo);
+          const progresso = (meta.valor_hoje / meta.valor_alvo) * 100;
+          const statusPrazo = getStatusPrazo(meta.data_limite);
+          const diasRestantes = getDiasRestantes(meta.data_limite);
+          const isCompleta = meta.valor_hoje >= meta.valor_alvo;
 
           return (
             <Card
               key={meta.id}
-              className={meta.status === "concluida" ? "border-green-600" : ""}
+              className={isCompleta ? "border-green-600" : ""}
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg">{meta.titulo}</CardTitle>
+                    <CardTitle className="text-lg">{meta.titulo_da_meta}</CardTitle>
                     <p className="text-sm text-muted-foreground">
                       {meta.descricao}
                     </p>
                   </div>
                   <Badge
                     variant={
-                      meta.status === "concluida" ? "default" : "secondary"
+                      isCompleta ? "default" : "secondary"
                     }
                     className={
-                      meta.status === "concluida"
+                      isCompleta
                         ? "bg-green-600 text-white"
                         : ""
                     }
@@ -896,13 +875,13 @@ export default function Metas() {
                         {t("progress")}: {progresso.toFixed(1)}%
                       </span>
                       <span>
-                        {formatCurrency(meta.valorAtual)} /{" "}
-                        {formatCurrency(meta.valorAlvo)}
+                        {formatCurrency(meta.valor_hoje)} /{" "}
+                        {formatCurrency(meta.valor_alvo)}
                       </span>
                     </div>
                     <Progress
                       value={progresso}
-                      className={`h-2 ${meta.status === "concluida" ? "[&>div]:bg-green-600" : ""}`}
+                      className={`h-2 ${isCompleta ? "[&>div]:bg-green-600" : ""}`}
                     />
                   </div>
 
@@ -912,11 +891,11 @@ export default function Metas() {
                       <Calendar className="h-4 w-4" />
                       <span>
                         {t("deadline")}:{" "}
-                        {new Date(meta.prazo).toLocaleDateString()}
+                        {new Date(meta.data_limite).toLocaleDateString()}
                       </span>
                     </div>
                     <Badge variant={statusPrazo.color as any}>
-                      {meta.status === "concluida"
+                      {isCompleta
                         ? t("completed")
                         : diasRestantes > 0
                           ? `${diasRestantes} ${t("days")}`
@@ -925,20 +904,20 @@ export default function Metas() {
                   </div>
 
                   {/* Valor restante */}
-                  {meta.status !== "concluida" && (
+                  {!isCompleta && (
                     <div className="text-sm">
                       <span className="text-muted-foreground">
                         {t("remaining")}:{" "}
                       </span>
                       <span className="font-semibold">
-                        {formatCurrency(meta.valorAlvo - meta.valorAtual)}
+                        {formatCurrency(meta.valor_alvo - meta.valor_hoje)}
                       </span>
                     </div>
                   )}
 
                   {/* Ações */}
                   <div className="flex space-x-2 pt-2">
-                    {meta.status === "ativa" && (
+                    {!isCompleta && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -947,7 +926,7 @@ export default function Metas() {
                         {t("edit")}
                       </Button>
                     )}
-                    {meta.status === "concluida" && (
+                    {isCompleta && (
                       <Badge
                         variant="default"
                         className="bg-green-600 text-white"

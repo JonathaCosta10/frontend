@@ -28,6 +28,117 @@ export interface BudgetResponse {
 }
 
 class BudgetApiService {
+  // ===== APIs DE METAS =====
+  async getMetasPersonalizadas() {
+    try {
+      secureLog("[BUDGET] Fetching metas personalizadas");
+      const response = await api.get("/api/metaspersonalizadas/");
+      return response;
+    } catch (error) {
+      console.error("API Error - getMetasPersonalizadas:", error);
+
+      // Use mock data only in development
+      if (isDevelopment) {
+        secureLog(
+          "[BUDGET] Using mock data for getMetasPersonalizadas (development)",
+        );
+        await simulateApiDelay(200);
+        return this.getMockMetasData();
+      }
+
+      throw error;
+    }
+  }
+
+  async cadastrarMeta(data: any) {
+    try {
+      const response = await api.post("/api/cadastrar_meta/", data);
+      return response;
+    } catch (error) {
+      console.error("API Error - cadastrarMeta:", error);
+      throw error;
+    }
+  }
+
+  async atualizarMeta(id: number, data: any) {
+    try {
+      const response = await api.put(`/api/atualizar_meta/${id}/`, data);
+      return response;
+    } catch (error) {
+      console.error("API Error - atualizarMeta:", error);
+      throw error;
+    }
+  }
+
+  async excluirMeta(id: number) {
+    try {
+      const response = await api.delete(`/api/excluir_meta/${id}/`);
+      return response;
+    } catch (error) {
+      console.error("API Error - excluirMeta:", error);
+      throw error;
+    }
+  }
+
+  private getMockMetasData() {
+    const mockMetas = [
+      {
+        id: 1,
+        titulo_da_meta: "Reserva de Emergência",
+        descricao: "Economizar 6 meses de gastos",
+        valor_hoje: 12500.0,
+        valor_alvo: 18000.0,
+        data_limite: "2024-12-31",
+        categoria: "Emergência",
+      },
+      {
+        id: 2,
+        titulo_da_meta: "Viagem para Europa",
+        descricao: "Economizar para férias",
+        valor_hoje: 3200.0,
+        valor_alvo: 8000.0,
+        data_limite: "2024-06-30",
+        categoria: "Lazer",
+      },
+      {
+        id: 3,
+        titulo_da_meta: "Curso de Especialização",
+        descricao: "MBA em Finanças",
+        valor_hoje: 15000.0,
+        valor_alvo: 15000.0,
+        data_limite: "2024-01-31",
+        categoria: "Educação",
+      },
+      {
+        id: 4,
+        titulo_da_meta: "Entrada do Apartamento",
+        descricao: "20% do valor do imóvel",
+        valor_hoje: 25000.0,
+        valor_alvo: 50000.0,
+        data_limite: "2025-03-31",
+        categoria: "Moradia",
+      },
+    ];
+
+    // Calcular resumo
+    const total_economizado = mockMetas.reduce((sum, meta) => sum + meta.valor_hoje, 0);
+    const metas_totais = mockMetas.length;
+    const metas_ativas = mockMetas.filter(meta => meta.valor_hoje < meta.valor_alvo).length;
+    const metas_concluidas = mockMetas.filter(meta => meta.valor_hoje >= meta.valor_alvo).length;
+    const progresso_geral = metas_totais > 0 ? (metas_concluidas / metas_totais) * 100 : 0;
+
+    return {
+      metas_personalizadas: mockMetas,
+      resumo: {
+        total_economizado,
+        metas_totais,
+        metas_ativas,
+        metas_concluidas,
+        progresso_geral,
+      }
+    };
+  }
+
   // ===== APIs DE DÍVIDAS =====
   async getMaioresDividas(tipo: string, mes: string, ano: string) {
     try {
