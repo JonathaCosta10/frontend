@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -15,31 +14,28 @@ import {
 } from "@/components/ui/table";
 import {
   Plus,
-  TrendingDown,
-  AlertCircle,
-  Home,
-  Car,
   DollarSign,
-  Waves,
-  GraduationCap,
-  Coffee,
+  TrendingUp,
+  Briefcase,
+  HandCoins,
+  Coins,
   Trash2,
   Target,
-  Bell,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTranslation } from "@/contexts/TranslationContext";
 import { budgetApi } from "@/services/api/budget";
+import { useTranslation } from "@/contexts/TranslationContext";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-interface Custo {
+// ========================= INTERFACES =========================
+interface Entrada {
   id: number;
   descricao: string;
   valor_mensal: number;
   categoria: string;
-  flag: boolean;
   mes: number;
   ano: number;
+  flag: boolean;
 }
 
 interface TotalPorCategoria {
@@ -48,8 +44,8 @@ interface TotalPorCategoria {
   percentual: number;
 }
 
-interface ResumoGastos {
-  total_gastos: number;
+interface ResumoEntradas {
+  total_entradas: number;
   total_com_replicacao: number;
   total_sem_replicacao: number;
   periodo: {
@@ -63,86 +59,137 @@ interface FormData {
   valor_mensal: string;
 }
 
-// Cores para o gráfico de pizza - tons de vermelho para custos
+interface ApiResponse {
+  maiores_entradas: Entrada[];
+  totais_por_categoria: TotalPorCategoria[];
+  resumo: ResumoEntradas;
+}
+
+// ========================= CONSTANTES =========================
+// Cores para o gráfico de pizza - tons de verde para entradas
 const COLORS = [
-  "#dc2626", // red-600
-  "#ef4444", // red-500
-  "#f87171", // red-400
-  "#fca5a5", // red-300
-  "#fecaca", // red-200
-  "#fee2e2", // red-100
-  "#991b1b", // red-800
-  "#7f1d1d", // red-900
+  "#16a34a", // green-600
+  "#22c55e", // green-500
+  "#4ade80", // green-400
+  "#86efac", // green-300
+  "#bbf7d0", // green-200
+  "#dcfce7", // green-100
+  "#15803d", // green-700
+  "#166534", // green-800
 ];
 
-export default function Custos() {
+// ========================= COMPONENTE PRINCIPAL =========================
+export default function Entradas() {
   const { isAuthenticated } = useAuth();
   const { t, formatCurrency } = useTranslation();
-  const [custos, setCustos] = useState<Custo[]>([]);
+
+  // ========================= ESTADOS =========================
+  const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [totaisPorCategoria, setTotaisPorCategoria] = useState<TotalPorCategoria[]>([]);
-  const [resumoGastos, setResumoGastos] = useState<ResumoGastos | null>(null);
-  const [currentCategoria, setCurrentCategoria] = useState("Custo Fixo");
+  const [resumo, setResumo] = useState<ResumoEntradas | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [currentCategoria, setCurrentCategoria] = useState("Salario");
   const [formData, setFormData] = useState<FormData>({
     descricao: "",
     valor_mensal: "",
   });
-  const [loading, setLoading] = useState(false);
 
+  // ========================= CONFIGURAÇÕES =========================
+  // Obter mês e ano do localStorage
+  const mes = localStorage.getItem("mes") || String(new Date().getMonth() + 1).padStart(2, "0");
+  const ano = localStorage.getItem("ano") || String(new Date().getFullYear());
+
+  // Configuração das categorias
+  const categorias = [
+    { key: "Salario", icon: Briefcase, label: t("salary") },
+    { key: "Freelance", icon: HandCoins, label: t("freelance") },
+    { key: "Investimentos", icon: Coins, label: t("investment") },
+    { key: "Outros", icon: DollarSign, label: t("other") },
+  ];
+
+  // ========================= FUNÇÕES AUXILIARES =========================
   // Função para preparar dados do gráfico
   const prepararDadosGrafico = () => {
     if (!totaisPorCategoria || totaisPorCategoria.length === 0) {
       return [];
     }
 
-    const total = totaisPorCategoria.reduce((sum, item) => sum + item.total, 0);
-    
     return totaisPorCategoria.map((item, index) => ({
       name: getCategoriaLabel(item.categoria),
       value: item.total,
-      percentage: ((item.total / total) * 100).toFixed(2),
+      percentage: item.percentual.toFixed(2),
       color: COLORS[index % COLORS.length],
     }));
   };
 
-  // Obter mês e ano do localStorage
-  const mes =
-    localStorage.getItem("mes") ||
-    String(new Date().getMonth() + 1).padStart(2, "0");
-  const ano = localStorage.getItem("ano") || String(new Date().getFullYear());
+  // Função para obter o ícone da categoria
+  const getCategoriaIcon = (categoria: string) => {
+    switch (categoria) {
+      case "Salario":
+        return <Briefcase className="h-4 w-4" />;
+      case "Freelance":
+        return <HandCoins className="h-4 w-4" />;
+      case "Investimentos":
+        return <Coins className="h-4 w-4" />;
+      case "Outros":
+        return <DollarSign className="h-4 w-4" />;
+      default:
+        return <DollarSign className="h-4 w-4" />;
+    }
+  };
 
+  // Função para obter o label da categoria
+  const getCategoriaLabel = (categoria: string) => {
+    switch (categoria) {
+      case "Salario":
+        return t("salary");
+      case "Freelance":
+        return t("freelance");
+      case "Investimentos":
+        return t("investment");
+      case "Outros":
+        return t("other");
+      default:
+        return categoria;
+    }
+  };
+
+  // ========================= EFEITOS =========================
   useEffect(() => {
     if (isAuthenticated) {
-      atualizarCustos();
+      atualizarEntradas();
     }
   }, [currentCategoria, mes, ano, isAuthenticated]);
 
-  // Função para atualizar os custos via API
-  const atualizarCustos = async () => {
+  // ========================= FUNÇÕES DA API =========================
+  // Função para atualizar as entradas via API
+  const atualizarEntradas = async () => {
     setLoading(true);
 
     try {
-      const response = await budgetApi.getMaioresGastos(
+      const response: ApiResponse = await budgetApi.getMaioresEntradas(
         currentCategoria,
         mes,
         ano,
       );
-      setCustos(response.maiores_gastos || []);
+      
+      setEntradas(response.maiores_entradas || []);
       setTotaisPorCategoria(response.totais_por_categoria || []);
-      setResumoGastos(response.resumo || null);
+      setResumo(response.resumo || null);
     } catch (error) {
-      console.error("Erro ao obter os maiores custos:", error);
-      setCustos([]);
+      console.error("Erro ao obter as maiores entradas:", error);
+      setEntradas([]);
       setTotaisPorCategoria([]);
-      setResumoGastos(null);
+      setResumo(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // Função para cadastrar um custo
-  const cadastrarCusto = async () => {
+  // Função para cadastrar uma entrada
+  const cadastrarEntrada = async () => {
     if (!isAuthenticated) {
-      alert(t("authentication_required_cost"));
+      alert(t("authentication_required"));
       return;
     }
 
@@ -155,61 +202,39 @@ export default function Custos() {
       categoria: currentCategoria,
       descricao: formData.descricao,
       valor_mensal: parseFloat(formData.valor_mensal),
-      flag: false,
       mes: parseInt(mes),
       ano: parseInt(ano),
     };
 
     try {
-      await budgetApi.cadastrarGasto(data);
-      alert(t("cost_registered_successfully"));
+      await budgetApi.cadastrarEntrada(data);
+      alert(t("entry_registered_successfully"));
       setFormData({
         descricao: "",
         valor_mensal: "",
       });
-      atualizarCustos();
+      atualizarEntradas();
     } catch (error) {
-      console.error("Erro ao cadastrar custo:", error);
-      alert(t("cost_registration_error"));
+      console.error("Erro ao cadastrar entrada:", error);
+      alert(t("entry_registration_error"));
     }
   };
 
-  // Função para excluir um custo
-  const excluirCusto = async (id: number) => {
-    if (window.confirm(t("confirm_delete_cost"))) {
+  // Função para excluir uma entrada
+  const excluirEntrada = async (id: number) => {
+    if (window.confirm(t("confirm_delete_entry"))) {
       try {
-        await budgetApi.excluirGasto(id);
-        atualizarCustos();
-        alert(t("cost_deleted_successfully"));
+        await budgetApi.excluirEntrada(id);
+        atualizarEntradas();
+        alert(t("entry_deleted_successfully"));
       } catch (error) {
-        console.error("Erro ao excluir custo:", error);
-        alert(t("cost_deletion_error"));
+        console.error("Erro ao excluir entrada:", error);
+        alert(t("entry_deletion_error"));
       }
     }
   };
 
-  // Função para atualizar flag de repetição
-  const atualizarFlagCusto = async (id: number, novaFlag: boolean) => {
-    if (!isAuthenticated) {
-      alert(t("authentication_required"));
-      return;
-    }
-
-    const dadosAtualizados = {
-      flag: novaFlag,
-    };
-
-    try {
-      await budgetApi.atualizarFlagCusto(id, dadosAtualizados);
-      atualizarCustos();
-    } catch (error) {
-      console.error("Erro ao atualizar flag do custo:", error);
-      alert(
-        `${t("flag_update_error")}: ${error.response?.data?.detail || t("unexpected_error")}`
-      );
-    }
-  };
-
+  // ========================= FUNÇÕES DE FORMULÁRIO =========================
   // Função para limpar o formulário
   const limparFormulario = () => {
     setFormData({
@@ -218,74 +243,18 @@ export default function Custos() {
     });
   };
 
-  // Função para repetir o último valor
-  const repetirUltimoValor = () => {
-    if (custos.length > 0) {
-      const ultimoCusto = custos[custos.length - 1];
-      setFormData({
-        ...formData,
-        valor_mensal: ultimoCusto.valor_mensal.toString(),
-      });
-    }
-  };
-
   // Função para mostrar o formulário de uma categoria específica
   const showForm = (categoria: string) => {
     setCurrentCategoria(categoria);
     limparFormulario();
   };
 
-  // Função para formatar valores monetários
-  const formatarValor = (valor: number) => {
-    return formatCurrency(valor);
-  };
+  // ========================= CÁLCULOS =========================
+  const totalEntradas = resumo?.total_entradas || 0;
+  const totalComReplicacao = resumo?.total_com_replicacao || 0;
+  const totalSemReplicacao = resumo?.total_sem_replicacao || 0;
 
-  // Função para obter o ícone da categoria
-  const getCategoriaIcon = (categoria: string) => {
-    switch (categoria) {
-      case "Custo Fixo":
-        return <Home className="h-4 w-4" />;
-      case "Conforto":
-        return <Waves className="h-4 w-4" />;
-      case "Metas":
-        return <Car className="h-4 w-4" />;
-      case "Prazeres":
-        return <Coffee className="h-4 w-4" />;
-      case "Liberdade Financeira":
-        return <DollarSign className="h-4 w-4" />;
-      case "Conhecimento":
-        return <GraduationCap className="h-4 w-4" />;
-      default:
-        return <Home className="h-4 w-4" />;
-    }
-  };
-
-  // Função para obter o label da categoria
-  const getCategoriaLabel = (categoria: string) => {
-    switch (categoria) {
-      case "Custo Fixo":
-        return t("fixed_cost");
-      case "Conforto":
-        return t("comfort");
-      case "Metas":
-        return t("goals");
-      case "Prazeres":
-        return t("pleasures");
-      case "Liberdade Financeira":
-        return t("freedom");
-      case "Conhecimento":
-        return t("knowledge");
-      default:
-        return categoria;
-    }
-  };
-
-  // Calcular totais usando os dados do resumo da API
-  const totalCustos = resumoGastos?.total_gastos || 0;
-  const totalFixos = resumoGastos?.total_com_replicacao || 0;
-  const totalVariaveis = resumoGastos?.total_sem_replicacao || 0;
-  const activeCosts = totaisPorCategoria.length;
-
+  // ========================= RENDER =========================
   return (
     <div className="space-y-6">
       {/* Cards de Resumo */}
@@ -293,16 +262,16 @@ export default function Custos() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t("total_costs")}
+              {t("total_income")}
             </CardTitle>
-            <TrendingDown className="h-4 w-4 text-destructive" />
+            <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              {formatarValor(totalCustos)}
+            <div className="text-2xl font-bold text-green-600">
+              {formatCurrency(totalEntradas)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {activeCosts} {t("active_costs")}
+              {totaisPorCategoria.length} {t("active_categories")}
             </p>
           </CardContent>
         </Card>
@@ -310,33 +279,33 @@ export default function Custos() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t("fixed_costs")}
+              {t("with_replication")}
             </CardTitle>
-            <AlertCircle className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatarValor(totalFixos)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t("monthly_commitment")}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("variable_costs")}
-            </CardTitle>
-            <Waves className="h-4 w-4 text-blue-500" />
+            <Briefcase className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {formatarValor(totalVariaveis)}
+              {formatCurrency(totalComReplicacao)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {t("flexible_expenses")}
+              {t("recurring_income")}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t("without_replication")}
+            </CardTitle>
+            <HandCoins className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {formatCurrency(totalSemReplicacao)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("one_time_income")}
             </p>
           </CardContent>
         </Card>
@@ -359,13 +328,13 @@ export default function Custos() {
         </Card>
       </div>
 
-      {/* Tabela de Custos */}
+      {/* Tabela de Entradas */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <TrendingDown className="h-5 w-5" />
+            <TrendingUp className="h-5 w-5" />
             <span>
-              {t("costs")} - {getCategoriaLabel(currentCategoria)}
+              {t("income")} - {getCategoriaLabel(currentCategoria)}
             </span>
           </CardTitle>
         </CardHeader>
@@ -375,7 +344,7 @@ export default function Custos() {
               <TableRow>
                 <TableHead>{t("description")}</TableHead>
                 <TableHead>{t("monthly_value")}</TableHead>
-                <TableHead className="text-center">{t("fixed")}</TableHead>
+                <TableHead>{t("type")}</TableHead>
                 <TableHead>{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -385,54 +354,40 @@ export default function Custos() {
                   <TableCell colSpan={4} className="text-center">
                     <div className="py-8">
                       <p className="text-muted-foreground">
-                        {t("loading_costs")}
+                        {t("loading_entries")}
                       </p>
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : custos.length === 0 ? (
+              ) : entradas.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center">
                     <div className="py-8">
-                      <p className="text-destructive">
-                        {t("no_costs_registered_for_user")}
+                      <p className="text-green-600">
+                        {t("no_entries_registered_for_user")}
                       </p>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                custos.map((custo) => (
-                  <TableRow key={custo.id}>
+                entradas.map((entrada) => (
+                  <TableRow key={entrada.id}>
                     <TableCell className="font-medium">
-                      {custo.descricao}
+                      {entrada.descricao}
                     </TableCell>
-                    <TableCell className="text-destructive font-semibold">
-                      {formatarValor(custo.valor_mensal)}
+                    <TableCell className="text-green-600 font-semibold">
+                      {formatCurrency(entrada.valor_mensal)}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => atualizarFlagCusto(custo.id, !custo.flag)}
-                          className={`p-2 transition-colors ${
-                            custo.flag 
-                              ? "text-red-600 hover:text-red-700" 
-                              : "text-gray-400 hover:text-red-500"
-                          }`}
-                          title={custo.flag ? t("fixed") : t("variable")}
-                        >
-                          <Bell
-                            className={`h-5 w-5 ${custo.flag ? "fill-current" : ""}`}
-                          />
-                        </Button>
-                      </div>
+                      <Badge variant={entrada.flag ? "default" : "secondary"}>
+                        {entrada.flag ? t("recurring") : t("one_time")}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => excluirCusto(custo.id)}
+                        onClick={() => excluirEntrada(entrada.id)}
                         className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -452,7 +407,7 @@ export default function Custos() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Target className="h-5 w-5 text-red-600" />
+              <Target className="h-5 w-5 text-green-600" />
               <span>{t("distribution_by_category")}</span>
             </CardTitle>
           </CardHeader>
@@ -504,22 +459,7 @@ export default function Custos() {
           <CardContent className="space-y-4">
             {/* Botões de Categoria */}
             <div className="flex justify-center flex-wrap gap-1">
-              {[
-                { key: "Custo Fixo", icon: Home, label: t("fixed_cost") },
-                { key: "Conforto", icon: Waves, label: t("comfort") },
-                { key: "Metas", icon: Car, label: t("goals") },
-                { key: "Prazeres", icon: Coffee, label: t("pleasures") },
-                {
-                  key: "Liberdade Financeira",
-                  icon: DollarSign,
-                  label: t("freedom"),
-                },
-                {
-                  key: "Conhecimento",
-                  icon: GraduationCap,
-                  label: t("knowledge"),
-                },
-              ].map(({ key, icon: Icon, label }) => (
+              {categorias.map(({ key, icon: Icon, label }) => (
                 <Button
                   key={key}
                   variant={currentCategoria === key ? "default" : "outline"}
@@ -543,7 +483,7 @@ export default function Custos() {
                   onChange={(e) =>
                     setFormData({ ...formData, descricao: e.target.value })
                   }
-                  placeholder={t("cost_description_placeholder")}
+                  placeholder={t("entry_description_placeholder")}
                   className="h-8"
                 />
               </div>
@@ -557,7 +497,7 @@ export default function Custos() {
                   onChange={(e) =>
                     setFormData({ ...formData, valor_mensal: e.target.value })
                   }
-                  placeholder="450.00"
+                  placeholder="2500.00"
                   className="h-8"
                 />
               </div>
@@ -566,21 +506,12 @@ export default function Custos() {
             {/* Botões de Ação */}
             <div className="flex space-x-2">
               <Button
-                onClick={cadastrarCusto}
+                onClick={cadastrarEntrada}
                 disabled={loading}
-                className="bg-red-600 hover:bg-red-700 text-white h-8 text-sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-sm"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Cadastrar
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={repetirUltimoValor}
-                size="sm"
-                className="text-xs px-2 py-1"
-                disabled={custos.length === 0}
-              >
-                Repetir Último
               </Button>
               <Button 
                 variant="outline" 
