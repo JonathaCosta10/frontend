@@ -62,7 +62,7 @@ class BudgetApiService {
 
   async atualizarMeta(id: number, data: any) {
     try {
-      const response = await api.put(`/api/atualizar_meta/${id}/`, data);
+      const response = await api.put(`/api/atualizar_dados_meta/${id}/`, data);
       return response;
     } catch (error) {
       console.error("API Error - atualizarMeta:", error);
@@ -70,9 +70,22 @@ class BudgetApiService {
     }
   }
 
+  async atualizarValorMeta(id: number, operationType: string, valorHoje: number) {
+    try {
+      const response = await api.put(`/api/atualizar_valor_meta/${id}/`, {
+        operation_type: operationType,
+        valor_hoje: valorHoje
+      });
+      return response;
+    } catch (error) {
+      console.error("API Error - atualizarValorMeta:", error);
+      throw error;
+    }
+  }
+
   async excluirMeta(id: number) {
     try {
-      const response = await api.delete(`/api/excluir_meta/${id}/`);
+      const response = await api.delete(`/api/atualizar_dados_meta/${id}/`);
       return response;
     } catch (error) {
       console.error("API Error - excluirMeta:", error);
@@ -123,12 +136,18 @@ class BudgetApiService {
     // Calcular resumo
     const total_economizado = mockMetas.reduce((sum, meta) => sum + meta.valor_hoje, 0);
     const metas_totais = mockMetas.length;
-    const metas_ativas = mockMetas.filter(meta => meta.valor_hoje < meta.valor_alvo).length;
-    const metas_concluidas = mockMetas.filter(meta => meta.valor_hoje >= meta.valor_alvo).length;
+    const metas_ativas = mockMetas.filter(meta => {
+      const progresso = (meta.valor_hoje / meta.valor_alvo) * 100;
+      return progresso < 100;
+    }).length;
+    const metas_concluidas = mockMetas.filter(meta => {
+      const progresso = (meta.valor_hoje / meta.valor_alvo) * 100;
+      return progresso >= 100;
+    }).length;
     const progresso_geral = metas_totais > 0 ? (metas_concluidas / metas_totais) * 100 : 0;
 
     return {
-      metas_personalizadas: mockMetas,
+      cadastros: mockMetas,
       resumo: {
         total_economizado,
         metas_totais,

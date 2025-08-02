@@ -28,6 +28,7 @@ import {
   Calendar,
   CheckCircle,
   AlertTriangle,
+  Trash2,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
@@ -38,8 +39,8 @@ interface Meta {
   id: number;
   titulo_da_meta: string;
   descricao: string;
-  valor_alvo: number;
-  valor_hoje: number;
+  valor_alvo: string | number; // API pode retornar string
+  valor_hoje: string | number; // API pode retornar string
   data_limite: string;
   categoria: string;
 }
@@ -68,7 +69,11 @@ export default function Metas() {
   const [resumoMetas, setResumoMetas] = useState<ResumoMetas | null>(null);
   const [isNovaMetaOpen, setIsNovaMetaOpen] = useState(false);
   const [isEditMetaOpen, setIsEditMetaOpen] = useState(false);
+  const [isAtualizarValorOpen, setIsAtualizarValorOpen] = useState(false);
   const [editingMeta, setEditingMeta] = useState<Meta | null>(null);
+  const [metaParaAtualizar, setMetaParaAtualizar] = useState<Meta | null>(null);
+  const [novoValor, setNovoValor] = useState("");
+  const [tipoOperacao, setTipoOperacao] = useState<"adicionar" | "substituir">("adicionar");
   const [novaMeta, setNovaMeta] = useState({
     titulo_da_meta: "",
     descricao: "",
@@ -116,7 +121,7 @@ export default function Metas() {
     setLoading(true);
     try {
       const response = await budgetApi.getMetasPersonalizadas();
-      setMetas(response.metas_personalizadas || []);
+      setMetas(response.cadastros || []);
       setResumoMetas(response.resumo || null);
     } catch (error) {
       console.error("Erro ao carregar metas:", error);
@@ -202,8 +207,9 @@ export default function Metas() {
     }
 
     try {
+      setLoading(true);
+      
       const metaAtualizada = {
-        ...editingMeta,
         titulo_da_meta: editMeta.titulo_da_meta,
         descricao: editMeta.descricao,
         valor_alvo: parseFloat(editMeta.valor_alvo),
@@ -212,12 +218,11 @@ export default function Metas() {
         categoria: editMeta.categoria,
       };
 
-      // Atualizar meta na lista
-      setMetas((prev) =>
-        prev.map((meta) =>
-          meta.id === editingMeta.id ? metaAtualizada : meta,
-        ),
-      );
+      // Enviar para API
+      await budgetApi.atualizarMeta(editingMeta.id, metaAtualizada);
+
+      // Recarregar metas após atualizar
+      await loadMetas();
 
       // Limpar formulário e fechar modal
       setEditMeta({
@@ -235,6 +240,8 @@ export default function Metas() {
     } catch (error) {
       console.error("Erro ao editar meta:", error);
       alert(t("error_updating_goal"));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -287,6 +294,77 @@ export default function Metas() {
     } catch (error) {
       console.error("Erro ao criar meta:", error);
       alert(t("error_creating_goal"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para excluir meta
+  const excluirMeta = async (meta: Meta) => {
+    if (!isAuthenticated) {
+      console.error("Usuário não autenticado");
+      return;
+    }
+
+    const confirmacao = confirm(
+      `${t("confirm_delete_goal")} "${meta.titulo_da_meta}"?`
+    );
+    
+    if (!confirmacao) return;
+
+    try {
+      setLoading(true);
+      
+      // Enviar para API
+      await budgetApi.excluirMeta(meta.id);
+
+      // Recarregar metas após excluir
+      await loadMetas();
+
+      console.log(t("goal_deleted_successfully"));
+    } catch (error) {
+      console.error("Erro ao excluir meta:", error);
+      alert(t("error_deleting_goal"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para abrir modal de atualizar valor
+  const handleAtualizarValor = (meta: Meta) => {
+    setMetaParaAtualizar(meta);
+    setNovoValor("");
+    setTipoOperacao("adicionar");
+    setIsAtualizarValorOpen(true);
+  };
+
+  // Função para atualizar valor da meta
+  const atualizarValorMeta = async () => {
+    if (!metaParaAtualizar || !isAuthenticated || !novoValor) {
+      alert(t("fill_required_fields"));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const valorNovo = parseFloat(novoValor);
+
+      // Enviar para API com operation_type
+      await budgetApi.atualizarValorMeta(metaParaAtualizar.id, tipoOperacao, valorNovo);
+
+      // Recarregar metas após atualizar
+      await loadMetas();
+
+      // Limpar formulário e fechar modal
+      setNovoValor("");
+      setMetaParaAtualizar(null);
+      setIsAtualizarValorOpen(false);
+
+      console.log(t("goal_value_updated_successfully"));
+    } catch (error) {
+      console.error("Erro ao atualizar valor da meta:", error);
+      alert(t("error_updating_goal_value"));
     } finally {
       setLoading(false);
     }
@@ -396,7 +474,7 @@ export default function Metas() {
   const metasAtivas = resumoMetas?.metas_ativas || 0;
   const metasConcluidas = resumoMetas?.metas_concluidas || 0;
   const totalEconomizado = resumoMetas?.total_economizado || 0;
-  const totalObjetivos = metas.reduce((sum, meta) => sum + meta.valor_alvo, 0);
+  const totalObjetivos = metas.reduce((sum, meta) => sum + parseFloat(meta.valor_alvo.toString()), 0);
 
   const getProgressoGeral = () => {
     return resumoMetas?.progresso_geral || 0;
@@ -829,15 +907,116 @@ export default function Metas() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Atualizar Valor Meta Dialog */}
+        <Dialog open={isAtualizarValorOpen} onOpenChange={setIsAtualizarValorOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>{t("update_goal_value")}</DialogTitle>
+            </DialogHeader>
+            {metaParaAtualizar && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="bg-muted p-3 rounded-md">
+                    <h4 className="font-semibold">{metaParaAtualizar.titulo_da_meta}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {t("current_value")}: {formatCurrency(parseFloat(metaParaAtualizar.valor_hoje.toString()))}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("target_value")}: {formatCurrency(parseFloat(metaParaAtualizar.valor_alvo.toString()))}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tipo-operacao">{t("operation_type")}</Label>
+                  <Select
+                    value={tipoOperacao}
+                    onValueChange={(value: "adicionar" | "substituir") => setTipoOperacao(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="adicionar">{t("add_to_current")}</SelectItem>
+                      <SelectItem value="substituir">{t("replace_value")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="novo-valor">
+                    {tipoOperacao === "adicionar" ? t("value_to_add") : t("new_value")}
+                  </Label>
+                  <Input
+                    id="novo-valor"
+                    type="number"
+                    value={novoValor}
+                    onChange={(e) => setNovoValor(e.target.value)}
+                    placeholder="0,00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                {tipoOperacao === "adicionar" && novoValor && (
+                  <div className="bg-blue-50 p-3 rounded-md">
+                    <p className="text-sm">
+                      <span className="font-semibold">{t("result")}:</span>{" "}
+                      {formatCurrency(
+                        parseFloat(metaParaAtualizar.valor_hoje.toString()) + 
+                        parseFloat(novoValor || "0")
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex space-x-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAtualizarValorOpen(false)}
+                    className="flex-1"
+                  >
+                    {t("cancel")}
+                  </Button>
+                  <Button 
+                    onClick={atualizarValorMeta} 
+                    className="flex-1"
+                    disabled={!novoValor || loading}
+                  >
+                    {loading ? t("updating") : t("update_value")}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Grid de Metas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {metas.map((meta) => {
-          const progresso = (meta.valor_hoje / meta.valor_alvo) * 100;
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">{t("registered_goals")}</h2>
+        
+        {loading ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">{t("loading_goals")}</p>
+          </div>
+        ) : metas.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">{t("no_goals_registered")}</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {t("click_new_goal_to_start")}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {metas.map((meta) => {
+          const valorHoje = parseFloat(meta.valor_hoje.toString());
+          const valorAlvo = parseFloat(meta.valor_alvo.toString());
+          const progresso = (valorHoje / valorAlvo) * 100;
           const statusPrazo = getStatusPrazo(meta.data_limite);
           const diasRestantes = getDiasRestantes(meta.data_limite);
-          const isCompleta = meta.valor_hoje >= meta.valor_alvo;
+          const isCompleta = progresso >= 100; // Baseado na % de progresso
 
           return (
             <Card
@@ -875,8 +1054,8 @@ export default function Metas() {
                         {t("progress")}: {progresso.toFixed(1)}%
                       </span>
                       <span>
-                        {formatCurrency(meta.valor_hoje)} /{" "}
-                        {formatCurrency(meta.valor_alvo)}
+                        {formatCurrency(valorHoje)} /{" "}
+                        {formatCurrency(valorAlvo)}
                       </span>
                     </div>
                     <Progress
@@ -910,7 +1089,7 @@ export default function Metas() {
                         {t("remaining")}:{" "}
                       </span>
                       <span className="font-semibold">
-                        {formatCurrency(meta.valor_alvo - meta.valor_hoje)}
+                        {formatCurrency(valorAlvo - valorHoje)}
                       </span>
                     </div>
                   )}
@@ -918,14 +1097,36 @@ export default function Metas() {
                   {/* Ações */}
                   <div className="flex space-x-2 pt-2">
                     {!isCompleta && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditMeta(meta)}
-                      >
-                        {t("edit")}
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditMeta(meta)}
+                        >
+                          {t("edit")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => handleAtualizarValor(meta)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {t("add_value")}
+                        </Button>
+                      </>
                     )}
+                    
+                    {/* Botão de excluir sempre presente */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => excluirMeta(meta)}
+                      className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      disabled={loading}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    
                     {isCompleta && (
                       <Badge
                         variant="default"
@@ -941,6 +1142,8 @@ export default function Metas() {
             </Card>
           );
         })}
+          </div>
+        )}
       </div>
     </div>
   );
