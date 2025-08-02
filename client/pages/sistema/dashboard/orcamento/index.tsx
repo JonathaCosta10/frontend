@@ -15,7 +15,7 @@ import {
 import VariacaoEntradaChart from "@/components/charts/VariacaoEntradaChart";
 import DistribuicaoGastosChart from "@/components/charts/DistribuicaoGastosChart";
 import MetaMesAMesChart from "@/components/charts/MetaMesAMesChart";
-import { budgetApi, BudgetResponse } from "@/services/api/budget";
+import { budgetApi, DistribuicaoGastosResponse } from "@/services/api/budget";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useMonthYear } from "@/hooks/useMonthYear";
 
@@ -27,14 +27,14 @@ export default function BudgetOverview() {
   const mesInt = parseInt(mes);
   const anoInt = parseInt(ano);
 
-  const [budgetData, setBudgetData] = useState<BudgetResponse | null>(null);
+  const [budgetData, setBudgetData] = useState<DistribuicaoGastosResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadBudgetData = async () => {
       setLoading(true);
       try {
-        const data = await budgetApi.getBudgetOverview(mesInt, anoInt);
+        const data = await budgetApi.getDistribuicaoGastosCompleta(mesInt, anoInt);
         setBudgetData(data);
       } catch (error) {
         console.error("Erro ao carregar dados do orçamento:", error);
@@ -81,8 +81,9 @@ export default function BudgetOverview() {
     );
   }
 
-  const saldoMensal =
-    (budgetData?.total_entrada || 0) - (budgetData?.total_gastos || 0);
+  const saldoMensal = budgetData?.resumo_financeiro?.saldo_liquido_mensal || 0;
+  const totalEntradas = budgetData?.resumo_financeiro?.total_entradas || 0;
+  const totalGastos = budgetData?.resumo_financeiro?.total_gastos || 0;
   const totalPatrimonio = 0; // Será implementado com API de patrimônio
   const metasAtingidas = 0; // Será implementado com API de metas
 
@@ -99,7 +100,7 @@ export default function BudgetOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {formatCurrency(budgetData?.total_entrada || 0)}
+              {formatCurrency(totalEntradas)}
             </div>
             <p className="text-xs text-muted-foreground">
               {t("month_income", { month: mes || "--", year: ano || "--" })}
@@ -116,7 +117,7 @@ export default function BudgetOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(budgetData?.total_gastos || 0)}
+              {formatCurrency(totalGastos)}
             </div>
             <p className="text-xs text-muted-foreground">
               {t("month_expenses", { month: mes || "--", year: ano || "--" })}
@@ -183,7 +184,7 @@ export default function BudgetOverview() {
             </p>
           </CardHeader>
           <CardContent>
-            <VariacaoEntradaChart mes={mes} ano={ano} />
+            <VariacaoEntradaChart mes={mesInt} ano={anoInt} />
           </CardContent>
         </Card>
 
@@ -202,7 +203,7 @@ export default function BudgetOverview() {
             </p>
           </CardHeader>
           <CardContent>
-            <DistribuicaoGastosChart mes={mes} ano={ano} />
+            <DistribuicaoGastosChart mes={mesInt} ano={anoInt} />
           </CardContent>
         </Card>
       </div>
@@ -224,7 +225,7 @@ export default function BudgetOverview() {
               </div>
             )}
 
-            {budgetData?.total_gastos === 0 && (
+            {totalGastos === 0 && (
               <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
                 <Target className="h-4 w-4 text-blue-600" />
                 <span className="text-sm">
@@ -233,7 +234,7 @@ export default function BudgetOverview() {
               </div>
             )}
 
-            {saldoMensal >= 0 && budgetData?.total_gastos > 0 && (
+            {saldoMensal >= 0 && totalGastos > 0 && (
               <div className="flex items-center space-x-2 p-3 bg-success/10 rounded-lg">
                 <TrendingUp className="h-4 w-4 text-success" />
                 <span className="text-sm">{t("congratulations_in_green")}</span>
@@ -253,7 +254,7 @@ export default function BudgetOverview() {
             </p>
           </CardHeader>
           <CardContent>
-            <MetaMesAMesChart mes={mes} ano={ano} />
+            <MetaMesAMesChart mes={mesInt} ano={anoInt} />
           </CardContent>
         </Card>
       </div>

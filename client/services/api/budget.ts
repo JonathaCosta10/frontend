@@ -27,6 +27,66 @@ export interface BudgetResponse {
   total_gastos: number;
 }
 
+export interface DistribuicaoGastosResponse {
+  periodo: {
+    mes: string;
+    ano: string;
+  };
+  resumo_financeiro: {
+    total_entradas: number;
+    total_gastos: number;
+    total_dividas: number;
+    total_juros_mensais: number;
+    saldo_liquido_mensal: number;
+    total_custos: number;
+  };
+  entradas: {
+    resumo: {
+      total_entradas: number;
+      total_com_replicacao: number;
+      total_sem_replicacao: number;
+    };
+    por_categoria: Array<{
+      categoria: string;
+      total: number;
+      percentual: number;
+    }>;
+  };
+  gastos: {
+    resumo: {
+      total_gastos: number;
+      total_com_replicacao: number;
+      total_sem_replicacao: number;
+    };
+    por_categoria: Array<{
+      categoria: string;
+      total: number;
+      percentual: number;
+    }>;
+  };
+  dividas: {
+    resumo: {
+      total_dividas: number;
+      total_juros_mensais: number;
+      total_com_replicacao: number;
+      total_sem_replicacao: number;
+    };
+    por_categoria: Array<{
+      categoria: string;
+      total_divida: number;
+      total_juros: number;
+      percentual: number;
+    }>;
+  };
+  metas_personalizadas: {
+    total_economizado: number;
+    total_metas: number;
+    metas_concluidas: number;
+    metas_ativas: number;
+    progresso_geral: number;
+  };
+}
+
 class BudgetApiService {
   // ===== APIs DE METAS =====
   async getMetasPersonalizadas() {
@@ -609,6 +669,32 @@ class BudgetApiService {
     }
   }
 
+  async getDistribuicaoGastosCompleta(
+    mes: number,
+    ano: number,
+  ): Promise<DistribuicaoGastosResponse> {
+    try {
+      secureLog("[BUDGET] Fetching distribuicao gastos completa", { mes, ano });
+      const response = await api.get(
+        `/api/distribuicao_gastos?mes=${mes.toString().padStart(2, '0')}&ano=${ano}`,
+      );
+      return response;
+    } catch (error) {
+      console.error("API Error - getDistribuicaoGastosCompleta:", error);
+
+      // Use mock data only in development
+      if (isDevelopment) {
+        secureLog(
+          "[BUDGET] Using mock data for distribuicao gastos completa (development)",
+        );
+        await simulateApiDelay(200);
+        return this.getMockDistribuicaoGastosCompleta(mes, ano);
+      }
+
+      throw error;
+    }
+  }
+
   async getBudgetOverview(mes: number, ano: number): Promise<BudgetResponse> {
     try {
       secureLog("[BUDGET] Fetching budget overview", { mes, ano });
@@ -660,6 +746,95 @@ class BudgetApiService {
       { categoria: "Saúde", valor: 280.0, percentual: 7.3 },
       { categoria: "Outros", valor: 160.0, percentual: 4.2 },
     ];
+  }
+
+  private getMockDistribuicaoGastosCompleta(mes: number, ano: number): DistribuicaoGastosResponse {
+    return {
+      periodo: {
+        mes: mes.toString().padStart(2, '0'),
+        ano: ano.toString()
+      },
+      resumo_financeiro: {
+        total_entradas: 7946.0,
+        total_gastos: 1946.0,
+        total_dividas: 1608.0,
+        total_juros_mensais: 5.4,
+        saldo_liquido_mensal: 4392.0,
+        total_custos: 3554.0
+      },
+      entradas: {
+        resumo: {
+          total_entradas: 7946.0,
+          total_com_replicacao: 4400.0,
+          total_sem_replicacao: 3546.0
+        },
+        por_categoria: [
+          {
+            categoria: "Salario",
+            total: 4400.0,
+            percentual: 55.37
+          },
+          {
+            categoria: "Freelance",
+            total: 3546.0,
+            percentual: 44.63
+          }
+        ]
+      },
+      gastos: {
+        resumo: {
+          total_gastos: 1946.0,
+          total_com_replicacao: 1289.0,
+          total_sem_replicacao: 657.0
+        },
+        por_categoria: [
+          {
+            categoria: "Custo Fixo",
+            total: 845.0,
+            percentual: 43.42
+          },
+          {
+            categoria: "Conhecimento",
+            total: 657.0,
+            percentual: 33.76
+          },
+          {
+            categoria: "Conforto",
+            total: 444.0,
+            percentual: 22.82
+          }
+        ]
+      },
+      dividas: {
+        resumo: {
+          total_dividas: 1608.0,
+          total_juros_mensais: 5.4,
+          total_com_replicacao: 0.0,
+          total_sem_replicacao: 1608.0
+        },
+        por_categoria: [
+          {
+            categoria: "CartaoDeCredito",
+            total_divida: 960.0,
+            total_juros: 0.0,
+            percentual: 59.7
+          },
+          {
+            categoria: "Outros",
+            total_divida: 648.0,
+            total_juros: 5.4,
+            percentual: 40.3
+          }
+        ]
+      },
+      metas_personalizadas: {
+        total_economizado: 6500.0,
+        total_metas: 6515.0,
+        metas_concluidas: 1,
+        metas_ativas: 1,
+        progresso_geral: 50.0
+      }
+    };
   }
 
   // ===== APIs DE CADASTRO =====
