@@ -24,8 +24,6 @@ import {
   MoreHorizontal,
   Scale,
   Target,
-  ToggleLeft,
-  ToggleRight,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
@@ -53,6 +51,16 @@ interface TotalPorCategoria {
   percentual: number;
 }
 
+interface ResumoDividas {
+  total_dividas: number;
+  total_parcelas_mensais: number;
+  total_juros_mensais: number;
+  periodo: {
+    mes: string;
+    ano: string;
+  };
+}
+
 interface FormData {
   descricao: string;
   valor_mensal: string;
@@ -78,6 +86,7 @@ export default function Dividas() {
   const { t, formatCurrency } = useTranslation();
   const [dividas, setDividas] = useState<Divida[]>([]);
   const [totaisPorCategoria, setTotaisPorCategoria] = useState<TotalPorCategoria[]>([]);
+  const [resumoDividas, setResumoDividas] = useState<ResumoDividas | null>(null);
   const [currentCategoria, setCurrentCategoria] = useState("CartaoDeCredito");
   const [formData, setFormData] = useState<FormData>({
     descricao: "",
@@ -128,9 +137,12 @@ export default function Dividas() {
       );
       setDividas(response.maiores_dividas || []);
       setTotaisPorCategoria(response.totais_por_categoria || []);
+      setResumoDividas(response.resumo || null);
     } catch (error) {
       console.error("Erro ao obter as maiores dívidas:", error);
       setDividas([]);
+      setTotaisPorCategoria([]);
+      setResumoDividas(null);
     } finally {
       setLoading(false);
     }
@@ -190,28 +202,6 @@ export default function Dividas() {
     }
   };
 
-  // Função para atualizar flag de repetição
-  const atualizarFlagDivida = async (id: number, novaFlag: boolean) => {
-    if (!isAuthenticated) {
-      alert(t("authentication_required"));
-      return;
-    }
-
-    const dadosAtualizados = {
-      flag: novaFlag,
-    };
-
-    try {
-      await budgetApi.atualizarFlagDivida(id, dadosAtualizados);
-      atualizarDividas();
-    } catch (error) {
-      console.error("Erro ao atualizar flag da dívida:", error);
-      alert(
-        `${t("flag_update_error")}: ${error.response?.data?.detail || t("unexpected_error")}`
-      );
-    }
-  };
-
   // Função para limpar o formulário
   const limparFormulario = () => {
     setFormData({
@@ -266,10 +256,11 @@ export default function Dividas() {
     }
   };
 
-  // Calcular totais
-  const totalDividas = dividas.reduce((sum, d) => sum + (Number(d.divida_total) || 0), 0);
-  const totalParcelas = dividas.reduce((sum, d) => sum + (Number(d.valor_mensal) || 0), 0);
-  const totalJuros = dividas.reduce((sum, d) => sum + (Number(d.juros_mensais) || 0), 0);
+  // Calcular totais usando os dados do resumo da API
+  const totalDividas = resumoDividas?.total_dividas || 0;
+  const totalParcelas = resumoDividas?.total_parcelas_mensais || 0;
+  const totalJuros = resumoDividas?.total_juros_mensais || 0;
+  const activeDividas = totaisPorCategoria.length;
 
   return (
     <div className="space-y-6">
@@ -287,7 +278,7 @@ export default function Dividas() {
               {formatarValor(totalDividas)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {totaisPorCategoria.length} {t("active_debts")}
+              {activeDividas} {t("active_debts")}
             </p>
           </CardContent>
         </Card>
@@ -365,14 +356,13 @@ export default function Dividas() {
                 <TableHead>{t("quantity")}</TableHead>
                 <TableHead>{t("annual_interest")}</TableHead>
                 <TableHead>{t("monthly_interest_abbr")}</TableHead>
-                <TableHead>{t("recurring")}</TableHead>
                 <TableHead>{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center">
+                  <TableCell colSpan={8} className="text-center">
                     <div className="py-8">
                       <p className="text-muted-foreground">
                         {t("loading_debts")}
@@ -382,7 +372,7 @@ export default function Dividas() {
                 </TableRow>
               ) : dividas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center">
+                  <TableCell colSpan={8} className="text-center">
                     <div className="py-8">
                       <p className="text-destructive">
                         {t("no_debts_registered_for_user")}
@@ -405,25 +395,6 @@ export default function Dividas() {
                     <TableCell>{divida.taxa_juros}%</TableCell>
                     <TableCell className="text-destructive">
                       {formatarValor(divida.juros_mensais)}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => atualizarFlagDivida(divida.id, !divida.flag)}
-                        className={`p-1 transition-colors ${
-                          divida.flag 
-                            ? "text-red-600 hover:text-red-700" 
-                            : "text-gray-400 hover:text-gray-600"
-                        }`}
-                        title={divida.flag ? t("active") : t("inactive")}
-                      >
-                        {divida.flag ? (
-                          <ToggleRight className="h-5 w-5" />
-                        ) : (
-                          <ToggleLeft className="h-5 w-5" />
-                        )}
-                      </Button>
                     </TableCell>
                     <TableCell>
                       <Button
