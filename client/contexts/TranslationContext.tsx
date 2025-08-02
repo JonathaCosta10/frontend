@@ -738,6 +738,8 @@ const translations = {
     how_connect_b3_account: "Como conectar minha conta B3?",
     how_expenses_distributed_month:
       "Como seus gastos estão distribuídos no mês",
+    how_expenses_distributed_annual:
+      "Como os custos estão distribuídos no ano {{year}}",
     how_premium_plan_works: "Como funciona o plano Premium?",
     how_repetition_flags_work: "Como funcionam as flags de repetição",
     hybrid: "Híbrido",

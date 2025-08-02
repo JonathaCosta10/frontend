@@ -27,15 +27,13 @@ export interface BudgetResponse {
   total_gastos: number;
 }
 
-export interface DistribuicaoGastosResponse {
-  periodo: {
-    mes: string;
-    ano: string;
-  };
+export interface DadosMensais {
+  mes: string;
   resumo_financeiro: {
     total_entradas: number;
     total_gastos: number;
     total_dividas: number;
+    total_dividas_mensais: number;
     total_juros_mensais: number;
     saldo_liquido_mensal: number;
     total_custos: number;
@@ -77,6 +75,14 @@ export interface DistribuicaoGastosResponse {
       total_juros: number;
       percentual: number;
     }>;
+  };
+}
+
+export interface DistribuicaoGastosResponse {
+  ano: string;
+  meses_disponeis: string[];
+  dados_mensais: {
+    [mes: string]: DadosMensais;
   };
   metas_personalizadas: {
     total_economizado: number;
@@ -623,10 +629,27 @@ class BudgetApiService {
   ): Promise<VariacaoEntrada[]> {
     try {
       secureLog("[BUDGET] Fetching variacao entrada", { mes, ano });
-      const response = await api.get(
-        `/api/variacao_entrada?mes=${mes}&ano=${ano}`,
-      );
-      return response.variacao_entrada || [];
+      
+      // Buscar dados completos do ano
+      const response = await this.getDistribuicaoGastosCompleta(mes, ano);
+      
+      // Transformar dados em formato de variação mensal
+      const variacaoEntrada: VariacaoEntrada[] = [];
+      
+      if (response.dados_mensais) {
+        Object.entries(response.dados_mensais).forEach(([mesKey, dadosMes]) => {
+          variacaoEntrada.push({
+            mes: parseInt(mesKey),
+            ano: parseInt(response.ano),
+            valor_total: dadosMes.resumo_financeiro.total_entradas
+          });
+        });
+      }
+      
+      // Ordenar por mês
+      variacaoEntrada.sort((a, b) => a.mes - b.mes);
+      
+      return variacaoEntrada;
     } catch (error) {
       console.error("API Error - getVariacaoEntrada:", error);
 
@@ -649,10 +672,37 @@ class BudgetApiService {
   ): Promise<DistribuicaoGastos[]> {
     try {
       secureLog("[BUDGET] Fetching distribuicao gastos", { mes, ano });
-      const response = await api.get(
-        `/api/distribuicao_gastos?mes=${mes}&ano=${ano}`,
-      );
-      return response.distribuicao_gastos || [];
+      
+      // Buscar dados completos
+      const response = await this.getDistribuicaoGastosCompleta(mes, ano);
+      
+      // Agregar dados de TODOS os meses disponíveis
+      const agregacaoCategorias: { [categoria: string]: number } = {};
+      let totalGeral = 0;
+      
+      if (response.dados_mensais) {
+        Object.values(response.dados_mensais).forEach(dadosMes => {
+          dadosMes.gastos.por_categoria.forEach(categoria => {
+            if (!agregacaoCategorias[categoria.categoria]) {
+              agregacaoCategorias[categoria.categoria] = 0;
+            }
+            agregacaoCategorias[categoria.categoria] += categoria.total;
+            totalGeral += categoria.total;
+          });
+        });
+      }
+      
+      // Transformar em formato do gráfico com percentuais recalculados
+      const distribuicaoGastos: DistribuicaoGastos[] = Object.entries(agregacaoCategorias).map(([categoria, total]) => ({
+        categoria,
+        valor: total,
+        percentual: totalGeral > 0 ? (total / totalGeral) * 100 : 0
+      }));
+      
+      // Ordenar por valor decrescente
+      distribuicaoGastos.sort((a, b) => b.valor - a.valor);
+      
+      return distribuicaoGastos;
     } catch (error) {
       console.error("API Error - getDistribuicaoGastos:", error);
 
@@ -676,7 +726,7 @@ class BudgetApiService {
     try {
       secureLog("[BUDGET] Fetching distribuicao gastos completa", { mes, ano });
       const response = await api.get(
-        `/api/distribuicao_gastos?mes=${mes.toString().padStart(2, '0')}&ano=${ano}`,
+        `/api/distribuicao_gastos?ano=${ano}`,
       );
       return response;
     } catch (error) {
@@ -749,86 +799,170 @@ class BudgetApiService {
   }
 
   private getMockDistribuicaoGastosCompleta(mes: number, ano: number): DistribuicaoGastosResponse {
+    const mesStr = mes.toString();
+    const anoStr = ano.toString();
+    
     return {
-      periodo: {
-        mes: mes.toString().padStart(2, '0'),
-        ano: ano.toString()
-      },
-      resumo_financeiro: {
-        total_entradas: 7946.0,
-        total_gastos: 1946.0,
-        total_dividas: 1608.0,
-        total_juros_mensais: 5.4,
-        saldo_liquido_mensal: 4392.0,
-        total_custos: 3554.0
-      },
-      entradas: {
-        resumo: {
-          total_entradas: 7946.0,
-          total_com_replicacao: 4400.0,
-          total_sem_replicacao: 3546.0
-        },
-        por_categoria: [
-          {
-            categoria: "Salario",
-            total: 4400.0,
-            percentual: 55.37
+      ano: anoStr,
+      meses_disponeis: ["7", "8"],
+      dados_mensais: {
+        "8": {
+          mes: "8",
+          resumo_financeiro: {
+            total_entradas: 1400.0,
+            total_gastos: 1552.0,
+            total_dividas: 8580.0,
+            total_dividas_mensais: 602.0,
+            total_juros_mensais: 1435.1,
+            saldo_liquido_mensal: -754.0,
+            total_custos: 2154.0
           },
-          {
-            categoria: "Freelance",
-            total: 3546.0,
-            percentual: 44.63
+          entradas: {
+            resumo: {
+              total_entradas: 1400.0,
+              total_com_replicacao: 0.0,
+              total_sem_replicacao: 1400.0
+            },
+            por_categoria: [
+              {
+                categoria: "Salario",
+                total: 1200.0,
+                percentual: 85.71
+              },
+              {
+                categoria: "Freelance",
+                total: 200.0,
+                percentual: 14.29
+              }
+            ]
+          },
+          gastos: {
+            resumo: {
+              total_gastos: 1552.0,
+              total_com_replicacao: 1000.0,
+              total_sem_replicacao: 552.0
+            },
+            por_categoria: [
+              {
+                categoria: "Custo Fixo",
+                total: 1000.0,
+                percentual: 64.43
+              },
+              {
+                categoria: "Conforto",
+                total: 500.0,
+                percentual: 32.22
+              },
+              {
+                categoria: "Outros",
+                total: 52.0,
+                percentual: 3.35
+              }
+            ]
+          },
+          dividas: {
+            resumo: {
+              total_dividas: 8580.0,
+              total_juros_mensais: 1435.1,
+              total_com_replicacao: 0.0,
+              total_sem_replicacao: 8580.0
+            },
+            por_categoria: [
+              {
+                categoria: "Financiamento",
+                total_divida: 6780.0,
+                total_juros: 1435.1,
+                percentual: 79.02
+              },
+              {
+                categoria: "CartaoDeCredito",
+                total_divida: 1800.0,
+                total_juros: 0.0,
+                percentual: 20.98
+              }
+            ]
           }
-        ]
-      },
-      gastos: {
-        resumo: {
-          total_gastos: 1946.0,
-          total_com_replicacao: 1289.0,
-          total_sem_replicacao: 657.0
         },
-        por_categoria: [
-          {
-            categoria: "Custo Fixo",
-            total: 845.0,
-            percentual: 43.42
+        "7": {
+          mes: "7",
+          resumo_financeiro: {
+            total_entradas: 7946.0,
+            total_gastos: 1946.0,
+            total_dividas: 1608.0,
+            total_dividas_mensais: 86.0,
+            total_juros_mensais: 5.4,
+            saldo_liquido_mensal: 5914.0,
+            total_custos: 2032.0
           },
-          {
-            categoria: "Conhecimento",
-            total: 657.0,
-            percentual: 33.76
+          entradas: {
+            resumo: {
+              total_entradas: 7946.0,
+              total_com_replicacao: 4400.0,
+              total_sem_replicacao: 3546.0
+            },
+            por_categoria: [
+              {
+                categoria: "Salario",
+                total: 4400.0,
+                percentual: 55.37
+              },
+              {
+                categoria: "Freelance",
+                total: 3546.0,
+                percentual: 44.63
+              }
+            ]
           },
-          {
-            categoria: "Conforto",
-            total: 444.0,
-            percentual: 22.82
+          gastos: {
+            resumo: {
+              total_gastos: 1946.0,
+              total_com_replicacao: 1289.0,
+              total_sem_replicacao: 657.0
+            },
+            por_categoria: [
+              {
+                categoria: "Custo Fixo",
+                total: 845.0,
+                percentual: 43.42
+              },
+              {
+                categoria: "Conhecimento",
+                total: 657.0,
+                percentual: 33.76
+              },
+              {
+                categoria: "Conforto",
+                total: 444.0,
+                percentual: 22.82
+              }
+            ]
+          },
+          dividas: {
+            resumo: {
+              total_dividas: 1608.0,
+              total_juros_mensais: 5.4,
+              total_com_replicacao: 0.0,
+              total_sem_replicacao: 1608.0
+            },
+            por_categoria: [
+              {
+                categoria: "CartaoDeCredito",
+                total_divida: 960.0,
+                total_juros: 0.0,
+                percentual: 59.7
+              },
+              {
+                categoria: "Outros",
+                total_divida: 648.0,
+                total_juros: 5.4,
+                percentual: 40.3
+              }
+            ]
           }
-        ]
-      },
-      dividas: {
-        resumo: {
-          total_dividas: 1608.0,
-          total_juros_mensais: 5.4,
-          total_com_replicacao: 0.0,
-          total_sem_replicacao: 1608.0
-        },
-        por_categoria: [
-          {
-            categoria: "CartaoDeCredito",
-            total_divida: 960.0,
-            total_juros: 0.0,
-            percentual: 59.7
-          },
-          {
-            categoria: "Outros",
-            total_divida: 648.0,
-            total_juros: 5.4,
-            percentual: 40.3
-          }
-        ]
+        }
       },
       metas_personalizadas: {
-        total_economizado: 6500.0,
+        total_economizado: 6501.0,
         total_metas: 6515.0,
         metas_concluidas: 1,
         metas_ativas: 1,
