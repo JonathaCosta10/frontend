@@ -1,6 +1,5 @@
 import React from "react";
 import { budgetApi, DistribuicaoGastosResponse } from "@/services/api/budget";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Doughnut } from 'react-chartjs-2';
@@ -108,35 +107,21 @@ const DistribuicaoGastosChart: React.FC<DistribuicaoGastosChartProps> = ({ mes, 
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribuição de Custos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 flex items-center justify-center">
-            <div className="animate-pulse text-muted-foreground">Carregando...</div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="h-80 flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+      </div>
     );
   }
 
   if (error || !distribuicaoData?.dados_mensais) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribuição de Custos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 flex flex-col items-center justify-center text-center space-y-4">
-            <CreditCard className="h-12 w-12 text-muted-foreground" />
-            <div>
-              <h3 className="text-lg font-semibold">Nenhum custo cadastrado</h3>
-              <p className="text-muted-foreground">Cadastre gastos e dívidas para visualizar a distribuição</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="h-80 flex flex-col items-center justify-center text-center space-y-4">
+        <CreditCard className="h-12 w-12 text-muted-foreground" />
+        <div>
+          <h3 className="text-lg font-semibold">Nenhum custo cadastrado</h3>
+          <p className="text-muted-foreground">Cadastre gastos e dívidas para visualizar a distribuição</p>
+        </div>
+      </div>
     );
   }
 
@@ -168,40 +153,23 @@ const DistribuicaoGastosChart: React.FC<DistribuicaoGastosChartProps> = ({ mes, 
 
   return (
     <TooltipProvider>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <CreditCard className="h-5 w-5 text-red-600" />
-            <span>Distribuição de Custos - Ano {ano}</span>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Inclui gastos e dívidas mensais de {mesesConsiderados} meses</p>
-              </TooltipContent>
-            </Tooltip>
-          </CardTitle>
-          <div className="text-sm text-muted-foreground">
+      <div>
+        <div className="text-sm text-muted-foreground mb-4">
             Total: {formatCurrency(totalGeral)} • {mesesConsiderados} meses considerados
           </div>
-        </CardHeader>
-        <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Gráfico de rosca */}
-            <div className="relative">
+            <div className="space-y-4">
               <div className="h-64">
                 <Doughnut data={configGrafico} options={opcoes} />
               </div>
-              {/* Valor total no centro */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">
-                    {formatCurrency(totalGeral)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Total Anual</div>
-                  <div className="text-xs text-muted-foreground">{mesesConsiderados} meses</div>
+              {/* Informações do total abaixo do gráfico */}
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(totalGeral)}
                 </div>
+                <div className="text-sm text-muted-foreground">Total Anual</div>
+                <div className="text-xs text-muted-foreground">{mesesConsiderados} meses</div>
               </div>
             </div>
 
@@ -253,8 +221,7 @@ const DistribuicaoGastosChart: React.FC<DistribuicaoGastosChartProps> = ({ mes, 
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+      </div>
     </TooltipProvider>
   );
 };

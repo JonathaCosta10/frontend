@@ -1,6 +1,5 @@
 import React from "react";
 import { budgetApi, VariacaoEntrada } from "@/services/api/budget";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Line } from 'react-chartjs-2';
 import {
@@ -39,8 +38,7 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
   const { formatCurrency } = useTranslation();
   
   const { data, loading, error } = useApiData(
-    () => budgetApi.getVariacaoEntrada(mes, ano),
-    { dependencies: [mes, ano] }
+    () => budgetApi.getVariacaoEntrada(mes, ano)
   );
 
   const calcularEstatisticas = (dados: VariacaoEntrada[]) => {
@@ -105,7 +103,10 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
         borderWidth: 1,
         callbacks: {
           label: function (context: any) {
-            return `${formatCurrency(context.parsed.y)}`;
+            const value = context.parsed.y;
+            // Debug: log para verificar se o valor está correto
+            console.log('Tooltip value:', value, 'Formatted:', formatCurrency(value));
+            return `Entradas: ${formatCurrency(value)}`;
           },
         },
       },
@@ -147,35 +148,21 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Variação de Entradas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 flex items-center justify-center">
-            <div className="animate-pulse text-muted-foreground">Carregando...</div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="h-80 flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+      </div>
     );
   }
 
   if (error || !data || data.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Variação de Entradas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 flex flex-col items-center justify-center text-center space-y-4">
-            <DollarSign className="h-12 w-12 text-muted-foreground" />
-            <div>
-              <h3 className="text-lg font-semibold">Nenhum dado disponível</h3>
-              <p className="text-muted-foreground">Cadastre entradas para visualizar o gráfico</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="h-80 flex flex-col items-center justify-center text-center space-y-4">
+        <DollarSign className="h-12 w-12 text-muted-foreground" />
+        <div>
+          <h3 className="text-lg font-semibold">Nenhum dado disponível</h3>
+          <p className="text-muted-foreground">Cadastre entradas para visualizar o gráfico</p>
+        </div>
+      </div>
     );
   }
 
@@ -183,52 +170,30 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
   const configGrafico = gerarConfigGrafico(data);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <DollarSign className="h-5 w-5 text-green-600" />
-            <span>Variação de Entradas - {ano}</span>
-          </CardTitle>
-          {estatisticas && (
-            <Badge 
-              variant={estatisticas.tendencia >= 0 ? "default" : "destructive"}
-              className={estatisticas.tendencia >= 0 ? "bg-green-100 text-green-800" : ""}
-            >
-              {estatisticas.tendencia >= 0 ? (
-                <TrendingUp className="h-3 w-3 mr-1" />
-              ) : (
-                <TrendingDown className="h-3 w-3 mr-1" />
-              )}
-              {estatisticas.percentualTendencia.toFixed(1)}%
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* Estatísticas resumidas */}
-        {estatisticas && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div>
+      {/* Estatísticas resumidas */}
+      {estatisticas && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="text-center p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-              <div className="text-sm text-muted-foreground">Total</div>
+              <div className="text-sm text-muted-foreground">Faturamento Anual</div>
               <div className="text-lg font-bold text-green-700 dark:text-green-400">
                 {formatCurrency(estatisticas.total)}
               </div>
             </div>
             <div className="text-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-              <div className="text-sm text-muted-foreground">Média</div>
+              <div className="text-sm text-muted-foreground">Média Mensal</div>
               <div className="text-lg font-bold text-blue-700 dark:text-blue-400">
                 {formatCurrency(estatisticas.media)}
               </div>
             </div>
             <div className="text-center p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
-              <div className="text-sm text-muted-foreground">Máximo</div>
+              <div className="text-sm text-muted-foreground">Melhor Mês</div>
               <div className="text-lg font-bold text-purple-700 dark:text-purple-400">
                 {formatCurrency(estatisticas.maximo)}
               </div>
             </div>
             <div className="text-center p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
-              <div className="text-sm text-muted-foreground">Mínimo</div>
+              <div className="text-sm text-muted-foreground">Pior Mês</div>
               <div className="text-lg font-bold text-orange-700 dark:text-orange-400">
                 {formatCurrency(estatisticas.minimo)}
               </div>
@@ -237,12 +202,28 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
         )}
 
         {/* Gráfico */}
-        <div className="h-64">
+        <div className="h-64 mb-6">
           <Line data={configGrafico} options={opcoes} />
         </div>
-      </CardContent>
-    </Card>
-  );
+
+        {/* Insights */}
+        {estatisticas && (
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <TrendingUp className="h-4 w-4 text-green-600" />
+              <span className="font-medium text-sm">Insights</span>
+            </div>
+            <div className="text-sm text-muted-foreground space-y-1">
+              <div>• Faturamento anual: {formatCurrency(estatisticas.total)}</div>
+              <div>• Média mensal: {formatCurrency(estatisticas.media)}</div>
+              <div>• Melhor performance: {formatCurrency(estatisticas.maximo)}</div>
+              <div>• Menor entrada: {formatCurrency(estatisticas.minimo)}</div>
+              <div>• Total de meses com dados: {data.length}</div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
 };
 
 export default VariacaoEntradaChart;

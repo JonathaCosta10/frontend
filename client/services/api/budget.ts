@@ -76,6 +76,26 @@ export interface DadosMensais {
       percentual: number;
     }>;
   };
+  orcamento_domestico?: {
+    resumo: {
+      total_planejado: number;
+      data_configuracao: string;
+    };
+    por_categoria: Array<{
+      categoria: string;
+      valor: number;
+      percentual: number;
+    }>;
+    detalhes: {
+      custos_fixos: number;
+      prazer: number;
+      conforto: number;
+      metas: number;
+      liberdade_financeira: number;
+      conhecimento: number;
+      data: string;
+    };
+  };
 }
 
 export interface DistribuicaoGastosResponse {
@@ -881,6 +901,53 @@ class BudgetApiService {
                 percentual: 20.98
               }
             ]
+          },
+          orcamento_domestico: {
+            resumo: {
+              total_planejado: 0.75,
+              data_configuracao: "2025-08-02T18:11:30.193185+00:00"
+            },
+            por_categoria: [
+              {
+                categoria: "Conhecimento",
+                valor: 0.44,
+                percentual: 44.0
+              },
+              {
+                categoria: "Metas",
+                valor: 0.16,
+                percentual: 16.0
+              },
+              {
+                categoria: "Conforto",
+                valor: 0.1,
+                percentual: 10.0
+              },
+              {
+                categoria: "Custos Fixos",
+                valor: 0.05,
+                percentual: 5.0
+              },
+              {
+                categoria: "Prazer",
+                valor: 0.0,
+                percentual: 0.0
+              },
+              {
+                categoria: "Liberdade Financeira",
+                valor: 0.0,
+                percentual: 0.0
+              }
+            ],
+            detalhes: {
+              custos_fixos: 0.05,
+              prazer: 0.0,
+              conforto: 0.1,
+              metas: 0.16,
+              liberdade_financeira: 0.0,
+              conhecimento: 0.44,
+              data: "2025-08-02T18:11:30.193185+00:00"
+            }
           }
         },
         "7": {
@@ -958,6 +1025,53 @@ class BudgetApiService {
                 percentual: 40.3
               }
             ]
+          },
+          orcamento_domestico: {
+            resumo: {
+              total_planejado: 0.75,
+              data_configuracao: "2025-08-02T18:11:30.193185+00:00"
+            },
+            por_categoria: [
+              {
+                categoria: "Conhecimento",
+                valor: 0.44,
+                percentual: 44.0
+              },
+              {
+                categoria: "Metas",
+                valor: 0.16,
+                percentual: 16.0
+              },
+              {
+                categoria: "Conforto",
+                valor: 0.1,
+                percentual: 10.0
+              },
+              {
+                categoria: "Custos Fixos",
+                valor: 0.05,
+                percentual: 5.0
+              },
+              {
+                categoria: "Prazer",
+                valor: 0.0,
+                percentual: 0.0
+              },
+              {
+                categoria: "Liberdade Financeira",
+                valor: 0.0,
+                percentual: 0.0
+              }
+            ],
+            detalhes: {
+              custos_fixos: 0.05,
+              prazer: 0.0,
+              conforto: 0.1,
+              metas: 0.16,
+              liberdade_financeira: 0.0,
+              conhecimento: 0.44,
+              data: "2025-08-02T18:11:30.193185+00:00"
+            }
           }
         }
       },
