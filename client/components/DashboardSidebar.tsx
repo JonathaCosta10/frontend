@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useProfileVerification } from "../hooks/useProfileVerification";
+import { usePersonalData } from "../hooks/usePersonalData";
 import { useTranslation } from "../contexts/TranslationContext";
 import SubscriptionGuard from "./SubscriptionGuard";
 import LanguageSelector from "./LanguageSelector";
@@ -30,12 +31,24 @@ interface SidebarItem {
   badge?: string;
 }
 
-export default function DashboardSidebar() {
+interface DashboardSidebarProps {
+  onCollapseChange?: (collapsed: boolean) => void;
+}
+
+export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { isPaidUser } = useProfileVerification();
+  const { personalData } = usePersonalData();
   const { t } = useTranslation();
+
+  // Notifica o parent component quando o estado collapsed muda
+  const handleCollapseToggle = () => {
+    const newCollapsed = !collapsed;
+    setCollapsed(newCollapsed);
+    onCollapseChange?.(newCollapsed);
+  };
 
   const mainItems: SidebarItem[] = [
     {
@@ -90,7 +103,7 @@ export default function DashboardSidebar() {
 
   const systemItems: SidebarItem[] = [
     {
-      labelKey: "Profile",
+      labelKey: "my_profile",
       path: "/dashboard/perfil",
       icon: <User className="h-4 w-4" />,
     },
@@ -135,12 +148,14 @@ export default function DashboardSidebar() {
       className={cn(
         "flex flex-col border-r bg-card transition-all duration-300 h-screen fixed left-0 top-0 z-50",
         collapsed ? "w-16" : "w-64",
+        "lg:block", // Always visible on large screens
+        "hidden md:block" // Hidden on mobile, visible on tablet and up
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         {!collapsed && (
-          <Link to="/home" className="flex items-center space-x-2">
+          <Link to="/dashboard/info-diaria" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">
                 O
@@ -149,10 +164,19 @@ export default function DashboardSidebar() {
             <span className="font-bold text-lg">Organizesee</span>
           </Link>
         )}
+        {collapsed && (
+          <Link to="/dashboard/info-diaria" className="flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-sm">
+                O
+              </span>
+            </div>
+          </Link>
+        )}
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={handleCollapseToggle}
           className="h-8 w-8 p-0"
         >
           {collapsed ? (
@@ -172,8 +196,17 @@ export default function DashboardSidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">
-                {user.full_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.name || user.username}
+                {personalData?.nome_completo || 
+                 user.full_name || 
+                 `${user.first_name || ''} ${user.last_name || ''}`.trim() || 
+                 user.name || 
+                 user.username}
               </p>
+              {personalData?.nome_completo && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {user.email}
+                </p>
+              )}
             </div>
           </div>
 

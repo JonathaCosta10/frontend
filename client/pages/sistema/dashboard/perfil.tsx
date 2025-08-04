@@ -483,6 +483,32 @@ const PerfilPage: React.FC = () => {
     }
   };
 
+  // Função para formatar valores monetários
+  const formatCurrency = (value: string): string => {
+    if (!value) return "Não informado";
+    
+    // Remove caracteres não numéricos e pontos/vírgulas
+    const cleanValue = value.replace(/[^\d.,]/g, '');
+    
+    // Se já está no formato monetário, retorna como está
+    if (value.startsWith('R$')) {
+      return value;
+    }
+    
+    // Converte para número
+    const numericValue = parseFloat(cleanValue.replace(',', '.'));
+    
+    if (isNaN(numericValue)) {
+      return value; // Retorna o valor original se não conseguir converter
+    }
+    
+    // Formata como moeda brasileira
+    return numericValue.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+  };
+
   // Função para formatar data para exibição (DD/MM/YYYY)
   const formatDateForDisplay = (dateString: string): string => {
     if (!dateString) return "Não informado";
@@ -575,6 +601,30 @@ const PerfilPage: React.FC = () => {
     setPersonalData(prev => ({ ...prev, telefone: formattedPhone }));
   };
 
+  // Handler para formatar valores monetários durante a digitação
+  const handleMoneyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Remove tudo que não é dígito
+    const digits = value.replace(/\D/g, '');
+    
+    if (digits === '') {
+      setPersonalData(prev => ({ ...prev, rendaMensal: '' }));
+      return;
+    }
+    
+    // Converte para número e divide por 100 para ter os centavos
+    const amount = parseFloat(digits) / 100;
+    
+    // Formata como moeda brasileira
+    const formatted = amount.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+    
+    setPersonalData(prev => ({ ...prev, rendaMensal: formatted }));
+  };
+
   // Handler específico para data com formatação automática
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/\D/g, '');
@@ -609,35 +659,51 @@ const PerfilPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-8">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <User className="h-6 w-6 text-blue-600" />
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-blue-100 rounded-xl">
+              <User className="h-8 w-8 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Perfil</h1>
+              <p className="text-gray-600 mt-1">Gerencie suas informações pessoais e configurações</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Perfil do Usuário</h1>
-            <p className="text-gray-600">Gerencie suas informações pessoais e configurações</p>
+          <div className="hidden md:flex items-center space-x-3">
+            <Badge variant="outline" className="text-blue-600 border-blue-600 bg-white px-3 py-1">
+              <User className="h-3 w-3 mr-1" />
+              {user?.email}
+            </Badge>
           </div>
         </div>
-        <Badge variant="outline" className="text-blue-600 border-blue-600">
-          {user?.email}
-        </Badge>
+        {/* Mobile email badge */}
+        <div className="md:hidden mt-4">
+          <Badge variant="outline" className="text-blue-600 border-blue-600 bg-white">
+            <User className="h-3 w-3 mr-1" />
+            {user?.email}
+          </Badge>
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground">Carregando dados do perfil...</p>
+          </div>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Dados Pessoais */}
-          <Card className="shadow-lg border-0">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <Card className="shadow-lg border-0 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2 text-lg">
-                  <User className="h-5 w-5 text-blue-600" />
-                  <span>Dados Pessoais</span>
+                <CardTitle className="flex items-center space-x-2 text-xl">
+                  <User className="h-6 w-6 text-blue-600" />
+                  <span className="text-gray-900">Dados Pessoais</span>
                 </CardTitle>
                 <Button
                   variant={isEditing ? "outline" : "default"}
@@ -659,7 +725,7 @@ const PerfilPage: React.FC = () => {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="p-6 space-y-6">
               {isEditing ? (
                 // Modo de Edição
                 <>
@@ -755,14 +821,15 @@ const PerfilPage: React.FC = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="rendaMensal">Renda Mensal</Label>
+                      <Label htmlFor="rendaMensal">💰 Renda Mensal</Label>
                       <Input
                         id="rendaMensal"
                         value={personalData.rendaMensal}
-                        onChange={(e) => handleInputChange("rendaMensal", e.target.value)}
+                        onChange={handleMoneyChange}
                         placeholder="R$ 0,00"
                         className="h-11"
                       />
+                      <p className="text-xs text-muted-foreground">Digite apenas números, a formatação será aplicada automaticamente</p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="cep">CEP</Label>
@@ -849,62 +916,62 @@ const PerfilPage: React.FC = () => {
                 </>
               ) : (
                 // Modo de Visualização
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">Nome Completo</Label>
-                    <p className="font-medium">{personalData.nomeCompleto || "Não informado"}</p>
+                    <p className="font-semibold text-gray-900">{personalData.nomeCompleto || "Não informado"}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">CPF</Label>
-                    <p className="font-medium">{personalData.cpf || "Não informado"}</p>
+                    <p className="font-semibold text-gray-900">{personalData.cpf || "Não informado"}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">WhatsApp</Label>
-                    <p className="font-medium">{formatPhoneForDisplay(personalData.telefone)}</p>
+                    <p className="font-semibold text-gray-900">{formatPhoneForDisplay(personalData.telefone)}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">E-mail</Label>
-                    <p className="font-medium">{personalData.email || "Não informado"}</p>
+                    <p className="font-semibold text-gray-900 break-all">{personalData.email || "Não informado"}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">Profissão</Label>
-                    <p className="font-medium">{personalData.profissao || "Não informado"}</p>
+                    <p className="font-semibold text-gray-900">{personalData.profissao || "Não informado"}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">Data de Nascimento</Label>
-                    <p className="font-medium">{formatDateForDisplay(personalData.dataNascimento)}</p>
+                    <p className="font-semibold text-gray-900">{formatDateForDisplay(personalData.dataNascimento)}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">Identidade de Gênero</Label>
-                    <p className="font-medium">{formatGenderForDisplay(personalData.genero)}</p>
+                    <p className="font-semibold text-gray-900">{formatGenderForDisplay(personalData.genero)}</p>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-sm font-medium text-muted-foreground">Renda Mensal</Label>
-                    <p className="font-medium">{personalData.rendaMensal || "Não informado"}</p>
+                  <div className="space-y-2 p-4 bg-green-50 rounded-lg border border-green-200">
+                    <Label className="text-sm font-medium text-green-700">💰 Renda Mensal</Label>
+                    <p className="font-bold text-lg text-green-800">{formatCurrency(personalData.rendaMensal)}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">CEP</Label>
-                    <p className="font-medium">{personalData.cep || "Não informado"}</p>
+                    <p className="font-semibold text-gray-900">{personalData.cep || "Não informado"}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">Endereço</Label>
-                    <p className="font-medium">{personalData.endereco || "Não informado"}</p>
+                    <p className="font-semibold text-gray-900">{personalData.endereco || "Não informado"}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">Número</Label>
-                    <p className="font-medium">{personalData.numero || "Não informado"}</p>
+                    <p className="font-semibold text-gray-900">{personalData.numero || "Não informado"}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">Cidade</Label>
-                    <p className="font-medium">{personalData.cidade || "Não informado"}</p>
+                    <p className="font-semibold text-gray-900">{personalData.cidade || "Não informado"}</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">Estado</Label>
-                    <p className="font-medium">{personalData.estado || "Não informado"}</p>
+                    <p className="font-semibold text-gray-900">{personalData.estado || "Não informado"}</p>
                   </div>
-                  <div className="space-y-1 md:col-span-2">
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg md:col-span-2 lg:col-span-3">
                     <Label className="text-sm font-medium text-muted-foreground">Objetivos Financeiros</Label>
-                    <p className="font-medium">{personalData.objetivosFinanceiros || "Não informado"}</p>
+                    <p className="font-semibold text-gray-900">{personalData.objetivosFinanceiros || "Não informado"}</p>
                   </div>
                 </div>
               )}
@@ -912,7 +979,7 @@ const PerfilPage: React.FC = () => {
           </Card>
 
           {/* Grid para as duas seções abaixo */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">{/* added mt-8 for spacing */}
             {/* Status Premium */}
             <Card className="border-l-4 border-l-yellow-500 bg-gradient-to-br from-yellow-50 to-orange-50">
               <CardHeader>

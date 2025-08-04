@@ -10,6 +10,7 @@ import LanguageSelector from "./LanguageSelector";
 
 export default function DashboardLayout() {
   const [darkMode, setDarkMode] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
   const { t } = useTranslation();
@@ -53,7 +54,7 @@ export default function DashboardLayout() {
     }
     if (location.pathname.startsWith("/dashboard/perfil")) {
       return {
-        title: t("profile"),
+        title: t("my_profile"),
         description: t("profile_description"),
       };
     }
@@ -74,12 +75,18 @@ export default function DashboardLayout() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <DashboardSidebar />
+      <DashboardSidebar onCollapseChange={setSidebarCollapsed} />
 
-      {/* Main Content - Add left padding to compensate for fixed sidebar */}
-      <div className="ml-64 flex flex-col overflow-hidden">
-        {/* Top Bar - Fixed position */}
-        <header className="fixed top-0 right-0 left-64 z-40 border-b bg-card px-6 py-4">
+      {/* Main Content - Responsive design */}
+      <div className={`flex flex-col overflow-hidden transition-all duration-300 
+        ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'} 
+        ml-0 /* No margin on mobile */
+      `}>
+        {/* Top Bar - Responsive positioning */}
+        <header className={`fixed top-0 right-0 z-40 border-b bg-card px-6 py-4 transition-all duration-300
+          ${sidebarCollapsed ? 'md:left-16' : 'md:left-64'}
+          left-0 /* Full width on mobile */
+        `}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div>
