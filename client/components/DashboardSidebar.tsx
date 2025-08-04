@@ -90,7 +90,7 @@ export default function DashboardSidebar() {
 
   const systemItems: SidebarItem[] = [
     {
-      labelKey: "profile",
+      labelKey: "Profile",
       path: "/dashboard/perfil",
       icon: <User className="h-4 w-4" />,
     },
@@ -171,9 +171,8 @@ export default function DashboardSidebar() {
               <User className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm truncate">{user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user.email}
+              <p className="font-medium text-sm truncate">
+                {user.full_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.name || user.username}
               </p>
             </div>
           </div>

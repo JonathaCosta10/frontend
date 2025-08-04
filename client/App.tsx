@@ -22,6 +22,8 @@ import Login from "./pages/HomePublicPages/Login";
 import Signup from "./pages/HomePublicPages/Signup";
 import ForgotPassword from "./pages/HomePublicPages/ForgotPassword";
 import PasswordResetSent from "./pages/HomePublicPages/PasswordResetSent";
+import VerifyResetCode from "./pages/HomePublicPages/VerifyResetCode";
+import ResetPassword from "./pages/HomePublicPages/ResetPassword";
 
 // Error Pages
 import NotFound from "./pages/ErrosTratamento/NotFound";
@@ -30,7 +32,6 @@ import LoginError from "./pages/ErrosTratamento/LoginError";
 
 // Auth Pages (remain in original location)
 import TwoFactorEmailSetup from "./pages/PagesAuth/TwoFactorEmailSetup";
-import TwoFactorSMSSetup from "./pages/PagesAuth/TwoFactorSMSSetup";
 import Pagamento from "./pages/Pagamento";
 
 // System Pages - Dashboard Structure
@@ -101,10 +102,18 @@ function App() {
                   path="/password-reset-sent"
                   element={<PasswordResetSent />}
                 />
+                <Route
+                  path="/verify-reset-code"
+                  element={<VerifyResetCode />}
+                />
+                <Route
+                  path="/reset-password"
+                  element={<ResetPassword />}
+                />
 
                 {/* Auth Routes */}
                 <Route path="/2fa/email" element={<TwoFactorEmailSetup />} />
-                <Route path="/2fa/sms" element={<TwoFactorSMSSetup />} />
+                <Route path="/2fa/email" element={<TwoFactorEmailSetup />} />
                 <Route path="/pagamento" element={<Pagamento />} />
 
                 {/* Error Routes */}

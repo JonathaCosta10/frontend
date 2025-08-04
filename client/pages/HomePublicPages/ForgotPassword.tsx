@@ -7,7 +7,9 @@ import { Moon, Sun, ArrowLeft, Mail, Shield } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useToast } from "@/hooks/use-toast";
 import LanguageSelector from "@/components/LanguageSelector";
+import EmailService from "@/services/emailService";
 
 interface ForgotPasswordForm {
   email: string;
@@ -18,6 +20,7 @@ export default function ForgotPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { toast } = useToast();
   const {
     register,
     handleSubmit,
@@ -35,14 +38,44 @@ export default function ForgotPassword() {
   const onSubmit = async (data: ForgotPasswordForm) => {
     setIsSubmitting(true);
 
-    // Simula o tempo de processamento
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Validar email antes de enviar
+      if (!EmailService.validarEmail(data.email)) {
+        toast({
+          title: "Email inválido",
+          description: "Por favor, insira um email válido.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    console.log("Password reset request for:", data.email);
-    // Aqui você implementaria a lógica de envio do email
+      // Chamar a API de recuperação de senha
+      const response = await EmailService.recuperarSenha({ 
+        email: data.email 
+      });
 
-    // Redireciona para a página de confirmação
-    navigate("/password-reset-sent", { state: { email: data.email } });
+      toast({
+        title: "Código enviado!",
+        description: response.message || "Um código de verificação foi enviado para seu email.",
+        variant: "default",
+      });
+
+      // Navegar para a página de verificação de código
+      navigate("/verify-reset-code", { 
+        state: { email: data.email } 
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao solicitar recuperação de senha:", error);
+      
+      toast({
+        title: "Erro ao enviar código",
+        description: error.message || "Não foi possível enviar o código. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -173,8 +206,6 @@ export default function ForgotPassword() {
                   </p>
                 </div>
               </div>
-
-
             </CardContent>
           </Card>
         </div>

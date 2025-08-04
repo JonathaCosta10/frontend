@@ -1,409 +1,1122 @@
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Camera,
-  Save,
+﻿import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
+import { Badge } from "../../../components/ui/badge";
+import { Separator } from "../../../components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
+import { useToast } from "../../../hooks/use-toast";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useTranslation } from "../../../contexts/TranslationContext";
+import { localStorageManager } from "../../../lib/localStorage";
+import { api } from "../../../lib/api";
+import { useViaCep } from "../../../hooks/useViaCep";
+import { 
+  User, 
+  Settings, 
+  CreditCard, 
+  Crown, 
+  TrendingUp, 
+  Target, 
+  BarChart3,
   Shield,
-  CreditCard,
-  TrendingUp,
-  Target,
-  Award,
-  Crown,
-  RefreshCw,
-  AlertCircle,
-  Check,
+  DollarSign,
+  Edit,
+  Save,
   X,
+  Trophy,
+  Award,
+  Star
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
-import { useTranslation } from "@/contexts/TranslationContext";
 
-export default function Perfil() {
+interface PersonalData {
+  nomeCompleto: string;
+  cpf: string;
+  telefone: string;
+  email: string;
+  profissao: string;
+  // Campos adicionais da API
+  endereco?: string;
+  numero?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  dataNascimento?: string;
+  genero?: string;
+  rendaMensal?: string;
+  objetivosFinanceiros?: string;
+}
+
+// Interface para comunicação com a API (snake_case)
+interface PersonalDataAPI {
+  nome_completo: string;
+  cpf: string;
+  email: string;
+  telefone?: string;
+  endereco?: string;
+  numero?: string;
+  cep?: string;
+  cidade?: string;
+  estado?: string;
+  data_nascimento?: string;
+  genero?: string;
+  profissao?: string;
+  renda_mensal?: string;
+  objetivos_financeiros?: string;
+}
+
+interface FinancialStats {
+  totalInvestments: string;
+  monthlyBudget: string;
+  goalsAchieved: number;
+  riskProfile: string;
+  // Adicionar mais campos do resumo
+  monthlyIncome: string;
+  savingsPercentage: number;
+  activeInvestments: number;
+}
+
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  earnedDate?: string;
+  isEarned: boolean;
+  category: "investment" | "savings" | "goals" | "streak";
+}
+
+const PerfilPage: React.FC = () => {
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    name: "João Silva",
-    email: "joao.silva@example.com",
-    phone: "+55 11 99999-9999",
-    location: "São Paulo, SP",
-    birthDate: "1990-05-15",
-    bio: "Desenvolvedor apaixonado por finanças pessoais e investimentos. Sempre buscando otimizar minha carteira e alcançar a independência financeira.",
-    avatar: "",
+  // Hook do ViaCEP
+  const { searchCep, formatCep, isLoading: cepLoading, error: cepError } = useViaCep();
+  const [personalData, setPersonalData] = useState<PersonalData>({
+    nomeCompleto: "",
+    cpf: "",
+    telefone: "",
+    email: "",
+    profissao: "",
+    endereco: "",
+    numero: "",
+    cidade: "",
+    estado: "",
+    cep: "",
+    dataNascimento: "",
+    genero: "",
+    rendaMensal: "",
+    objetivosFinanceiros: ""
   });
 
-  const [stats] = useState({
-    memberSince: "Janeiro 2023",
-    totalInvestments: "R$ 150.000,00",
-    monthlyBudget: "R$ 8.500,00",
-    goalsAchieved: 12,
-    riskProfile: t("moderate"),
+  // Mock financial stats for demo
+  const [stats] = useState<FinancialStats>({
+    totalInvestments: "R$ 15.750,00",
+    monthlyBudget: "R$ 3.200,00",
+    goalsAchieved: 3,
+    riskProfile: "Moderado",
+    monthlyIncome: "R$ 5.500,00",
+    savingsPercentage: 25,
+    activeInvestments: 8
   });
 
-  const [subscriptionInfo] = useState({
-    plan: "Premium",
-    status: "Ativo",
-    expiryDate: "2024-12-15",
-    nextBilling: "2024-03-15",
-    autoRenewal: true,
-    paymentMethod: "**** 1234",
-    monthlyPrice: "R$ 29,90",
-  });
-
-  const achievements = [
+  // Mock achievements data
+  const [achievements] = useState<Achievement[]>([
     {
-      title: t("first_investment"),
-      description: t("first_investment_desc"),
-      icon: "🎯",
+      id: "1",
+      title: "Primeiro Investimento",
+      description: "Realizou seu primeiro investimento",
+      icon: "trophy",
+      earnedDate: "2024-01-15",
+      isEarned: true,
+      category: "investment"
     },
     {
-      title: t("monthly_goal"),
-      description: t("monthly_goal_desc"),
-      icon: "📈",
+      id: "2", 
+      title: "Meta Alcançada",
+      description: "Atingiu sua primeira meta financeira",
+      icon: "target",
+      earnedDate: "2024-02-20",
+      isEarned: true,
+      category: "goals"
     },
     {
-      title: t("diversification"),
-      description: t("diversification_desc"),
-      icon: "💼",
+      id: "3",
+      title: "Poupador Consistente",
+      description: "Manteve taxa de poupança acima de 20% por 3 meses",
+      icon: "star",
+      earnedDate: "2024-03-10",
+      isEarned: true,
+      category: "savings"
     },
     {
-      title: t("savings"),
-      description: t("savings_desc"),
-      icon: "💰",
+      id: "4",
+      title: "Diversificador",
+      description: "Possui investimentos em 5 ou mais categorias",
+      icon: "award",
+      isEarned: false,
+      category: "investment"
     },
-  ];
+    {
+      id: "5",
+      title: "Disciplina de Ferro",
+      description: "30 dias consecutivos registrando gastos",
+      icon: "award",
+      isEarned: false,
+      category: "streak"
+    }
+  ]);
 
-  const handleInputChange = (field: string, value: string) => {
-    setProfile((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const loadPersonalData = async () => {
+    try {
+      setIsLoading(true);
+      console.log("Iniciando carregamento de dados pessoais...");
+      
+      // Usar a API service configurada corretamente
+      const data = await api.get("/api/dadospessoais/");
+      
+      console.log("Dados recebidos da API:", data);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast({
-      title: t("profile_updated"),
-      description: t("information_saved_successfully"),
-    });
-  };
-
-  const getRiskProfileColor = (risk: string) => {
-    const conservativeKey = t("conservative");
-    const moderateKey = t("moderate");
-    const aggressiveKey = t("aggressive");
-
-    switch (risk) {
-      case conservativeKey:
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case moderateKey:
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case aggressiveKey:
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+      if (data && typeof data === "object") {
+        // Usar a nova função de conversão
+        const convertedData = convertFromAPI(data);
+        setPersonalData(convertedData);
+        console.log("Estado atualizado com dados convertidos:", convertedData);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados pessoais:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados pessoais",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <User className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold">{t("my_profile")}</h1>
-            <p className="text-muted-foreground">
-              {t("manage_personal_information_preferences")}
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadPersonalData();
+    }
+  }, [isAuthenticated, user]);
+
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Validações obrigatórias conforme especificação da API
+      if (!validateCPF(personalData.cpf)) {
+        toast({
+          title: "Erro de Validação",
+          description: "CPF deve ter exatamente 11 dígitos",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!validateEmail(personalData.email)) {
+        toast({
+          title: "Erro de Validação", 
+          description: "Email deve ter um formato válido",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!personalData.nomeCompleto.trim()) {
+        toast({
+          title: "Erro de Validação",
+          description: "Nome completo é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validações opcionais
+      if (personalData.cep && !validateCEP(personalData.cep)) {
+        toast({
+          title: "Erro de Validação",
+          description: "CEP deve ter exatamente 8 dígitos",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (personalData.estado && !validateEstado(personalData.estado)) {
+        toast({
+          title: "Erro de Validação",
+          description: "Estado deve ter exatamente 2 caracteres (ex: SP, RJ)",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Converter dados para formato da API
+      const apiData = convertToAPI(personalData);
+      
+      // Usar POST para criar ou PUT para atualizar (a API decidirá baseado na existência)
+      await api.post("/api/dadospessoais/", apiData);
+
+      toast({
+        title: "Sucesso",
+        description: "Dados pessoais salvos com sucesso",
+      });
+      
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Erro ao salvar dados:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar dados pessoais",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+    // Handler para mudança do CEP com busca automática
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/\D/g, '');
+    const formattedCep = formatCep(rawValue);
+    
+    setPersonalData(prev => ({ ...prev, cep: formattedCep }));
+    
+    // Busca automática quando CEP tem 8 dígitos
+    if (rawValue.length === 8) {
+      const address = await searchCep(rawValue);
+      if (address) {
+        setPersonalData(prev => ({
+          ...prev,
+          endereco: address.endereco,
+          cidade: address.cidade,
+          estado: address.estado
+        }));
+      }
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setPersonalData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const getRiskProfileColor = (profile: string) => {
+    switch (profile.toLowerCase()) {
+      case "conservador":
+        return "bg-green-100 text-green-800";
+      case "moderado":
+        return "bg-yellow-100 text-yellow-800";
+      case "arrojado":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getAchievementIcon = (iconType: string) => {
+    switch (iconType) {
+      case "trophy":
+        return Trophy;
+      case "target":
+        return Target;
+      case "star":
+        return Star;
+      case "award":
+        return Award;
+      default:
+        return Trophy;
+    }
+  };
+
+  const getAchievementCategoryColor = (category: string) => {
+    switch (category) {
+      case "investment":
+        return "bg-blue-100 text-blue-800";
+      case "savings":
+        return "bg-green-100 text-green-800";
+      case "goals":
+        return "bg-purple-100 text-purple-800";
+      case "streak":
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // Funções de validação conforme especificação da API
+  const validateCPF = (cpf: string): boolean => {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    return cleanCpf.length === 11;
+  };
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateCEP = (cep: string): boolean => {
+    const cleanCep = cep.replace(/\D/g, '');
+    return cleanCep.length === 8;
+  };
+
+  const validateEstado = (estado: string): boolean => {
+    return estado.length === 2;
+  };
+
+  // Função para formatar CPF com máscara
+  const formatCPF = (cpf: string): string => {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    if (cleanCpf.length <= 11) {
+      return cleanCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+    return cpf;
+  };
+
+  // Função para converter dados do frontend para API
+  const convertToAPI = (data: PersonalData): PersonalDataAPI => {
+    // Converter data de DD/MM/YYYY para YYYY-MM-DD
+    let apiDate = "";
+    if (data.dataNascimento && data.dataNascimento.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [day, month, year] = data.dataNascimento.split('/');
+      apiDate = `${year}-${month}-${day}`;
+    }
+
+    return {
+      nome_completo: data.nomeCompleto,
+      cpf: data.cpf.replace(/\D/g, ''), // Remove máscara do CPF: 000.000.000-00 → 00000000000
+      email: data.email,
+      telefone: data.telefone?.replace(/\D/g, ''), // Remove máscara do telefone: (11) 9XXXX-XXXX → 11900000000
+      endereco: data.endereco,
+      numero: data.numero,
+      cep: data.cep?.replace(/\D/g, ''), // Remove máscara do CEP: 00000-000 → 00000000
+      cidade: data.cidade,
+      estado: data.estado,
+      data_nascimento: apiDate || undefined,
+      genero: data.genero,
+      profissao: data.profissao,
+      renda_mensal: data.rendaMensal,
+      objetivos_financeiros: data.objetivosFinanceiros
+    };
+  };
+
+  // Função para converter dados da API para frontend
+  const convertFromAPI = (data: any): PersonalData => {
+    // Converter data de YYYY-MM-DD para DD/MM/YYYY
+    let formattedDate = "";
+    if (data.data_nascimento && data.data_nascimento.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = data.data_nascimento.split('-');
+      formattedDate = `${day}/${month}/${year}`;
+    }
+
+    // Formatar CEP se vier da API (pode vir formatado 00000-000 ou limpo 00000000)
+    let formattedCep = "";
+    if (data.cep) {
+      const cleanCep = data.cep.replace(/\D/g, '');
+      if (cleanCep.length === 8) {
+        formattedCep = `${cleanCep.slice(0, 5)}-${cleanCep.slice(5)}`;
+      } else {
+        formattedCep = data.cep; // Manter como está se não for o formato esperado
+      }
+    }
+
+    // Formatar CPF se vier da API (pode vir limpo 00000000000)
+    let formattedCpf = "";
+    if (data.cpf) {
+      const cleanCpf = data.cpf.replace(/\D/g, '');
+      if (cleanCpf.length === 11) {
+        formattedCpf = cleanCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      } else {
+        formattedCpf = data.cpf; // Manter como está se não for o formato esperado
+      }
+    }
+
+    // Formatar telefone se vier da API (pode vir limpo 11900000000)
+    let formattedPhone = "";
+    if (data.telefone) {
+      const cleanPhone = data.telefone.replace(/\D/g, '');
+      if (cleanPhone.length === 11) {
+        formattedPhone = `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 7)}-${cleanPhone.slice(7)}`;
+      } else if (cleanPhone.length === 10) {
+        formattedPhone = `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 6)}-${cleanPhone.slice(6)}`;
+      } else {
+        formattedPhone = data.telefone; // Manter como está se não for o formato esperado
+      }
+    }
+
+    return {
+      nomeCompleto: data.nome_completo || "",
+      cpf: formattedCpf,
+      telefone: formattedPhone,
+      email: data.email || "",
+      profissao: data.profissao || "",
+      endereco: data.endereco || "",
+      numero: data.numero || "",
+      cidade: data.cidade || "",
+      estado: data.estado || "",
+      cep: formattedCep,
+      dataNascimento: formattedDate,
+      genero: data.genero || "",
+      rendaMensal: data.renda_mensal || "",
+      objetivosFinanceiros: data.objetivos_financeiros || ""
+    };
+  };
+
+  const getCategoryNameInPortuguese = (category: string) => {
+    switch (category) {
+      case "investment":
+        return "Investimento";
+      case "savings":
+        return "Poupança";
+      case "goals":
+        return "Metas";
+      case "streak":
+        return "Sequência";
+      default:
+        return category;
+    }
+  };
+
+  // Função para formatar data para exibição (DD/MM/YYYY)
+  const formatDateForDisplay = (dateString: string): string => {
+    if (!dateString) return "Não informado";
+    
+    // Se a data estiver no formato YYYY-MM-DD da API
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    
+    return dateString; // Retorna como está se não estiver no formato esperado
+  };
+
+  // Função para formatar gênero para exibição
+  const formatGenderForDisplay = (gender: string): string => {
+    if (!gender) return "Não informado";
+    
+    const genderMap: { [key: string]: string } = {
+      "feminino": "Feminino",
+      "masculino": "Masculino",
+      "nao-binario": "Não-binário",
+      "genero-fluido": "Gênero fluido",
+      "agênero": "Agênero",
+      "outro": "Outro",
+      "prefiro-nao-informar": "Prefiro não informar"
+    };
+    
+    return genderMap[gender] || gender;
+  };
+
+  // Função para formatar telefone para exibição (11) 9XXXX-XXXX
+  const formatPhoneForDisplay = (phone: string): string => {
+    if (!phone) return "Não informado";
+    
+    // Remove todos os caracteres não numéricos
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Se tiver 11 dígitos (celular com DDD)
+    if (cleanPhone.length === 11) {
+      return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 7)}-${cleanPhone.slice(7)}`;
+    }
+    
+    // Se tiver 10 dígitos (fixo com DDD)
+    if (cleanPhone.length === 10) {
+      return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 6)}-${cleanPhone.slice(6)}`;
+    }
+    
+    return phone; // Retorna como está se não estiver no formato esperado
+  };
+
+  // Handler específico para CPF com formatação e validação
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/\D/g, '');
+    let formattedCPF = rawValue;
+    
+    // Aplicar máscara progressivamente
+    if (rawValue.length >= 11) {
+      formattedCPF = rawValue.slice(0, 11).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    } else if (rawValue.length >= 9) {
+      formattedCPF = rawValue.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3-');
+    } else if (rawValue.length >= 6) {
+      formattedCPF = rawValue.replace(/(\d{3})(\d{3})/, '$1.$2.');
+    } else if (rawValue.length >= 3) {
+      formattedCPF = rawValue.replace(/(\d{3})/, '$1.');
+    }
+    
+    setPersonalData(prev => ({ ...prev, cpf: formattedCPF }));
+  };
+
+  // Handler para estado com validação
+  const handleEstadoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase().slice(0, 2); // Máximo 2 caracteres, maiúsculo
+    setPersonalData(prev => ({ ...prev, estado: value }));
+  };
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/\D/g, '');
+    let formattedPhone = rawValue;
+    
+    // Formatar automaticamente durante a digitação
+    if (rawValue.length >= 11) {
+      formattedPhone = `(${rawValue.slice(0, 2)}) ${rawValue.slice(2, 7)}-${rawValue.slice(7, 11)}`;
+    } else if (rawValue.length >= 10) {
+      formattedPhone = `(${rawValue.slice(0, 2)}) ${rawValue.slice(2, 6)}-${rawValue.slice(6)}`;
+    } else if (rawValue.length >= 6) {
+      formattedPhone = `(${rawValue.slice(0, 2)}) ${rawValue.slice(2, 6)}-${rawValue.slice(6)}`;
+    } else if (rawValue.length >= 2) {
+      formattedPhone = `(${rawValue.slice(0, 2)}) ${rawValue.slice(2)}`;
+    }
+    
+    setPersonalData(prev => ({ ...prev, telefone: formattedPhone }));
+  };
+
+  // Handler específico para data com formatação automática
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/\D/g, '');
+    let formattedDate = rawValue;
+    
+    // Formatar automaticamente durante a digitação DD/MM/YYYY
+    if (rawValue.length >= 8) {
+      formattedDate = `${rawValue.slice(0, 2)}/${rawValue.slice(2, 4)}/${rawValue.slice(4, 8)}`;
+    } else if (rawValue.length >= 4) {
+      formattedDate = `${rawValue.slice(0, 2)}/${rawValue.slice(2, 4)}/${rawValue.slice(4)}`;
+    } else if (rawValue.length >= 2) {
+      formattedDate = `${rawValue.slice(0, 2)}/${rawValue.slice(2)}`;
+    }
+    
+    setPersonalData(prev => ({ ...prev, dataNascimento: formattedDate }));
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center space-y-4 pt-6">
+            <User className="h-12 w-12 text-muted-foreground" />
+            <p className="text-lg font-medium">Acesso restrito</p>
+            <p className="text-sm text-muted-foreground text-center">
+              Você precisa estar logado para acessar esta página
             </p>
-          </div>
-        </div>
-        <Button
-          onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
-          className="flex items-center space-x-2"
-        >
-          <Save className="h-4 w-4" />
-          <span>{isEditing ? t("save") : t("edit")}</span>
-        </Button>
-      </div>
-
-      <div className="space-y-6">
-        {/* Informações Principais */}
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>{t("personal_information")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Avatar e Nome */}
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile.avatar} alt={profile.name} />
-                  <AvatarFallback className="text-lg">
-                    {profile.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                </Avatar>
-                {isEditing && (
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
-                  >
-                    <Camera className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-              <div className="flex-1">
-                {isEditing ? (
-                  <Input
-                    value={profile.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="text-xl font-semibold"
-                  />
-                ) : (
-                  <h2 className="text-xl font-semibold">{profile.name}</h2>
-                )}
-                <p className="text-muted-foreground">
-                  {t("member_since")} {stats.memberSince}
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Campos de informação */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center space-x-2">
-                  <Mail className="h-4 w-4" />
-                  <span>{t("email")}</span>
-                </Label>
-                {isEditing ? (
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                  />
-                ) : (
-                  <p className="text-sm">{profile.email}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center space-x-2">
-                  <Phone className="h-4 w-4" />
-                  <span>{t("phone")}</span>
-                </Label>
-                {isEditing ? (
-                  <Input
-                    id="phone"
-                    value={profile.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                  />
-                ) : (
-                  <p className="text-sm">{profile.phone}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="location"
-                  className="flex items-center space-x-2"
-                >
-                  <MapPin className="h-4 w-4" />
-                  <span>{t("location")}</span>
-                </Label>
-                {isEditing ? (
-                  <Input
-                    id="location"
-                    value={profile.location}
-                    onChange={(e) =>
-                      handleInputChange("location", e.target.value)
-                    }
-                  />
-                ) : (
-                  <p className="text-sm">{profile.location}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="birthDate"
-                  className="flex items-center space-x-2"
-                >
-                  <Calendar className="h-4 w-4" />
-                  <span>{t("birth_date")}</span>
-                </Label>
-                {isEditing ? (
-                  <Input
-                    id="birthDate"
-                    type="date"
-                    value={profile.birthDate}
-                    onChange={(e) =>
-                      handleInputChange("birthDate", e.target.value)
-                    }
-                  />
-                ) : (
-                  <p className="text-sm">
-                    {new Date(profile.birthDate).toLocaleDateString("pt-BR")}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bio">{t("about_me")}</Label>
-              {isEditing ? (
-                <Textarea
-                  id="bio"
-                  value={profile.bio}
-                  onChange={(e) => handleInputChange("bio", e.target.value)}
-                  rows={3}
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">{profile.bio}</p>
-              )}
-            </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
 
-        {/* Grid para as três seções abaixo */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Status Premium */}
-          <Card className="border-l-4 border-l-yellow-500">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Crown className="h-5 w-5 text-yellow-500" />
-                <span>{t("premium_status")}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {t("premium_user")}
-                  </span>
-                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                    {t("active")}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {t("billing_date")}
-                  </span>
-                  <span className="text-sm font-medium">15/03/2024</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {t("full_access_valid_until")}
-                  </span>
-                  <span className="text-sm font-medium">15/12/2024</span>
-                </div>
-              </div>
-              <Separator />
-              <div className="text-center">
-                <Link to="/dashboard/subscription">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    {t("manage_subscription")}
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+  return (
+    <div className="container mx-auto px-4 py-6 space-y-8">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <User className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Perfil do Usuário</h1>
+            <p className="text-gray-600">Gerencie suas informações pessoais e configurações</p>
+          </div>
+        </div>
+        <Badge variant="outline" className="text-blue-600 border-blue-600">
+          {user?.email}
+        </Badge>
+      </div>
 
-          {/* Conquistas */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Award className="h-5 w-5" />
-                <span>{t("achievements")}</span>
-              </CardTitle>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {/* Dados Pessoais */}
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2 text-lg">
+                  <User className="h-5 w-5 text-blue-600" />
+                  <span>Dados Pessoais</span>
+                </CardTitle>
+                <Button
+                  variant={isEditing ? "outline" : "default"}
+                  size="sm"
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="flex items-center space-x-2"
+                >
+                  {isEditing ? (
+                    <>
+                      <X className="h-4 w-4" />
+                      <span>Cancelar</span>
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="h-4 w-4" />
+                      <span>Editar</span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {achievements.map((achievement, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <div className="text-xl">{achievement.icon}</div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{achievement.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {achievement.description}
-                    </p>
+            <CardContent className="space-y-6">
+              {isEditing ? (
+                // Modo de Edição
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="nomeCompleto">Nome Completo <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="nomeCompleto"
+                        value={personalData.nomeCompleto}
+                        onChange={(e) => handleInputChange("nomeCompleto", e.target.value)}
+                        placeholder="Digite seu nome completo"
+                        className={`h-11 ${!personalData.nomeCompleto.trim() && personalData.nomeCompleto !== '' ? 'border-red-500' : ''}`}
+                      />
+                      {!personalData.nomeCompleto.trim() && personalData.nomeCompleto !== '' && (
+                        <p className="text-sm text-red-500">Nome completo é obrigatório</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cpf">CPF <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="cpf"
+                        value={personalData.cpf}
+                        onChange={handleCPFChange}
+                        placeholder="000.000.000-00"
+                        maxLength={14}
+                        className={`h-11 ${!validateCPF(personalData.cpf) && personalData.cpf ? 'border-red-500' : ''}`}
+                      />
+                      {!validateCPF(personalData.cpf) && personalData.cpf && (
+                        <p className="text-sm text-red-500">CPF deve ter exatamente 11 dígitos</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="telefone">WhatsApp</Label>
+                      <Input
+                        id="telefone"
+                        value={personalData.telefone}
+                        onChange={handlePhoneChange}
+                        placeholder="(00) 00000-0000"
+                        maxLength={15}
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">E-mail <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={personalData.email}
+                        onChange={(e) => handleInputChange("email", e.target.value)}
+                        placeholder="seu@email.com"
+                        className={`h-11 ${!validateEmail(personalData.email) && personalData.email ? 'border-red-500' : ''}`}
+                      />
+                      {!validateEmail(personalData.email) && personalData.email && (
+                        <p className="text-sm text-red-500">Email deve ter um formato válido</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="profissao">Profissão</Label>
+                      <Input
+                        id="profissao"
+                        value={personalData.profissao}
+                        onChange={(e) => handleInputChange("profissao", e.target.value)}
+                        placeholder="Sua profissão"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                      <Input
+                        id="dataNascimento"
+                        value={personalData.dataNascimento}
+                        onChange={handleDateChange}
+                        placeholder="DD/MM/AAAA"
+                        maxLength={10}
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="genero">Identidade de Gênero</Label>
+                      <Select value={personalData.genero} onValueChange={(value) => handleInputChange("genero", value)}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Selecione sua identidade de gênero" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="feminino">Feminino</SelectItem>
+                          <SelectItem value="masculino">Masculino</SelectItem>
+                          <SelectItem value="nao-binario">Não-binário</SelectItem>
+                          <SelectItem value="genero-fluido">Gênero fluido</SelectItem>
+                          <SelectItem value="agênero">Agênero</SelectItem>
+                          <SelectItem value="outro">Outro</SelectItem>
+                          <SelectItem value="prefiro-nao-informar">Prefiro não informar</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="rendaMensal">Renda Mensal</Label>
+                      <Input
+                        id="rendaMensal"
+                        value={personalData.rendaMensal}
+                        onChange={(e) => handleInputChange("rendaMensal", e.target.value)}
+                        placeholder="R$ 0,00"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cep">CEP</Label>
+                      <Input
+                        id="cep"
+                        value={personalData.cep}
+                        onChange={handleCepChange}
+                        placeholder="00000-000"
+                        maxLength={9}
+                        disabled={cepLoading}
+                        className="h-11"
+                      />
+                      {cepError && (
+                        <p className="text-sm text-red-500 mt-1">{cepError}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="endereco">Endereço</Label>
+                      <Input
+                        id="endereco"
+                        value={personalData.endereco}
+                        onChange={(e) => handleInputChange("endereco", e.target.value)}
+                        placeholder="Digite seu endereço"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="numero">Número</Label>
+                      <Input
+                        id="numero"
+                        value={personalData.numero}
+                        onChange={(e) => handleInputChange("numero", e.target.value)}
+                        placeholder="Nº"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cidade">Cidade</Label>
+                      <Input
+                        id="cidade"
+                        value={personalData.cidade}
+                        onChange={(e) => handleInputChange("cidade", e.target.value)}
+                        placeholder="Sua cidade"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="estado">Estado</Label>
+                      <Input
+                        id="estado"
+                        value={personalData.estado}
+                        onChange={handleEstadoChange}
+                        placeholder="SP"
+                        maxLength={2}
+                        className={`h-11 ${!validateEstado(personalData.estado) && personalData.estado ? 'border-red-500' : ''}`}
+                      />
+                      {!validateEstado(personalData.estado) && personalData.estado && (
+                        <p className="text-sm text-red-500">Estado deve ter 2 caracteres (ex: SP, RJ)</p>
+                      )}
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="objetivosFinanceiros">Objetivos Financeiros</Label>
+                      <Input
+                        id="objetivosFinanceiros"
+                        value={personalData.objetivosFinanceiros}
+                        onChange={(e) => handleInputChange("objetivosFinanceiros", e.target.value)}
+                        placeholder="Descreva seus objetivos financeiros"
+                        className="h-11"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setIsEditing(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleSave} disabled={isLoading} className="min-w-[120px]">
+                      <Save className="h-4 w-4 mr-2" />
+                      {isLoading ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                // Modo de Visualização
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">Nome Completo</Label>
+                    <p className="font-medium">{personalData.nomeCompleto || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">CPF</Label>
+                    <p className="font-medium">{personalData.cpf || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">WhatsApp</Label>
+                    <p className="font-medium">{formatPhoneForDisplay(personalData.telefone)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">E-mail</Label>
+                    <p className="font-medium">{personalData.email || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">Profissão</Label>
+                    <p className="font-medium">{personalData.profissao || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">Data de Nascimento</Label>
+                    <p className="font-medium">{formatDateForDisplay(personalData.dataNascimento)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">Identidade de Gênero</Label>
+                    <p className="font-medium">{formatGenderForDisplay(personalData.genero)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">Renda Mensal</Label>
+                    <p className="font-medium">{personalData.rendaMensal || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">CEP</Label>
+                    <p className="font-medium">{personalData.cep || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">Endereço</Label>
+                    <p className="font-medium">{personalData.endereco || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">Número</Label>
+                    <p className="font-medium">{personalData.numero || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">Cidade</Label>
+                    <p className="font-medium">{personalData.cidade || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">Estado</Label>
+                    <p className="font-medium">{personalData.estado || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Objetivos Financeiros</Label>
+                    <p className="font-medium">{personalData.objetivosFinanceiros || "Não informado"}</p>
                   </div>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
 
-          {/* Resumo Financeiro */}
-          <Card>
+          {/* Grid para as duas seções abaixo */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Status Premium */}
+            <Card className="border-l-4 border-l-yellow-500 bg-gradient-to-br from-yellow-50 to-orange-50">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Crown className="h-5 w-5 text-yellow-500" />
+                  <span>Status Premium</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                    <span className="text-sm font-medium">Tipo de Usuário</span>
+                    <Badge className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white">
+                      <Crown className="h-3 w-3 mr-1" />
+                      Usuário Premium
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                    <span className="text-sm text-muted-foreground">Status</span>
+                    <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">
+                      ✓ Ativo
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                    <span className="text-sm text-muted-foreground">Próxima Cobrança</span>
+                    <span className="text-sm font-medium">15/02/2024</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                    <span className="text-sm text-muted-foreground">Acesso Completo Válido Até</span>
+                    <span className="text-sm font-medium">15/03/2024</span>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Gerenciar Assinatura
+                  </Button>
+                  <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
+                    Ver Benefícios Premium
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Resumo Financeiro */}
+            <Card className="border-l-4 border-l-blue-500">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <BarChart3 className="h-5 w-5 text-blue-500" />
+                  <span>Resumo Financeiro</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                      <span className="text-sm text-muted-foreground">Total Investido</span>
+                    </div>
+                    <span className="text-lg font-bold text-green-600">{stats.totalInvestments}</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <DollarSign className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm text-muted-foreground">Renda Mensal</span>
+                    </div>
+                    <span className="text-lg font-bold text-blue-600">{stats.monthlyIncome}</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Target className="h-4 w-4 text-purple-500" />
+                      <span className="text-sm text-muted-foreground">Metas Atingidas</span>
+                    </div>
+                    <span className="text-lg font-bold text-purple-600">{stats.goalsAchieved}</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <BarChart3 className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm text-muted-foreground">Investimentos Ativos</span>
+                    </div>
+                    <span className="text-lg font-bold text-orange-600">{stats.activeInvestments}</span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Orçamento Mensal</span>
+                    <span className="font-semibold">{stats.monthlyBudget}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Taxa de Poupança</span>
+                    <Badge variant="outline" className="text-green-600 border-green-600">
+                      {stats.savingsPercentage}%
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Perfil de Risco</span>
+                    <Badge className={getRiskProfileColor(stats.riskProfile)}>
+                      <Shield className="h-3 w-3 mr-1" />
+                      {stats.riskProfile}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <Button variant="outline" size="sm" className="w-full">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Refazer Teste de Perfil
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Conquistas */}
+          <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-pink-50">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5" />
-                <span>{t("financial_summary")}</span>
+                <Trophy className="h-5 w-5 text-purple-500" />
+                <span>Conquistas</span>
+                <Badge variant="outline" className="ml-auto">
+                  {achievements.filter(a => a.isEarned).length}/{achievements.length}
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {t("total_invested")}
-                  </span>
-                  <span className="font-semibold">
-                    {stats.totalInvestments}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {t("monthly_budget")}
-                  </span>
-                  <span className="font-semibold">{stats.monthlyBudget}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {t("goals_achieved")}
-                  </span>
-                  <span className="font-semibold">{stats.goalsAchieved}</span>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {achievements.map((achievement) => {
+                  const IconComponent = getAchievementIcon(achievement.icon);
+                  return (
+                    <div
+                      key={achievement.id}
+                      className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                        achievement.isEarned
+                          ? "bg-white border-purple-200 shadow-md"
+                          : "bg-gray-50 border-gray-200 opacity-60"
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-2 rounded-full ${
+                          achievement.isEarned 
+                            ? "bg-purple-100" 
+                            : "bg-gray-100"
+                        }`}>
+                          <IconComponent 
+                            className={`h-5 w-5 ${
+                              achievement.isEarned 
+                                ? "text-purple-600" 
+                                : "text-gray-400"
+                            }`} 
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <h4 className={`font-medium text-sm ${
+                              achievement.isEarned 
+                                ? "text-gray-900" 
+                                : "text-gray-500"
+                            }`}>
+                              {achievement.title}
+                            </h4>
+                            <Badge 
+                              className={getAchievementCategoryColor(achievement.category)}
+                            >
+                              {getCategoryNameInPortuguese(achievement.category)}
+                            </Badge>
+                          </div>
+                          <p className={`text-xs mt-1 ${
+                            achievement.isEarned 
+                              ? "text-gray-600" 
+                              : "text-gray-400"
+                          }`}>
+                            {achievement.description}
+                          </p>
+                          {achievement.earnedDate && (
+                            <p className="text-xs text-purple-600 mt-2">
+                              Conquistada em {new Date(achievement.earnedDate).toLocaleDateString('pt-BR')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+              
               <Separator />
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">
-                    {t("risk_profile")}
-                  </span>
-                  <Badge className={getRiskProfileColor(stats.riskProfile)}>
-                    {stats.riskProfile}
-                  </Badge>
-                </div>
-                <Link to="/dashboard/risk-assessment" className="block">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    {t("retake_test")}
-                  </Button>
-                </Link>
+              
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">
+                  Continue usando a plataforma para desbloquear mais conquistas!
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
-      </div>
+      )}
     </div>
   );
-}
+};
+
+export default PerfilPage;

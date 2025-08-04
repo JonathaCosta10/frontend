@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Avançado - Códigos de Verificação</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 20px auto; 
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .test-section { 
+            background: white;
+            padding: 25px; 
+            margin: 20px 0; 
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-section h3 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        .code-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .code-example {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .code-example h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+            font-size: 14px;
+        }
+        .code-value {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 2px solid #3498db;
+            letter-spacing: 2px;
+        }
+        .copy-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        .copy-btn:hover {
+            background: #2980b9;
+        }
+        .feature-list {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .feature-list h4 {
+            color: #155724;
+            margin: 0 0 10px 0;
+        }
+        .feature-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            color: #155724;
+            margin: 5px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 15px 0;
+            color: #856404;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 15px 0;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Teste Avançado - Códigos de Verificação</h1>
+    <p>Demonstração do novo sistema de códigos que aceita letras, números e caracteres especiais (case-sensitive).</p>
+
+    <div class="test-section">
+        <h3>✨ Novos Recursos Implementados</h3>
+        <div class="feature-list">
+            <h4>🎯 Melhorias na Página /verify-reset-code:</h4>
+            <ul>
+                <li><strong>Caracteres Especiais:</strong> Agora aceita símbolos como @, #, $, %, !, etc.</li>
+                <li><strong>Case-Sensitive:</strong> Diferencia maiúsculas de minúsculas (A ≠ a)</li>
+                <li><strong>Colar Melhorado:</strong> Cola códigos de qualquer formato, trunca se maior que 8</li>
+                <li><strong>Flexibilidade Total:</strong> Qualquer combinação de 8 caracteres válida</li>
+                <li><strong>Interface Atualizada:</strong> Descrições e mensagens mais precisas</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>📋 Exemplos de Códigos Válidos</h3>
+        <p>Clique em "Copiar" para testar na página de verificação:</p>
+        
+        <div class="code-examples">
+            <div class="code-example">
+                <h4>Exemplo Real</h4>
+                <div class="code-value" id="code1">jl0t&4Yl</div>
+                <button class="copy-btn" onclick="copyCode('code1')">Copiar</button>
+            </div>
+            
+            <div class="code-example">
+                <h4>Números e Símbolos</h4>
+                <div class="code-value" id="code2">123#45@7</div>
+                <button class="copy-btn" onclick="copyCode('code2')">Copiar</button>
+            </div>
+            
+            <div class="code-example">
+                <h4>Case-Sensitive</h4>
+                <div class="code-value" id="code3">AaBbCcDd</div>
+                <button class="copy-btn" onclick="copyCode('code3')">Copiar</button>
+            </div>
+            
+            <div class="code-example">
+                <h4>Especiais Avançados</h4>
+                <div class="code-value" id="code4">$%^&*()!</div>
+                <button class="copy-btn" onclick="copyCode('code4')">Copiar</button>
+            </div>
+            
+            <div class="code-example">
+                <h4>Misto Complexo</h4>
+                <div class="code-value" id="code5">X9@k#P2z</div>
+                <button class="copy-btn" onclick="copyCode('code5')">Copiar</button>
+            </div>
+            
+            <div class="code-example">
+                <h4>Emojis e Unicode</h4>
+                <div class="code-value" id="code6">A1b2🔐🎯💻!</div>
+                <button class="copy-btn" onclick="copyCode('code6')">Copiar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔧 Como Testar</h3>
+        
+        <div class="warning">
+            <strong>⚠️ Nota:</strong> Estes códigos são apenas para teste de formato. Para teste real, você precisará do código enviado por email pelo backend.
+        </div>
+        
+        <ol>
+            <li><strong>Acesse a página de verificação:</strong> 
+                <a href="http://localhost:8080/verify-reset-code" target="_blank">
+                    http://localhost:8080/verify-reset-code
+                </a>
+            </li>
+            <li><strong>Copie um dos códigos acima</strong> clicando no botão "Copiar"</li>
+            <li><strong>Cole no primeiro campo</strong> da página de verificação</li>
+            <li><strong>Observe:</strong> O código será distribuído automaticamente nos 8 campos</li>
+            <li><strong>Teste manual:</strong> Digite caracteres especiais diretamente nos campos</li>
+        </ol>
+        
+        <div class="success">
+            <strong>✅ Funcionalidades Testáveis:</strong><br>
+            • Auto-focus entre campos ao digitar<br>
+            • Navegação com backspace<br>
+            • Colar códigos de qualquer formato<br>
+            • Truncamento automático se código > 8 caracteres<br>
+            • Preservação de case-sensitive<br>
+            • Aceitação de qualquer caractere Unicode
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 Teste de Funcionalidades</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <h4>Gerador de Código Aleatório</h4>
+                <button onclick="generateRandomCode()" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    Gerar Código Aleatório
+                </button>
+                <div id="randomCode" style="margin-top: 10px; font-family: monospace; font-size: 18px; font-weight: bold;"></div>
+            </div>
+            
+            <div>
+                <h4>Validador de Comprimento</h4>
+                <input type="text" id="testInput" placeholder="Digite ou cole um código..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <div id="validation" style="margin-top: 8px; font-weight: bold;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Função para copiar código
+        function copyCode(elementId) {
+            const codeElement = document.getElementById(elementId);
+            const code = codeElement.textContent;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                // Feedback visual
+                const originalBg = codeElement.style.backgroundColor;
+                codeElement.style.backgroundColor = '#28a745';
+                codeElement.style.color = 'white';
+                
+                setTimeout(() => {
+                    codeElement.style.backgroundColor = originalBg;
+                    codeElement.style.color = '#2c3e50';
+                }, 1000);
+                
+                // Notificação
+                showNotification(`Código ${code} copiado! Cole na página de verificação.`);
+            }).catch(err => {
+                console.error('Erro ao copiar:', err);
+                showNotification('Erro ao copiar código', 'error');
+            });
+        }
+
+        // Função para mostrar notificação
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#28a745' : '#dc3545'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 6px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                z-index: 1000;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Gerador de código aleatório
+        function generateRandomCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+            let code = '';
+            for (let i = 0; i < 8; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            const randomCodeElement = document.getElementById('randomCode');
+            randomCodeElement.textContent = code;
+            randomCodeElement.style.cssText = `
+                background: white;
+                padding: 10px;
+                border: 2px solid #3498db;
+                border-radius: 6px;
+                letter-spacing: 2px;
+                cursor: pointer;
+            `;
+            
+            // Fazer o código clicável para copiar
+            randomCodeElement.onclick = () => copyCode('randomCode');
+        }
+
+        // Validador em tempo real
+        document.getElementById('testInput').addEventListener('input', function() {
+            const value = this.value;
+            const validation = document.getElementById('validation');
+            
+            if (value.length === 0) {
+                validation.textContent = '';
+                validation.style.color = '';
+            } else if (value.length === 8) {
+                validation.textContent = '✅ Comprimento válido (8 caracteres)';
+                validation.style.color = '#28a745';
+            } else if (value.length < 8) {
+                validation.textContent = `⚠️ Muito curto (${value.length}/8 caracteres)`;
+                validation.style.color = '#ffc107';
+            } else {
+                validation.textContent = `❌ Muito longo (${value.length}/8 caracteres) - será truncado`;
+                validation.style.color = '#dc3545';
+            }
+        });
+
+        // CSS para animação
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Gerar um código inicial
+        generateRandomCode();
+    </script>
+</body>
+</html>

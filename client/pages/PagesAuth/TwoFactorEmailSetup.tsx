@@ -16,6 +16,7 @@ import {
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { EmailService } from "@/services/emailService";
 
 export default function TwoFactorEmailSetup() {
   const [currentStep, setCurrentStep] = useState<
@@ -39,10 +40,11 @@ export default function TwoFactorEmailSetup() {
     }
 
     setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Simular envio de código de verificação 2FA por email
+      // Em produção, seria uma chamada específica à API para 2FA
+      console.log("Enviando código 2FA para:", email);
+      
       setCurrentStep("verify");
       setCountdown(60);
 
@@ -60,7 +62,16 @@ export default function TwoFactorEmailSetup() {
         title: t("code_sent"),
         description: t("verification_code_sent_to", { email }),
       });
-    }, 2000);
+    } catch (error) {
+      console.error("Erro ao enviar código 2FA:", error);
+      toast({
+        title: t("error"),
+        description: t("email_send_error"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleVerifyCode = async () => {

@@ -12,6 +12,7 @@ import {
   refreshTokenApi,
   getUserData,
 } from "./Rules";
+import { eventEmitter, EVENTS } from "../lib/eventEmitter";
 
 // Configuração do ambiente
 const API_KEY = import.meta.env.VITE_API_KEY || "minha-chave-secreta";
@@ -25,6 +26,8 @@ interface User {
   email: string;
   first_name?: string;
   last_name?: string;
+  full_name?: string;
+  isPaidUser?: boolean;
   subscription_type: "free" | "premium";
   subscription_expires?: string;
   profile_image?: string;
@@ -46,6 +49,8 @@ interface AuthContextType {
   refreshToken: () => Promise<boolean>;
   hasPermission: (permission: string) => boolean;
   isPremiumUser: () => boolean;
+  refreshPremiumStatus: () => void;
+  premiumStatusVersion: number;
 }
 
 interface RegisterData {
@@ -68,6 +73,8 @@ const defaultAuthValue: AuthContextType = {
   refreshToken: async () => false,
   hasPermission: () => false,
   isPremiumUser: () => false,
+  refreshPremiumStatus: () => {},
+  premiumStatusVersion: 0,
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthValue);
@@ -94,6 +101,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Estado para forçar rerender quando dados premium mudam
+  const [premiumStatusVersion, setPremiumStatusVersion] = useState(0);
 
   // Verificar status de autenticação no carregamento
   useEffect(() => {
@@ -142,21 +152,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log("🔄 Token expirado, tentando refresh via Rules...");
           const refreshSuccess = await performTokenRefresh(refreshTokenValue);
           if (refreshSuccess) {
-            // Buscar dados atualizados do usuário após refresh
-            const updatedUserData = await getUserData("user");
+            // O refresh agora sempre retorna dados atualizados do usuário
+            // Usar dados do localStorage que foram atualizados pelo refresh
+            const updatedUserData = localStorageManager.getUserData();
             if (updatedUserData) {
-              localStorageManager.setUserData(updatedUserData);
               setUser(updatedUserData);
               setIsAuthenticated(true);
+              // Notificar sobre mudança no status premium
+              setPremiumStatusVersion(prev => prev + 1);
               console.log(
-                "✅ Token renovado e dados do usuário atualizados via Rules",
+                "✅ Token renovado e dados do usuário atualizados:",
+                updatedUserData.full_name || updatedUserData.username
               );
             } else {
-              // Se não conseguir buscar dados do usuário, usar dados do localStorage
-              const cachedUserData = localStorageManager.getUserData();
-              setUser(cachedUserData);
-              setIsAuthenticated(true);
-              console.log("✅ Token renovado via Rules, usando dados em cache");
+              clearAuthData();
             }
           } else {
             clearAuthData();
@@ -177,6 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const clearAuthData = () => {
     localStorageManager.clearAuthData();
+    localStorageManager.remove("isPaidUser"); // Limpar status premium
     setUser(null);
     setIsAuthenticated(false);
   };
@@ -186,6 +196,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   ): Promise<boolean> => {
     try {
       console.log("🔄 Usando Rules para refresh token...");
+
+      // Capturar status premium antes do refresh
+      const premiumStatusBefore = localStorageManager.get("isPaidUser");
 
       // Usar Rules para refresh token
       const refreshData = await refreshTokenApi(
@@ -203,7 +216,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             localStorageManager.setRefreshToken(refreshData.refresh);
           }
 
+          // Verificar se status premium mudou após o refresh
+          const premiumStatusAfter = localStorageManager.get("isPaidUser");
+          
           console.log("✅ Token refresh via Rules bem-sucedido");
+          
+          // Se o status premium mudou, a página já será recarregada pelo ResponseParms
+          // Então não precisamos fazer nada aqui
+          if (premiumStatusBefore !== premiumStatusAfter) {
+            console.log("🔄 Status premium mudou durante refresh, página será recarregada...");
+          }
+          
           return true;
         }
       }
@@ -343,8 +366,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const isPremiumUser = (): boolean => {
-    return user?.subscription_type === "premium" || false;
+    // Verificar primeiro no localStorage (dados mais recentes)
+    const isPaidUserFromStorage = localStorageManager.get("isPaidUser");
+    if (isPaidUserFromStorage !== null) {
+      return isPaidUserFromStorage;
+    }
+    
+    // Fallback para dados do usuário
+    const userData = localStorageManager.getUserData();
+    return userData?.isPaidUser || user?.subscription_type === "premium" || false;
   };
+
+  const refreshPremiumStatus = (): void => {
+    console.log("🔄 Forçando atualização do status premium...");
+    setPremiumStatusVersion(prev => prev + 1);
+  };
+
+  // Escutar eventos de mudança de status premium
+  useEffect(() => {
+    const handlePremiumStatusChange = (data: any) => {
+      console.log("🔔 AuthContext recebeu mudança de status premium:", data);
+      
+      // Atualizar o usuário com os novos dados
+      if (data.userData) {
+        setUser(data.userData);
+      }
+      
+      // Forçar re-render de todos os componentes dependentes
+      refreshPremiumStatus();
+    };
+
+    const handleUserDataUpdate = (data: any) => {
+      console.log("🔔 AuthContext recebeu atualização de dados do usuário:", data);
+      
+      // Atualizar dados do usuário se mudaram
+      if (data.newData) {
+        setUser(data.newData);
+      }
+      
+      // Se status premium mudou, forçar atualização
+      if (data.premiumStatusChanged) {
+        refreshPremiumStatus();
+      }
+    };
+
+    // Registrar listeners
+    eventEmitter.on(EVENTS.PREMIUM_STATUS_CHANGED, handlePremiumStatusChange);
+    eventEmitter.on(EVENTS.USER_DATA_UPDATED, handleUserDataUpdate);
+    
+    return () => {
+      // Limpar listeners quando componente for desmontado
+      eventEmitter.off(EVENTS.PREMIUM_STATUS_CHANGED, handlePremiumStatusChange);
+      eventEmitter.off(EVENTS.USER_DATA_UPDATED, handleUserDataUpdate);
+    };
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -358,6 +433,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         refreshToken,
         hasPermission,
         isPremiumUser,
+        refreshPremiumStatus,
+        premiumStatusVersion,
       }}
     >
       {children}

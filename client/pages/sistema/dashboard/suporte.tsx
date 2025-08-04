@@ -22,7 +22,6 @@ import {
 import {
   LifeBuoy,
   Mail,
-  Phone,
   MessageSquare,
   Clock,
   Send,
@@ -39,6 +38,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useAuth } from "@/contexts/AuthContext";
+import EmailService from "@/services/emailService";
 
 interface SupportForm {
   name: string;
@@ -53,17 +54,18 @@ interface SupportForm {
 export default function Suporte() {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SupportForm>({
-    name: "",
-    email: "",
+    name: user?.full_name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || "",
+    email: user?.email || "",
     category: "",
     priority: "medium",
     subject: "",
     message: "",
   });
 
-  const contactMethods = [
+  const contactChannels = [
     {
       icon: <Mail className="h-5 w-5" />,
       title: "Email",
@@ -71,14 +73,6 @@ export default function Suporte() {
       subtitle: t("response_time_24h"),
       color: "bg-blue-100 text-blue-700",
       action: "mailto:suporte@organizesee.com",
-    },
-    {
-      icon: <Phone className="h-5 w-5" />,
-      title: "Telefone",
-      description: "+55 (11) 3000-1234",
-      subtitle: t("monday_to_friday_9_to_18"),
-      color: "bg-indigo-100 text-indigo-700",
-      action: "tel:+551130001234",
     },
     {
       icon: <MessageSquare className="h-5 w-5" />,
@@ -104,9 +98,7 @@ export default function Suporte() {
       color: "bg-sky-100 text-sky-700",
       action: "https://t.me/OrganizeseeSupport",
     },
-  ];
-
-  const socialMediaLinks = [
+  ];  const socialMediaLinks = [
     {
       name: "Twitter",
       url: "https://twitter.com/organizesee",
@@ -223,7 +215,7 @@ export default function Suporte() {
     {
       question: "Como funciona a autenticação 2FA?",
       answer:
-        "Configure 2FA por email ou SMS em Configurações > Segurança para adicionar uma camada extra de proteção à sua conta.",
+        "Configure autenticação de dois fatores por email em Configurações > Segurança para adicionar uma camada extra de proteção à sua conta.",
     },
     {
       question: "Problemas com sincronização de dados?",
@@ -243,25 +235,58 @@ export default function Suporte() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simular envio
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // Validar dados antes de enviar
+      if (!formData.subject.trim() || !formData.message.trim()) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Por favor, preencha o assunto e a mensagem.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    toast({
-      title: "Ticket criado com sucesso!",
-      description: `Seu ticket #${Math.random().toString(36).substr(2, 9).toUpperCase()} foi criado. Você receberá uma resposta em até 24h.`,
-    });
+      // Chamar a API de contato de suporte
+      const response = await EmailService.contatoSuporte({
+        assunto: formData.subject,
+        mensagem: `
+Categoria: ${formData.category}
+Prioridade: ${formData.priority}
+Nome: ${formData.name}
+Email: ${formData.email}
 
-    // Limpar formulário
-    setFormData({
-      name: "",
-      email: "",
-      category: "",
-      priority: "medium",
-      subject: "",
-      message: "",
-    });
+Mensagem:
+${formData.message}
+        `.trim(),
+        email: user?.email !== formData.email ? formData.email : undefined,
+      });
 
-    setIsSubmitting(false);
+      toast({
+        title: "Ticket criado com sucesso!",
+        description: response.message || "Seu ticket foi criado. Você receberá uma resposta em até 24h.",
+      });
+
+      // Limpar formulário
+      setFormData({
+        name: user?.full_name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || "",
+        email: user?.email || "",
+        category: "",
+        priority: "medium",
+        subject: "",
+        message: "",
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao enviar ticket de suporte:", error);
+      
+      toast({
+        title: "Erro ao enviar ticket",
+        description: error.message || "Não foi possível enviar o ticket. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -351,7 +376,7 @@ export default function Suporte() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {contactMethods.map((method, index) => (
+              {contactChannels.map((method, index) => (
                 <div
                   key={index}
                   className="group border rounded-lg p-6 hover:shadow-lg transition-all cursor-pointer bg-card hover:bg-accent/50"

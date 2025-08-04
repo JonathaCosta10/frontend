@@ -17,6 +17,7 @@ import {
 import { Link } from "react-router-dom";
 import { useProfileVerification } from "../hooks/useProfileVerification";
 import { useTranslation } from "../contexts/TranslationContext";
+import { eventEmitter, EVENTS } from "../lib/eventEmitter";
 
 interface SubscriptionGuardProps {
   feature?:
@@ -62,8 +63,37 @@ export default function SubscriptionGuard({
     isTrialUser,
     getSubscriptionStatusText,
     getDaysUntilExpiration,
+    refreshProfile,
   } = useProfileVerification();
   const { t } = useTranslation();
+
+  // Debug logs para verificar atualizações
+  console.log("🛡️ SubscriptionGuard - Status atual:", {
+    feature,
+    isPaidUser: isPaidUser(),
+    hasFeatureAccess: feature ? hasFeatureAccess(feature) : "N/A",
+    subscriptionType: profile?.subscriptionType,
+    isLoading
+  });
+
+  // Escutar mudanças de status premium e forçar refresh
+  React.useEffect(() => {
+    const handlePremiumStatusChange = (data: any) => {
+      console.log("🛡️ SubscriptionGuard recebeu mudança de status premium:", data);
+      // Forçar refresh do perfil
+      if (refreshProfile) {
+        refreshProfile();
+      }
+    };
+
+    // Registrar listener
+    eventEmitter.on(EVENTS.PREMIUM_STATUS_CHANGED, handlePremiumStatusChange);
+    
+    return () => {
+      // Limpar listener
+      eventEmitter.off(EVENTS.PREMIUM_STATUS_CHANGED, handlePremiumStatusChange);
+    };
+  }, [refreshProfile]);
 
   // Check if premium authentication is disabled globally
   const isPremiumAuthEnabled =

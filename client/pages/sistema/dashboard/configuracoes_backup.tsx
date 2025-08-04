@@ -18,6 +18,7 @@ import {
   Sun,
   Monitor,
   Mail,
+  Smartphone,
   Repeat,
   Calendar,
   DollarSign,
@@ -61,8 +62,8 @@ export default function Configuracoes() {
 
   // Estado para rastrear quais métodos de 2FA estão configurados
   const [twoFactorStatus, setTwoFactorStatus] = useState({
-    
-    email: true,
+    email: false, // Simulação - mudaria baseado no status real do usuário
+    sms: true,    // Simulação - SMS está configurado
     app: false,   // Simulação - App authenticator não est�� configurado
   });
 
@@ -413,26 +414,26 @@ export default function Configuracoes() {
                 </Link>
                 <Link to="/2fa/email">
                   <div className={`border-2 rounded-lg p-3 transition-colors ${
-                    twoFactorStatus.email
+                    twoFactorStatus.sms
                       ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                       : 'border-red-300 bg-red-50 dark:bg-red-900/20'
                   }`}>
                     <Button variant="ghost" size="sm" className="w-full h-auto flex-col space-y-2 p-2">
                       <div className="flex items-center space-x-2">
-                        <Mail className="h-4 w-4" />
-                        {twoFactorStatus.email ? (
+                        <Smartphone className="h-4 w-4" />
+                        {twoFactorStatus.sms ? (
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         ) : (
                           <XCircle className="h-4 w-4 text-red-600" />
                         )}
                       </div>
                       <div className="text-center">
-                        <p className="text-sm font-medium">{t('2fa_by_email')}</p>
+                        <p className="text-sm font-medium">{t('2fa_by_sms')}</p>
                         <Badge
-                          variant={twoFactorStatus.email ? "default" : "destructive"}
+                          variant={twoFactorStatus.sms ? "default" : "destructive"}
                           className="text-xs mt-1"
                         >
-                          {twoFactorStatus.email ? t('configured') : t('not_configured')}
+                          {twoFactorStatus.sms ? t('configured') : t('not_configured')}
                         </Badge>
                       </div>
                     </Button>

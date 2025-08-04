@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { localStorageManager } from "../lib/localStorage";
+import { eventEmitter, EVENTS } from "../lib/eventEmitter";
 
 export interface UserProfile {
   subscriptionType: "free" | "premium" | "enterprise";
@@ -20,7 +22,7 @@ export interface UserProfile {
 }
 
 export function useProfileVerification() {
-  const { user } = useAuth();
+  const { user, premiumStatusVersion } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,34 +34,68 @@ export function useProfileVerification() {
       setIsLoading(false);
       setProfile(null);
     }
-  }, [user]);
+  }, [user, premiumStatusVersion]); // Reagir a mudanças no status premium
+
+  // Escutar eventos de mudança de status premium
+  useEffect(() => {
+    const handlePremiumStatusChange = () => {
+      console.log("🔔 useProfileVerification recebeu mudança de status premium");
+      fetchUserProfile();
+    };
+
+    const handleUserDataUpdate = (data: any) => {
+      if (data.premiumStatusChanged) {
+        console.log("🔔 useProfileVerification detectou mudança de status premium via user data update");
+        fetchUserProfile();
+      }
+    };
+
+    // Registrar listeners
+    eventEmitter.on(EVENTS.PREMIUM_STATUS_CHANGED, handlePremiumStatusChange);
+    eventEmitter.on(EVENTS.USER_DATA_UPDATED, handleUserDataUpdate);
+    
+    return () => {
+      // Limpar listeners
+      eventEmitter.off(EVENTS.PREMIUM_STATUS_CHANGED, handlePremiumStatusChange);
+      eventEmitter.off(EVENTS.USER_DATA_UPDATED, handleUserDataUpdate);
+    };
+  }, []);
 
   const fetchUserProfile = async () => {
     setIsLoading(true);
 
-    // Simulate API call - replace with real API
-    setTimeout(() => {
-      // Check if it's the premium developer user
+    try {
+      // Buscar informação premium do localStorage (vem do backend no login/refresh)
+      const isPaidUserFromStorage = localStorageManager.get("isPaidUser");
+      const userData = localStorageManager.getUserData();
+      
+      // Usar dados reais do backend
+      const isPaidUser = isPaidUserFromStorage || userData?.isPaidUser || false;
+      
+      console.log("🔍 Verificando status premium:", {
+        fromStorage: isPaidUserFromStorage,
+        fromUserData: userData?.isPaidUser,
+        finalStatus: isPaidUser
+      });
+
+      // Check if it's the premium developer user (fallback para desenvolvimento)
       const isPremiumDeveloper = localStorage.getItem("isPremiumDeveloper") === "true";
 
-      // Mock user profile based on user data
-      const mockProfile: UserProfile = {
-        subscriptionType: isPremiumDeveloper ? "enterprise" :
-                         user?.email?.includes("premium") ? "premium" :
-                         user?.email?.includes("enterprise") ? "enterprise" : "free",
+      // Criar perfil baseado nos dados reais do backend
+      const realProfile: UserProfile = {
+        subscriptionType: isPremiumDeveloper ? "enterprise" : 
+                         isPaidUser ? "premium" : "free",
         subscriptionStatus: "active",
-        subscriptionEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year for dev user
+        subscriptionEndDate: isPaidUser ? 
+          new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : 
+          undefined,
         features: {
-          maxBudgets: isPremiumDeveloper ? -1 :
-                    user?.email?.includes("premium") ? 10 :
-                    user?.email?.includes("enterprise") ? -1 : 3, // -1 = unlimited
-          maxInvestments: isPremiumDeveloper ? -1 :
-                         user?.email?.includes("premium") ? 50 :
-                         user?.email?.includes("enterprise") ? -1 : 10,
-          cryptoAccess: isPremiumDeveloper || user?.email?.includes("premium") || user?.email?.includes("enterprise") || false,
-          advancedCharts: isPremiumDeveloper || user?.email?.includes("premium") || user?.email?.includes("enterprise") || false,
-          exportData: isPremiumDeveloper || user?.email?.includes("premium") || user?.email?.includes("enterprise") || false,
-          prioritySupport: isPremiumDeveloper || user?.email?.includes("enterprise") || false,
+          maxBudgets: isPremiumDeveloper ? -1 : isPaidUser ? 10 : 3, // -1 = unlimited
+          maxInvestments: isPremiumDeveloper ? -1 : isPaidUser ? 50 : 10,
+          cryptoAccess: isPremiumDeveloper || isPaidUser,
+          advancedCharts: isPremiumDeveloper || isPaidUser,
+          exportData: isPremiumDeveloper || isPaidUser,
+          prioritySupport: isPremiumDeveloper || isPaidUser,
         },
         limits: {
           currentBudgets: 2,
@@ -67,9 +103,20 @@ export function useProfileVerification() {
         }
       };
 
-      setProfile(mockProfile);
+      setProfile(realProfile);
       setIsLoading(false);
-    }, 1000);
+      
+      console.log("✅ Perfil premium configurado:", {
+        subscriptionType: realProfile.subscriptionType,
+        cryptoAccess: realProfile.features.cryptoAccess,
+        advancedCharts: realProfile.features.advancedCharts
+      });
+      
+    } catch (error) {
+      console.error("❌ Erro ao verificar perfil premium:", error);
+      setIsLoading(false);
+      setProfile(null);
+    }
   };
 
   const hasFeatureAccess = (feature: keyof UserProfile['features']): boolean => {
