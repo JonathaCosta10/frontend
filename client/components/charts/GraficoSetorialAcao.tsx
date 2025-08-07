@@ -1,5 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Chart from 'chart.js/auto';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+
+// Register only needed components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
 import { investmentsApi, SetorInfo } from '@/services/api/investments';
 
 interface GraficoSetorialAcaoProps {
@@ -8,7 +28,7 @@ interface GraficoSetorialAcaoProps {
 
 const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSelecionado = 'Acoes' }) => {
     const chartRef = useRef<HTMLCanvasElement>(null);
-    const chartInstanceRef = useRef<Chart | null>(null);
+    const chartInstanceRef = useRef<ChartJS | null>(null);
     const [setores, setSetores] = useState<SetorInfo[]>([]);
 
     useEffect(() => {
@@ -32,7 +52,7 @@ const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSeleciona
                 if (chartRef.current) {
                     const ctx = chartRef.current.getContext('2d');
                     if (ctx) {
-                        chartInstanceRef.current = new Chart(ctx, {
+                        chartInstanceRef.current = new ChartJS(ctx, {
                             type: 'pie',
                             data: {
                                 labels,

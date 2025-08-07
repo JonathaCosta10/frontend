@@ -33,7 +33,27 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { budgetApi } from "@/services/api/budget";
-import Chart from "chart.js/auto";
+// Optimized Chart.js import - only import what we need
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+// Register only the components we need
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface Meta {
   id: number;
@@ -410,7 +430,7 @@ export default function Metas() {
 
       const ctx = chartRef.current.getContext("2d");
       if (ctx) {
-        chartInstance.current = new Chart(ctx, {
+        chartInstance.current = new ChartJS(ctx, {
           type: "doughnut",
           data: {
             labels: [

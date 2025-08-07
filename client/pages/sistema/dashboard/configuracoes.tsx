@@ -24,14 +24,18 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  BookOpen,
+  PlayCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 export default function Configuracoes() {
   const { toast } = useToast();
   const { language, currency, setLanguage, setCurrency, t } = useTranslation();
+  const { resetOnboarding, hasSeenOnboarding } = useOnboarding();
   const [settings, setSettings] = useState({
     notifications: {
       email: true,
@@ -312,6 +316,58 @@ export default function Configuracoes() {
                   <option value="EUR">Euro (EUR)</option>
                 </select>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tutorial e Orientação */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <BookOpen className="h-5 w-5" />
+              <span>Tutorial e Orientação</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Apresentação do Sistema</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {hasSeenOnboarding 
+                      ? "Você já visualizou a apresentação do sistema" 
+                      : "Você ainda não visualizou a apresentação completa"}
+                  </p>
+                </div>
+                <Badge variant={hasSeenOnboarding ? "default" : "secondary"}>
+                  {hasSeenOnboarding ? "Concluído" : "Pendente"}
+                </Badge>
+              </div>
+              
+              <Button 
+                onClick={() => {
+                  resetOnboarding();
+                  toast({
+                    title: "Apresentação reiniciada",
+                    description: "A apresentação do sistema será exibida novamente.",
+                  });
+                }}
+                className="w-full"
+                variant="outline"
+              >
+                <PlayCircle className="h-4 w-4 mr-2" />
+                {hasSeenOnboarding ? "Ver Apresentação Novamente" : "Iniciar Apresentação"}
+              </Button>
+            </div>
+
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+              <h4 className="font-medium text-sm text-blue-800 dark:text-blue-200 mb-1">
+                💡 Sobre a Apresentação
+              </h4>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                A apresentação guia você pelas principais funcionalidades do sistema, 
+                mostrando como usar cada seção para organizar suas finanças de forma eficiente.
+              </p>
             </div>
           </CardContent>
         </Card>

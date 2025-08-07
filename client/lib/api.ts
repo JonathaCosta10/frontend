@@ -1,7 +1,7 @@
 import { localStorageManager } from "./localStorage";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
-const API_KEY = import.meta.env.VITE_API_KEY || "minha-chave-secreta";
+const API_KEY = import.meta.env.VITE_API_KEY || "organizesee-api-key-2025-secure";
 
 interface ExtendedRequestInit extends RequestInit {
   authenticated?: boolean;

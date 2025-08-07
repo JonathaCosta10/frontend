@@ -95,7 +95,7 @@ export default function ForgotPassword() {
 
             <div className="flex items-center space-x-4">
               {/* Language and Currency Selector */}
-              <LanguageSelector variant="compact" showCurrency={true} size="sm" />
+              <LanguageSelector variant="compact" showCurrency={false} size="sm" />
 
               <Button
                 variant="ghost"

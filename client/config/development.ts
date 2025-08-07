@@ -5,7 +5,7 @@ export const isProduction = import.meta.env.PROD;
 // Backend configuration
 export const BACKEND_URL =
   import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
-export const API_KEY = import.meta.env.VITE_API_KEY || "minha-chave-secreta";
+export const API_KEY = import.meta.env.VITE_API_KEY || "organizesee-api-key-2025-secure";
 
 // JWT Authentication Only - No Bypasses
 export const JWT_CONFIG = {
@@ -148,7 +148,7 @@ export const validateConfig = () => {
     warnings.push("BACKEND_URL não configurado, usando fallback");
   }
 
-  if (!API_KEY || API_KEY === "minha-chave-secreta") {
+  if (!API_KEY || API_KEY === "organizesee-api-key-2025-secure") {
     if (isProduction) {
       warnings.push("Considere configurar uma API_KEY personalizada");
     }

@@ -226,7 +226,7 @@ export default function VerifyResetCode() {
             </Link>
 
             <div className="flex items-center space-x-4">
-              <LanguageSelector variant="compact" showCurrency={true} size="sm" />
+              <LanguageSelector variant="compact" showCurrency={false} size="sm" />
 
               <Button
                 variant="ghost"

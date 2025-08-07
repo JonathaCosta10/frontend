@@ -146,7 +146,8 @@ export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarP
   return (
     <div
       className={cn(
-        "flex flex-col border-r bg-card transition-all duration-300 h-screen fixed left-0 top-0 z-50",
+        "sidebar-container flex flex-col border-l bg-card transition-all duration-300",
+        "fixed right-0 top-0 h-screen z-50",
         collapsed ? "w-16" : "w-64",
         "lg:block", // Always visible on large screens
         "hidden md:block" // Hidden on mobile, visible on tablet and up
@@ -236,8 +237,8 @@ export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarP
       )}
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <nav className="p-2 space-y-2">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300">
+        <nav className="p-2 space-y-2 pb-20 md:pb-8 lg:pb-4">
           {/* Main Items */}
           <div className="space-y-1">
             {!collapsed && (
@@ -368,7 +369,7 @@ export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarP
       </div>
 
       {/* Logout */}
-      <div className="p-2 border-t mt-auto">
+      <div className="sidebar-footer p-2 border-t mt-auto">
         <Button
           variant="ghost"
           onClick={logout}

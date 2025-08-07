@@ -158,7 +158,7 @@ export default function Signup() {
               {/* Language and Currency Selector */}
               <LanguageSelector
                 variant="compact"
-                showCurrency={true}
+                showCurrency={false}
                 size="sm"
               />
 

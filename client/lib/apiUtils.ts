@@ -3,7 +3,7 @@ import { localStorageManager } from "./localStorage";
 
 // Configuração do ambiente
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
-const API_KEY = import.meta.env.VITE_API_KEY || "minha-chave-secreta";
+const API_KEY = import.meta.env.VITE_API_KEY || "organizesee-api-key-2025-secure";
 
 /**
  * Utilitário para fazer chamadas API com autenticação JWT

@@ -1685,7 +1685,7 @@ const translations = {
     support: "Soporte",
     settings: "Configuración",
     logout: "Cerrar Sesión",
-    daily_info: "Info Diaria",
+    daily_info: "Resumo Semanal",
     budget: "Presupuesto",
     investments: "Inversiones",
     market: "Mercado",

@@ -167,7 +167,7 @@ export default function Demo() {
               {/* Language and Currency Selector */}
               <LanguageSelector
                 variant="compact"
-                showCurrency={true}
+                showCurrency={false}
                 size="sm"
               />
 
@@ -233,7 +233,7 @@ export default function Demo() {
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5"></div>
                   <img
-                    src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                    src={import.meta.env.VITE_DEMO_IMAGE_URL || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"}
                     alt="Dashboard Preview"
                     className="w-full h-full object-cover opacity-50"
                   />

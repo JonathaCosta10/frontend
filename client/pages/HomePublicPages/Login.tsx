@@ -104,7 +104,7 @@ export default function Login() {
               {/* Language and Currency Selector */}
               <LanguageSelector
                 variant="compact"
-                showCurrency={true}
+                showCurrency={false}
                 size="sm"
               />
 

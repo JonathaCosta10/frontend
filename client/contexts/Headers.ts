@@ -3,6 +3,8 @@
  * Design Pattern: Centralização de headers por tipo de página/requisição
  */
 
+import { createHeaders, shouldIncludeApiKey, getApiKey } from "@/lib/apiKeyUtils";
+
 export interface HeaderModel {
   [key: string]: string;
 }
@@ -10,7 +12,7 @@ export interface HeaderModel {
 // Headers base para todas as requisições
 const BASE_HEADERS: HeaderModel = {
   "Content-Type": "application/json",
-  "X-API-Key": import.meta.env.VITE_API_KEY || "minha-chave-secreta",
+  "X-API-Key": getApiKey(), // Sempre incluir por padrão
 };
 
 // Headers para páginas públicas (sem autenticação)
@@ -100,13 +102,30 @@ export const HEADERS_MAP = {
  * Função para obter headers por chave
  * @param chave - Chave do header no mapa
  * @param withAuth - Se deve incluir token de autenticação
+ * @param endpoint - Endpoint para verificar se necessita API_KEY
  * @returns Headers mapeados
  */
 export const getHeaders = (
   chave: string,
   withAuth: boolean = false,
+  endpoint?: string,
 ): HeaderModel => {
   const baseHeaders = HEADERS_MAP[chave] || PUBLIC_PAGE_HEADERS;
+
+  // Criar headers inteligentes baseado no endpoint
+  if (endpoint) {
+    const smartHeaders = createHeaders(endpoint, baseHeaders);
+    
+    if (withAuth) {
+      // Token será adicionado dinamicamente via Rules
+      return {
+        ...smartHeaders,
+        // Placeholder para Authorization que será preenchido pelo Rules
+      };
+    }
+    
+    return smartHeaders;
+  }
 
   if (withAuth) {
     // Token será adicionado dinamicamente via Rules
@@ -123,7 +142,7 @@ export const getHeaders = (
  * Headers para upload de arquivos
  */
 export const FILE_UPLOAD_HEADERS: HeaderModel = {
-  "X-API-Key": import.meta.env.VITE_API_KEY || "minha-chave-secreta",
+  "X-API-Key": getApiKey(),
   // Content-Type será definido automaticamente pelo FormData
 };
 

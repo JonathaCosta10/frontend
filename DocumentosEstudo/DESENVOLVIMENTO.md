@@ -9,7 +9,7 @@ Por padrão, a aplicação está configurada para usar dados fictícios (mock da
 - `VITE_USE_REAL_APIS=false` - Usa dados mock (padrão para desenvolvimento)
 - `VITE_USE_REAL_APIS=true` - Tenta usar APIs reais do backend
 - `VITE_BACKEND_URL=http://127.0.0.1:8000` - URL do backend
-- `VITE_API_KEY=minha-chave-secreta` - Chave da API
+- `VITE_API_KEY=organizesee-api-key-2025-secure` - Chave da API
 
 ### Como Alternar Entre Mock e APIs Reais
 

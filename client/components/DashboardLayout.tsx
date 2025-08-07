@@ -2,18 +2,24 @@ import React, { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Moon, Sun, Code } from "lucide-react";
+import { Moon, Sun, Code, Menu, X } from "lucide-react";
 import DashboardSidebar from "./DashboardSidebar";
+import Onboarding from "./Onboarding";
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "../contexts/TranslationContext";
+import { useOnboarding } from "../hooks/useOnboarding";
 import LanguageSelector from "./LanguageSelector";
 
 export default function DashboardLayout() {
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
   const { t } = useTranslation();
+  
+  // Onboarding state
+  const { shouldShowOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
 
   const toggleDarkMode = () => {
     setDarkMode((prev) => {
@@ -28,6 +34,12 @@ export default function DashboardLayout() {
 
   // Define título e descrição baseado na rota atual
   const getPageInfo = () => {
+    if (location.pathname.startsWith("/pagamento")) {
+      return {
+        title: t("premium_upgrade"),
+        description: t("choose_your_plan"),
+      };
+    }
     if (location.pathname.startsWith("/dashboard/orcamento")) {
       return {
         title: t("budget") + " - " + t("budget_overview"),
@@ -73,30 +85,46 @@ export default function DashboardLayout() {
   const pageInfo = getPageInfo();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Sidebar */}
-      <DashboardSidebar onCollapseChange={setSidebarCollapsed} />
+    <div className="min-h-screen bg-background text-foreground flex">
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
 
-      {/* Main Content - Responsive design */}
-      <div className={`flex flex-col overflow-hidden transition-all duration-300 
-        ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'} 
-        ml-0 /* No margin on mobile */
+      {/* Main Content - Now comes first, sidebar will be on the right */}
+      <div className={`flex flex-col flex-1 min-h-screen transition-all duration-300 
+        ${sidebarCollapsed ? 'md:mr-16' : 'md:mr-64'} 
+        mr-0 /* No margin on mobile */
       `}>
         {/* Top Bar - Responsive positioning */}
-        <header className={`fixed top-0 right-0 z-40 border-b bg-card px-6 py-4 transition-all duration-300
-          ${sidebarCollapsed ? 'md:left-16' : 'md:left-64'}
-          left-0 /* Full width on mobile */
-        `}>
+        <header className={`sticky top-0 z-40 border-b bg-card px-4 md:px-6 py-4 transition-all duration-300`}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div>
-                <h1 className="text-2xl font-bold">{pageInfo.title}</h1>
-                <p className="text-muted-foreground">{pageInfo.description}</p>
+            <div className="flex items-center space-x-4 flex-1 min-w-0">
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="w-9 h-9 md:hidden"
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-4 w-4" />
+                ) : (
+                  <Menu className="h-4 w-4" />
+                )}
+              </Button>
+
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl md:text-2xl font-bold truncate">{pageInfo.title}</h1>
+                <p className="text-muted-foreground text-sm hidden sm:block">{pageInfo.description}</p>
               </div>
               {isDevMode && (
                 <Badge
                   variant="secondary"
-                  className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+                  className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 hidden sm:flex"
                 >
                   <Code className="h-3 w-3 mr-1" />
                   {t("development_mode")}
@@ -104,13 +132,15 @@ export default function DashboardLayout() {
               )}
             </div>
 
-            <div className="flex items-center space-x-4">
-              {/* Language and Currency Selector */}
-              <LanguageSelector
-                variant="compact"
-                showCurrency={true}
-                size="sm"
-              />
+            <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
+              {/* Language Selector only - Hidden on very small screens */}
+              <div className="hidden sm:block">
+                <LanguageSelector
+                  variant="compact"
+                  showCurrency={false}
+                  size="sm"
+                />
+              </div>
 
               <Button
                 variant="ghost"
@@ -128,11 +158,30 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        {/* Content Area - Add top padding for fixed header */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6 pt-24">
+        {/* Content Area - Responsive padding */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-6">
           <Outlet />
         </main>
       </div>
+
+      {/* Sidebar - Now positioned on the right and fixed */}
+      <div className={`
+        ${mobileMenuOpen ? 'block' : 'hidden'} md:block
+        fixed right-0 top-0 z-50 md:z-30
+        ${mobileMenuOpen ? 'w-full max-w-sm' : ''}
+      `}>
+        <DashboardSidebar 
+          onCollapseChange={setSidebarCollapsed} 
+          onMobileClose={() => setMobileMenuOpen(false)}
+        />
+      </div>
+
+      {/* Onboarding Component */}
+      <Onboarding
+        isVisible={shouldShowOnboarding}
+        onComplete={completeOnboarding}
+        onSkip={skipOnboarding}
+      />
     </div>
   );
 }

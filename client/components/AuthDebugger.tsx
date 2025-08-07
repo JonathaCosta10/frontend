@@ -47,7 +47,7 @@ const AuthDebugger: React.FC = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-API-Key": "minha-chave-secreta",
+            "X-API-Key": import.meta.env.VITE_API_KEY || "organizesee-api-key-2025-secure",
           },
           body: JSON.stringify({ refresh: refreshTokenValue }),
         },

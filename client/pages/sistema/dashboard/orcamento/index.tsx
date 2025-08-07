@@ -20,6 +20,7 @@ import MetaRealidadeChart from "@/components/charts/MetaRealidadeChart";
 import { budgetApi, DistribuicaoGastosResponse } from "@/services/api/budget";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useMonthYear } from "@/hooks/useMonthYear";
+import { BudgetNoDataGuidance } from "@/components/NewUserGuidance";
 
 export default function BudgetOverview() {
   const { t, formatCurrency } = useTranslation();
@@ -152,6 +153,10 @@ export default function BudgetOverview() {
   if (budgetData && !mesDisponivel) {
     return (
       <div className="space-y-6">
+        {/* Orientação para novos usuários */}
+        <BudgetNoDataGuidance />
+        
+        {/* Card de informação sobre dados não disponíveis */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">

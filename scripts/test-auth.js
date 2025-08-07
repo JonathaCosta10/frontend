@@ -4,7 +4,7 @@
 // Para uso: node scripts/test-auth.js
 
 const baseURL = "http://127.0.0.1:8000";
-const apiKey = "minha-chave-secreta";
+const apiKey = "organizesee-api-key-2025-secure";
 
 // Função para fazer login
 async function testLogin() {
