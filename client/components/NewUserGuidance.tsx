@@ -102,11 +102,100 @@ export default function NewUserGuidance({
 
 // Component específico para o orçamento quando não há dados
 export function BudgetNoDataGuidance() {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
   return (
-    <NewUserGuidance
-      title="Comece cadastrando seus dados básicos"
-      description="Para começar a usar o Organizesee e ter acesso aos dados do orçamento, primeiro complete seu perfil com suas informações pessoais. Depois você poderá adicionar suas primeiras receitas e despesas."
-      className="max-w-2xl mx-auto"
-    />
+    <div className="space-y-4 max-w-2xl mx-auto">
+      {/* Main guidance card */}
+      <Card className="border-dashed border-2 border-blue-300 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-700">
+        <CardHeader className="text-center pb-4">
+          <div className="flex justify-center mb-3">
+            <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
+              <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+          <CardTitle className="text-lg text-blue-900 dark:text-blue-100">
+            Configure seu Orçamento
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          <p className="text-blue-700 dark:text-blue-300 text-sm leading-relaxed">
+            Para visualizar seus dados financeiros, você precisa configurar as informações do seu orçamento. 
+            Comece adicionando suas entradas, custos, dívidas e metas financeiras.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Budget-specific actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border border-green-200 bg-green-50/50 hover:bg-green-50 dark:bg-green-950/20 dark:border-green-800 dark:hover:bg-green-950/30 transition-colors cursor-pointer"
+              onClick={() => navigate('/dashboard/orcamento/entradas')}>
+          <CardContent className="p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <h3 className="font-medium text-green-900 dark:text-green-100 text-sm mb-1">
+              Adicionar suas Entradas
+            </h3>
+            <p className="text-green-700 dark:text-green-300 text-xs">
+              Registre suas receitas mensais
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-red-200 bg-red-50/50 hover:bg-red-50 dark:bg-red-950/20 dark:border-red-800 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+              onClick={() => navigate('/dashboard/orcamento/custos')}>
+          <CardContent className="p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <ArrowRight className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className="font-medium text-red-900 dark:text-red-100 text-sm mb-1">
+              Adicionar seus Custos
+            </h3>
+            <p className="text-red-700 dark:text-red-300 text-xs">
+              Configure suas despesas
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-orange-200 bg-orange-50/50 hover:bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800 dark:hover:bg-orange-950/30 transition-colors cursor-pointer"
+              onClick={() => navigate('/dashboard/orcamento/dividas')}>
+          <CardContent className="p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <Plus className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <h3 className="font-medium text-orange-900 dark:text-orange-100 text-sm mb-1">
+              Adicionar suas Dívidas
+            </h3>
+            <p className="text-orange-700 dark:text-orange-300 text-xs">
+              Gerencie seus compromissos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-purple-200 bg-purple-50/50 hover:bg-purple-50 dark:bg-purple-950/20 dark:border-purple-800 dark:hover:bg-purple-950/30 transition-colors cursor-pointer"
+              onClick={() => navigate('/dashboard/orcamento/metas')}>
+          <CardContent className="p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h3 className="font-medium text-purple-900 dark:text-purple-100 text-sm mb-1">
+              Adicionar suas Metas
+            </h3>
+            <p className="text-purple-700 dark:text-purple-300 text-xs">
+              Defina seus objetivos financeiros
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Help text */}
+      <div className="text-center">
+        <p className="text-muted-foreground text-xs">
+          💡 <strong>Dica:</strong> Após configurar seus dados de orçamento, você terá acesso completo às análises e relatórios financeiros.
+        </p>
+      </div>
+    </div>
   );
 }

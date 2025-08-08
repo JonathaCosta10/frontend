@@ -48,6 +48,9 @@ export const HEADERS_MAP = {
   // Dashboard (privado)
   dashboard: PRIVATE_PAGE_HEADERS,
   dashboardStats: PRIVATE_PAGE_HEADERS,
+  infodaily: PRIVATE_PAGE_HEADERS,
+  marketIndices: PRIVATE_PAGE_HEADERS,
+  marketInsights: PRIVATE_PAGE_HEADERS,
   profile: PRIVATE_PAGE_HEADERS,
   logout: PRIVATE_PAGE_HEADERS,
   user: PRIVATE_PAGE_HEADERS,

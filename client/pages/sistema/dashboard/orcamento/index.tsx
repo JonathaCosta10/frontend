@@ -153,28 +153,8 @@ export default function BudgetOverview() {
   if (budgetData && !mesDisponivel) {
     return (
       <div className="space-y-6">
-        {/* Orientação para novos usuários */}
+        {/* Orientação específica para o módulo de orçamento */}
         <BudgetNoDataGuidance />
-        
-        {/* Card de informação sobre dados não disponíveis */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-              <span>Dados não disponíveis</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Não há dados disponíveis para {mesKey}/{ano}. 
-              {budgetData.meses_disponeis.length > 0 && (
-                <>
-                  {" "}Meses disponíveis: {budgetData.meses_disponeis.join(", ")}/{budgetData.ano}
-                </>
-              )}
-            </p>
-          </CardContent>
-        </Card>
       </div>
     );
   }

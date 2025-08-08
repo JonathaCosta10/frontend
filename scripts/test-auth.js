@@ -3,8 +3,9 @@
 // Script simples para testar autenticação com o servidor Django
 // Para uso: node scripts/test-auth.js
 
-const baseURL = "http://127.0.0.1:8000";
-const apiKey = "organizesee-api-key-2025-secure";
+// Usar variável de ambiente se disponível, senão fallback
+const baseURL = process.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const apiKey = process.env.VITE_API_KEY || "organizesee-api-key-2025-secure";
 
 // Função para fazer login
 async function testLogin() {

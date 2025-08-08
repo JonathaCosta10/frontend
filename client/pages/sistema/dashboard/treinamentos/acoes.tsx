@@ -12,6 +12,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
+import TrainingPremiumGuard from "@/components/TrainingPremiumGuard";
 
 export default function Acoes() {
   const { t } = useTranslation();
@@ -92,7 +93,8 @@ export default function Acoes() {
   };
 
   return (
-    <div className="space-y-6">
+    <TrainingPremiumGuard trainingType="acoes">
+      <div className="space-y-6">
       {/* Warning Alert */}
       <Card className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
         <CardContent className="p-4">
@@ -268,5 +270,6 @@ export default function Acoes() {
         </CardContent>
       </Card>
     </div>
+    </TrainingPremiumGuard>
   );
 }

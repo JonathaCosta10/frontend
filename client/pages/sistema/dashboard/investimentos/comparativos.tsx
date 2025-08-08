@@ -29,7 +29,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
-import SubscriptionGuard from "@/components/SubscriptionGuard";
+import InvestmentPremiumGuard from "@/components/InvestmentPremiumGuard";
 
 export default function Comparativos() {
   const { t } = useTranslation();
@@ -107,7 +107,7 @@ export default function Comparativos() {
   };
 
   return (
-    <SubscriptionGuard>
+    <InvestmentPremiumGuard featureType="comparativos">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -324,6 +324,6 @@ export default function Comparativos() {
           </Card>
         </div>
       </div>
-    </SubscriptionGuard>
+    </InvestmentPremiumGuard>
   );
 }

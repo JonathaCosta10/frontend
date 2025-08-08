@@ -94,10 +94,22 @@ export default function DashboardLayout() {
         />
       )}
 
-      {/* Main Content - Now comes first, sidebar will be on the right */}
+      {/* Sidebar - Positioned on the left and fixed */}
+      <div className={`
+        ${mobileMenuOpen ? 'block' : 'hidden'} md:block
+        fixed left-0 top-0 z-50 md:z-30
+        ${mobileMenuOpen ? 'w-full max-w-sm' : ''}
+      `}>
+        <DashboardSidebar 
+          onCollapseChange={setSidebarCollapsed} 
+          onMobileClose={() => setMobileMenuOpen(false)}
+        />
+      </div>
+
+      {/* Main Content - Now comes after sidebar */}
       <div className={`flex flex-col flex-1 min-h-screen transition-all duration-300 
-        ${sidebarCollapsed ? 'md:mr-16' : 'md:mr-64'} 
-        mr-0 /* No margin on mobile */
+        ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'} 
+        ml-0 /* No margin on mobile */
       `}>
         {/* Top Bar - Responsive positioning */}
         <header className={`sticky top-0 z-40 border-b bg-card px-4 md:px-6 py-4 transition-all duration-300`}>
@@ -162,18 +174,6 @@ export default function DashboardLayout() {
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-6">
           <Outlet />
         </main>
-      </div>
-
-      {/* Sidebar - Now positioned on the right and fixed */}
-      <div className={`
-        ${mobileMenuOpen ? 'block' : 'hidden'} md:block
-        fixed right-0 top-0 z-50 md:z-30
-        ${mobileMenuOpen ? 'w-full max-w-sm' : ''}
-      `}>
-        <DashboardSidebar 
-          onCollapseChange={setSidebarCollapsed} 
-          onMobileClose={() => setMobileMenuOpen(false)}
-        />
       </div>
 
       {/* Onboarding Component */}

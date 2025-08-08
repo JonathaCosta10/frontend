@@ -25,6 +25,9 @@ export const DASHBOARD_ROUTES = {
   stats: "/api/dashboard/stats/",
   recent: "/api/dashboard/recent/",
   notifications: "/api/dashboard/notifications/",
+  infodaily: "/api/infodaily/",
+  marketIndices: "/api/infodaily/",
+  marketInsights: "/api/insights-mercado/",
 };
 
 // Rotas de Orçamento
@@ -163,6 +166,9 @@ export const ROUTES_MAP: Record<string, string> = {
   // Dashboard
   dashboard: DASHBOARD_ROUTES.overview,
   dashboardStats: DASHBOARD_ROUTES.stats,
+  infodaily: DASHBOARD_ROUTES.infodaily,
+  marketIndices: DASHBOARD_ROUTES.marketIndices,
+  marketInsights: DASHBOARD_ROUTES.marketInsights,
 
   // Budget - Custos
   custos: BUDGET_ROUTES.custos,

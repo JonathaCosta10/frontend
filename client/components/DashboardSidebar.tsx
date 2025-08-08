@@ -33,9 +33,10 @@ interface SidebarItem {
 
 interface DashboardSidebarProps {
   onCollapseChange?: (collapsed: boolean) => void;
+  onMobileClose?: () => void;
 }
 
-export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarProps) {
+export default function DashboardSidebar({ onCollapseChange, onMobileClose }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -146,8 +147,8 @@ export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarP
   return (
     <div
       className={cn(
-        "sidebar-container flex flex-col border-l bg-card transition-all duration-300",
-        "fixed right-0 top-0 h-screen z-50",
+        "sidebar-container flex flex-col border-r bg-card transition-all duration-300",
+        "fixed left-0 top-0 h-screen z-50",
         collapsed ? "w-16" : "w-64",
         "lg:block", // Always visible on large screens
         "hidden md:block" // Hidden on mobile, visible on tablet and up
@@ -181,9 +182,9 @@ export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarP
           className="h-8 w-8 p-0"
         >
           {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
             <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
           )}
         </Button>
       </div>
@@ -253,7 +254,11 @@ export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarP
               }
 
               return (
-                <Link key={item.path} to={item.path}>
+                <Link 
+                  key={item.path} 
+                  to={item.path} 
+                  onClick={() => onMobileClose && onMobileClose()}
+                >
                   <Button
                     variant={
                       isActive(item.path) ||
@@ -282,28 +287,26 @@ export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarP
               );
             })}
 
-            {/* Crypto Section - Always show for paid users */}
-            {isPaidUser() && (
-              <Link to="/dashboard/cripto">
-                <Button
-                  variant={
-                    location.pathname.startsWith("/dashboard/cripto")
-                      ? "secondary"
-                      : "ghost"
-                  }
-                  className={cn("w-full justify-start", collapsed && "px-2")}
-                >
-                  <Bitcoin className="h-4 w-4" />
-                  {!collapsed && (
-                    <span className="ml-2">{t("cryptocurrencies")}</span>
-                  )}
-                </Button>
-              </Link>
-            )}
+            {/* Crypto Section - Always show for all users */}
+            <Link to="/dashboard/cripto" onClick={() => onMobileClose && onMobileClose()}>
+              <Button
+                variant={
+                  location.pathname.startsWith("/dashboard/cripto")
+                    ? "secondary"
+                    : "ghost"
+                }
+                className={cn("w-full justify-start", collapsed && "px-2")}
+              >
+                <Bitcoin className="h-4 w-4" />
+                {!collapsed && (
+                  <span className="ml-2">{t("cryptocurrencies")}</span>
+                )}
+              </Button>
+            </Link>
 
-            {/* Vire Premium Section - Only for non-paid users */}
+            {/* Vire Premium Section - Only show for non-premium users */}
             {!isPaidUser() && (
-              <Link to="/pagamento">
+              <Link to="/pagamento" onClick={() => onMobileClose && onMobileClose()}>
                 <Button
                   variant="ghost"
                   className={cn("w-full justify-start", collapsed && "px-2")}
@@ -330,7 +333,7 @@ export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarP
               </h3>
             )}
             {trainingItems.map((item) => (
-              <Link key={item.path} to={item.path}>
+              <Link key={item.path} to={item.path} onClick={() => onMobileClose && onMobileClose()}>
                 <Button
                   variant={isActive(item.path) ? "secondary" : "ghost"}
                   className={cn("w-full justify-start", collapsed && "px-2")}
@@ -352,7 +355,7 @@ export default function DashboardSidebar({ onCollapseChange }: DashboardSidebarP
               </h3>
             )}
             {systemItems.map((item) => (
-              <Link key={item.path} to={item.path}>
+              <Link key={item.path} to={item.path} onClick={() => onMobileClose && onMobileClose()}>
                 <Button
                   variant={isActive(item.path) ? "secondary" : "ghost"}
                   className={cn("w-full justify-start", collapsed && "px-2")}

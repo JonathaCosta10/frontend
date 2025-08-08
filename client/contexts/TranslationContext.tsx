@@ -405,7 +405,7 @@ const translations = {
 
     // D
     daily: "Diário",
-    daily_info: "Info Diária",
+    daily_info: "Info Semanal",
     daily_variation: "Variação Diária",
     daily_volume: "Volume Diário",
     dark: "Escuro",
@@ -1606,7 +1606,7 @@ const translations = {
     support: "Support",
     settings: "Settings",
     logout: "Logout",
-    daily_info: "Daily Info",
+    daily_info: "Weekly Info",
     budget: "Budget",
     investments: "Investments",
     market: "Market",
@@ -1685,7 +1685,7 @@ const translations = {
     support: "Soporte",
     settings: "Configuración",
     logout: "Cerrar Sesión",
-    daily_info: "Resumo Semanal",
+    daily_info: "Info Semanal",
     budget: "Presupuesto",
     investments: "Inversiones",
     market: "Mercado",

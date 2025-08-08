@@ -17,7 +17,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import SubscriptionGuard from '@/components/SubscriptionGuard';
+import InvestmentPremiumGuard from '@/components/InvestmentPremiumGuard';
 
 interface RankingItem {
   posicao: number;
@@ -140,7 +140,7 @@ export default function Ranking() {
   const topPerformers = rankingData.slice(0, 3);
 
   return (
-    <SubscriptionGuard>
+    <InvestmentPremiumGuard featureType="ranking">
       <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -399,6 +399,6 @@ export default function Ranking() {
         </CardContent>
       </Card>
       </div>
-    </SubscriptionGuard>
+    </InvestmentPremiumGuard>
   );
 }

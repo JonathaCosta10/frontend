@@ -37,7 +37,7 @@ import {
   BarChart3,
   Target,
 } from "lucide-react";
-import SubscriptionGuard from "@/components/SubscriptionGuard";
+import CryptoPremiumGuard from "@/components/CryptoPremiumGuard";
 import { useTranslation } from "@/contexts/TranslationContext";
 
 interface CriptoAsset {
@@ -321,7 +321,7 @@ export default function DashboardCripto() {
   };
 
   return (
-    <SubscriptionGuard feature="cryptoAccess">
+    <CryptoPremiumGuard>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -896,6 +896,6 @@ export default function DashboardCripto() {
           </Card>
         )}
       </div>
-    </SubscriptionGuard>
+    </CryptoPremiumGuard>
   );
 }

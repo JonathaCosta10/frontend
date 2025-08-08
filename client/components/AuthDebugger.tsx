@@ -41,8 +41,9 @@ const AuthDebugger: React.FC = () => {
       console.log("🔄 Testing refresh token...");
 
       // Simular chamada de refresh (substitua pela função real quando disponível)
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
       const response = await fetch(
-        "http://127.0.0.1:8000/api/auth/token/refresh/",
+        `${BACKEND_URL}/api/auth/token/refresh/`,
         {
           method: "POST",
           headers: {

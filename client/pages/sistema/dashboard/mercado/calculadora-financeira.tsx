@@ -41,7 +41,7 @@ import {
   InvestmentInput,
   InvestmentResult,
 } from "@/src/entities/FinancialCalculator";
-import SubscriptionGuard from "@/components/SubscriptionGuard";
+import MarketPremiumGuard from "@/components/MarketPremiumGuard";
 
 export default function CalculadoraFinanceira() {
   const { t } = useTranslation();
@@ -195,7 +195,7 @@ export default function CalculadoraFinanceira() {
   };
 
   return (
-    <SubscriptionGuard>
+    <MarketPremiumGuard marketFeature="financial-calculator">
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -1118,6 +1118,6 @@ export default function CalculadoraFinanceira() {
           </TabsContent>
         </Tabs>
       </div>
-    </SubscriptionGuard>
+    </MarketPremiumGuard>
   );
 }

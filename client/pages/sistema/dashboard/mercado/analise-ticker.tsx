@@ -18,7 +18,7 @@ import {
   CheckCircle,
   Clock,
 } from "lucide-react";
-import SubscriptionGuard from "@/components/SubscriptionGuard";
+import MarketPremiumGuard from "@/components/MarketPremiumGuard";
 import { useTranslation } from "@/contexts/TranslationContext";
 
 interface TickerAnalysis {
@@ -149,7 +149,7 @@ export default function AnaliseTicker() {
   };
 
   return (
-    <SubscriptionGuard>
+    <MarketPremiumGuard marketFeature="ticker-analysis">
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -596,6 +596,6 @@ export default function AnaliseTicker() {
           </Card>
         )}
       </div>
-    </SubscriptionGuard>
+    </MarketPremiumGuard>
   );
 }

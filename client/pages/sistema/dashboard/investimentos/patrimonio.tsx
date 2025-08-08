@@ -25,6 +25,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
+import InvestmentPremiumGuard from "@/components/InvestmentPremiumGuard";
 
 interface PatrimonioItem {
   categoria: string;
@@ -134,7 +135,8 @@ export default function Patrimonio() {
   };
 
   return (
-    <div className="space-y-6">
+    <InvestmentPremiumGuard featureType="patrimonio">
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -454,6 +456,7 @@ export default function Patrimonio() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </InvestmentPremiumGuard>
   );
 }

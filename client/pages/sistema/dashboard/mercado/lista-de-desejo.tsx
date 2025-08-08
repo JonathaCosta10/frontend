@@ -45,7 +45,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/contexts/TranslationContext";
-import SubscriptionGuard from "@/components/SubscriptionGuard";
+import MarketPremiumGuard from "@/components/MarketPremiumGuard";
 import { WishlistApiService } from "@/services/api/entities/wishlistApi";
 import {
   WishlistItem,
@@ -344,7 +344,7 @@ export default function ListaDeDesejo() {
   };
 
   return (
-    <SubscriptionGuard>
+    <MarketPremiumGuard marketFeature="wishlist">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -903,6 +903,6 @@ export default function ListaDeDesejo() {
           </CardContent>
         </Card>
       </div>
-    </SubscriptionGuard>
+    </MarketPremiumGuard>
   );
 }

@@ -136,23 +136,41 @@ export class Rules {
    * @returns Resposta da API
    */
   async get(userData: RequestData): Promise<ApiResponse> {
+    console.log("🔧 Rules.get() iniciado com:", userData);
+    
     const { endpoint, fullHeaders } = this.buildRequestParams(userData);
+    
+    console.log("🏗️ Parâmetros construídos:", {
+      endpoint,
+      headers: fullHeaders,
+      chave: userData.chave,
+      withAuth: userData.withAuth
+    });
 
+    console.log("🔍 Buscando serviço de API para chave:", userData.chave);
     const apiService = await this.getApiService(
       userData.chave,
       userData.withAuth,
     );
-
+    
+    console.log("✅ Serviço de API obtido:", !!apiService);
+    
+    console.log("📡 Fazendo requisição GET...");
     const response = await apiService.get(endpoint, fullHeaders);
+    
+    console.log("📨 Resposta do serviço recebida:", response);
 
     // Processar resposta através do ResponseParms
-    return responseParms.processResponse({
+    const finalResponse = responseParms.processResponse({
       response,
       chave: userData.chave,
       method: "GET",
       endpoint,
       withAuth: userData.withAuth || false,
     });
+    
+    console.log("🎯 Resposta final processada:", finalResponse);
+    return finalResponse;
   }
 
   /**
@@ -212,20 +230,36 @@ export class Rules {
    * @returns Serviço de API específico
    */
   private async getApiService(chave: string, withAuth: boolean = false) {
+    console.log("🔍 getApiService chamado para chave:", chave);
+    
     // Determinar se é página pública ou privada
     const isPublicPage = this.isPublicPageKey(chave);
     const basePath = isPublicPage ? "PublicPages" : "PrivatePages";
+    
+    console.log("📁 Tipo de página:", isPublicPage ? "Pública" : "Privada");
+    console.log("📂 BasePath:", basePath);
 
     // Mapear chave para arquivo específico
     const serviceFile = this.getServiceFile(chave);
+    console.log("📄 Arquivo de serviço:", serviceFile);
+    
+    const servicePath = `../services/api/${basePath}/${serviceFile}.js`;
+    console.log("🛤️ Caminho completo:", servicePath);
 
     try {
+      console.log("📥 Tentando importar serviço...");
       // Importar dinamicamente o serviço específico
-      const module = await import(
-        `../services/api/${basePath}/${serviceFile}.js`
-      );
-      return module.default || module;
+      const module = await import(servicePath);
+      console.log("✅ Serviço importado com sucesso:", !!module);
+      console.log("📦 Módulo tem default?", !!module.default);
+      console.log("📦 Chaves do módulo:", Object.keys(module));
+      
+      const service = module.default || module;
+      console.log("🎯 Serviço final:", !!service);
+      
+      return service;
     } catch (error) {
+      console.error("❌ Erro ao importar serviço:", error);
       console.warn(
         `Serviço específico não encontrado para ${chave}, usando serviço genérico`,
       );
@@ -305,6 +339,11 @@ export class Rules {
       alocacaoTipo: "Investments",
       setores: "Investments",
       dividendosFii: "Investments",
+
+      // InfoDaily (privadas)
+      infodaily: "InfoDaily",
+      marketInsights: "InfoDaily",
+      marketIndices: "InfoDaily",
 
       // System (privadas)
       systemConfig: "Dashboard",
