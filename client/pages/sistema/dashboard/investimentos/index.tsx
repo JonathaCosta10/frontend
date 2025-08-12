@@ -13,7 +13,6 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import GraficoAlocacaoTipo from "@/components/charts/GraficoAlocacaoTipo";
 import GraficoSetorialAcao from "@/components/charts/GraficoSetorialAcao";
 import GraficoDividendosFII from "@/components/charts/GraficoDividendosFII";
-import InvestmentDividendPremiumGuard from "@/components/InvestmentDividendPremiumGuard";
 
 export default function Investimentos() {
   const { t, formatCurrency } = useTranslation();
@@ -159,13 +158,11 @@ export default function Investimentos() {
           </div>
         </CardHeader>
         <CardContent>
-          <InvestmentDividendPremiumGuard>
-            <GraficoDividendosFII
-              mes={mes}
-              ano={ano}
-              tipoSelecionado={tipoSelecionado}
-            />
-          </InvestmentDividendPremiumGuard>
+          <GraficoDividendosFII
+            mes={mes}
+            ano={ano}
+            tipoSelecionado={tipoSelecionado}
+          />
         </CardContent>
       </Card>
 
