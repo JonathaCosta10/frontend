@@ -15,7 +15,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
 import LanguageSelector from "@/components/LanguageSelector";
-import { fetchTop10Ranking } from "@/services/api/publicPages/ranking/pesquisaRankingporTipoPublic";
+import { fetchTop10Ranking } from "@/services/api/PublicPages/ranking/pesquisaRankingporTipoPublic";
 
 interface FinancialData {
   ticker: string;
