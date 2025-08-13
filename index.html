@@ -1,14 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello world project</title>
+    
+    <!-- SEO Meta Tags -->
+    <title>Curry Oasis - Gestão Financeira Inteligente</title>
+    <meta name="description" content="Plataforma completa de gestão financeira com acompanhamento de investimentos, análise de mercado e controle orçamentário." />
+    <meta name="keywords" content="gestão financeira, investimentos, orçamento, análise mercado" />
+    <meta name="author" content="Organizesee" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Curry Oasis - Gestão Financeira" />
+    <meta property="og:description" content="Plataforma completa de gestão financeira" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://curry-oasis.netlify.app" />
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://127.0.0.1:8000 http://localhost:8000; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000;" />
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Critical CSS será injetado pelo Vite -->
   </head>
-
   <body>
     <div id="root"></div>
-
     <script type="module" src="/client/main.tsx"></script>
   </body>
 </html>

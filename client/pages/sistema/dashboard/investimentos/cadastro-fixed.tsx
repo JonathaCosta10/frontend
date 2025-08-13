@@ -15,64 +15,6 @@ import investmentService, { InvestmentAsset, TickerSearchResult } from "@/servic
 // Interface conforme documentação do backend
 interface Investimento extends InvestmentAsset {}
 
-// Funções helper para converter valores da API
-const toNumber = (value: string | number | undefined | null): number => {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') return parseFloat(value) || 0;
-  return 0;
-};
-
-const formatCurrency = (value: string | number | undefined | null): string => {
-  const numValue = toNumber(value);
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numValue);
-};
-
-const formatPercentage = (value: string | number | undefined | null): string => {
-  const numValue = toNumber(value);
-  return numValue.toFixed(2);
-};
-
-// Funções para formatação de entrada de valores
-const formatInputCurrency = (value: string): string => {
-  // Remove tudo que não é dígito
-  const numbers = value.replace(/[^\d]/g, '');
-  
-  // Se vazio, retorna vazio
-  if (!numbers) return '';
-  
-  // Remove zeros à esquerda
-  const withoutLeadingZeros = numbers.replace(/^0+/, '');
-  if (!withoutLeadingZeros) return '';
-  
-  // Converte para número
-  const numValue = parseFloat(withoutLeadingZeros) / 100;
-  
-  // Formata como moeda brasileira sem o símbolo R$
-  return numValue.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-};
-
-const parseCurrencyInput = (value: string): number => {
-  if (!value) return 0;
-  // Remove formatação e converte para número
-  const cleanValue = value.replace(/[.\s]/g, '').replace(',', '.');
-  return parseFloat(cleanValue) || 0;
-};
-
-const formatQuantityInput = (value: string): string => {
-  // Remove tudo que não é dígito
-  const numbers = value.replace(/[^\d]/g, '');
-  
-  // Se vazio, retorna vazio
-  if (!numbers) return '';
-  
-  // Remove zeros à esquerda, mas mantém pelo menos um dígito
-  const withoutLeadingZeros = numbers.replace(/^0+/, '');
-  return withoutLeadingZeros || '0';
-};
-
 export default function CadastroInvestimentos() {
   const { toast } = useToast();
   
@@ -86,16 +28,11 @@ export default function CadastroInvestimentos() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInvestimento, setEditingInvestimento] = useState<Investimento | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [formData, setFormData] = useState<{
-    ticker: string;
-    data_compra: string;
-    quantidade: string; // Mudado para string para melhor controle
-    valor_unitario: string; // Mudado para string para formatação
-  }>({
+  const [formData, setFormData] = useState<Omit<Investimento, 'id' | 'valor_investido' | 'preco_atual' | 'valor_atual' | 'variacao_percentual' | 'ganho_perda'>>({
     ticker: "",
     data_compra: "",
-    quantidade: "",
-    valor_unitario: "",
+    quantidade: 0,
+    valor_unitario: 0,
   });
 
   // Carregar investimentos ao montar o componente
@@ -167,17 +104,9 @@ export default function CadastroInvestimentos() {
 
       setLoading(true);
 
-      // Converter dados do form para o formato da API
-      const dataToSend = {
-        ticker: formData.ticker,
-        quantidade: parseInt(formData.quantidade) || 0,
-        valor_unitario: parseCurrencyInput(formData.valor_unitario),
-        data_compra: formData.data_compra,
-      };
-
       if (editingInvestimento) {
         // Editar investimento existente
-        await investmentService.editarAtivo(editingInvestimento.id!, dataToSend);
+        await investmentService.editarAtivo(editingInvestimento.id!, formData);
         toast({
           title: "Investimento atualizado",
           description: "O investimento foi atualizado com sucesso.",
@@ -185,7 +114,7 @@ export default function CadastroInvestimentos() {
         });
       } else {
         // Criar novo investimento
-        await investmentService.cadastrarAtivo(dataToSend);
+        await investmentService.cadastrarAtivo(formData);
         toast({
           title: "Investimento cadastrado",
           description: "O investimento foi cadastrado com sucesso.",
@@ -236,8 +165,8 @@ export default function CadastroInvestimentos() {
     setEditingInvestimento(investimento);
     setFormData({
       ticker: investimento.ticker,
-      quantidade: toNumber(investimento.quantidade).toString(),
-      valor_unitario: formatInputCurrency((toNumber(investimento.preco_medio || investimento.valor_unitario) * 100).toString()),
+      quantidade: investimento.quantidade,
+      valor_unitario: investimento.valor_unitario,
       data_compra: investimento.data_compra,
     });
     setIsDialogOpen(true);
@@ -248,8 +177,8 @@ export default function CadastroInvestimentos() {
     setFormData({
       ticker: "",
       data_compra: "",
-      quantidade: "",
-      valor_unitario: "",
+      quantidade: 0,
+      valor_unitario: 0,
     });
     setEditingInvestimento(null);
     setSearchTerm("");
@@ -287,14 +216,14 @@ export default function CadastroInvestimentos() {
             </DialogHeader>
             
             <div className="grid gap-4 py-4">
-              {/* Busca de Ticker - Campo único melhorado */}
+              {/* Busca de Ticker */}
               <div className="grid gap-2">
-                <Label htmlFor="ticker-search">Código/Ticker *</Label>
+                <Label htmlFor="ticker-search">Buscar Ticker</Label>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="ticker-search"
-                    placeholder={formData.ticker || "Digite o ticker (ex: VALE3, PETR4)..."}
+                    placeholder="Digite o ticker (ex: VALE3, PETR4)..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-8"
@@ -303,27 +232,6 @@ export default function CadastroInvestimentos() {
                     <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin" />
                   )}
                 </div>
-                
-                {/* Ticker selecionado */}
-                {formData.ticker && (
-                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                    <div className="flex items-center justify-between">
-                      <span className="text-green-800 font-medium">Ticker selecionado: {formData.ticker}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setFormData(prev => ({ ...prev, ticker: "" }));
-                          setSearchTerm("");
-                        }}
-                        className="text-green-600 hover:text-green-700"
-                      >
-                        Alterar
-                      </Button>
-                    </div>
-                  </div>
-                )}
                 
                 {/* Resultados da busca */}
                 {tickerSearchResults.length > 0 && (
@@ -343,32 +251,40 @@ export default function CadastroInvestimentos() {
                 )}
               </div>
 
-              {/* Campos do formulário melhorados */}
+              {/* Campos do formulário */}
+              <div className="grid gap-2">
+                <Label htmlFor="ticker">Ticker *</Label>
+                <Input
+                  id="ticker"
+                  value={formData.ticker}
+                  onChange={(e) => setFormData(prev => ({ ...prev, ticker: e.target.value.toUpperCase() }))}
+                  placeholder="Ex: VALE3"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="quantidade">Quantidade *</Label>
                   <Input
                     id="quantidade"
-                    type="text"
+                    type="number"
+                    min="0"
+                    step="1"
                     value={formData.quantidade}
-                    onChange={(e) => {
-                      const formatted = formatQuantityInput(e.target.value);
-                      setFormData(prev => ({ ...prev, quantidade: formatted }));
-                    }}
+                    onChange={(e) => setFormData(prev => ({ ...prev, quantidade: Number(e.target.value) }))}
                     placeholder="100"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="valor_unitario">Valor Unitário (R$) *</Label>
+                  <Label htmlFor="valor_unitario">Valor Unitário *</Label>
                   <Input
                     id="valor_unitario"
-                    type="text"
+                    type="number"
+                    min="0"
+                    step="0.01"
                     value={formData.valor_unitario}
-                    onChange={(e) => {
-                      const formatted = formatInputCurrency(e.target.value);
-                      setFormData(prev => ({ ...prev, valor_unitario: formatted }));
-                    }}
-                    placeholder="25,50"
+                    onChange={(e) => setFormData(prev => ({ ...prev, valor_unitario: Number(e.target.value) }))}
+                    placeholder="25.50"
                   />
                 </div>
               </div>
@@ -380,9 +296,6 @@ export default function CadastroInvestimentos() {
                   type="date"
                   value={formData.data_compra}
                   onChange={(e) => setFormData(prev => ({ ...prev, data_compra: e.target.value }))}
-                  max={new Date().toISOString().split('T')[0]}
-                  min="1900-01-01"
-                  className="h-10"
                 />
               </div>
             </div>
@@ -417,8 +330,8 @@ export default function CadastroInvestimentos() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(
-                investimentos.reduce((acc, inv) => acc + toNumber(inv.valor_investido), 0)
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                investimentos.reduce((acc, inv) => acc + (inv.valor_investido || 0), 0)
               )}
             </div>
           </CardContent>
@@ -430,8 +343,8 @@ export default function CadastroInvestimentos() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(
-                investimentos.reduce((acc, inv) => acc + toNumber(inv.valor_atual), 0)
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                investimentos.reduce((acc, inv) => acc + (inv.valor_atual || 0), 0)
               )}
             </div>
           </CardContent>
@@ -476,24 +389,24 @@ export default function CadastroInvestimentos() {
                   investimentos.map((investimento) => (
                     <TableRow key={investimento.id}>
                       <TableCell className="font-medium">{investimento.ticker}</TableCell>
-                      <TableCell className="text-right">{toNumber(investimento.quantidade).toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="text-right">{investimento.quantidade.toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(investimento.preco_medio || investimento.valor_unitario)}
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(investimento.valor_unitario)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(investimento.valor_investido)}
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(investimento.valor_investido || 0)}
                       </TableCell>
                       <TableCell className="text-right">
                         {investimento.preco_atual ? 
-                          formatCurrency(investimento.preco_atual) : 
+                          new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(investimento.preco_atual) : 
                           'N/A'
                         }
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(investimento.valor_atual)}
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(investimento.valor_atual || 0)}
                       </TableCell>
-                      <TableCell className={`text-right ${toNumber(investimento.variacao_percentual) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatPercentage(investimento.variacao_percentual)}%
+                      <TableCell className={`text-right ${(investimento.variacao_percentual || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {(investimento.variacao_percentual || 0).toFixed(2)}%
                       </TableCell>
                       <TableCell>{new Date(investimento.data_compra).toLocaleDateString('pt-BR')}</TableCell>
                       <TableCell>

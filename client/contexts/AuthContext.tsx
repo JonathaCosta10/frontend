@@ -245,13 +245,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   ): Promise<boolean> => {
     try {
       setLoading(true);
-      console.log("🔐 Iniciando login via Rules:", {
+      console.log("🔐 Iniciando login:", {
         username,
-        password: "***",
+        backendUrl: BACKEND_URL,
       });
 
       // Usar Rules para login
       const success = await loginRules(username, password, "login");
+      console.log("📊 Resultado do login:", success);
 
       if (success) {
         // Verificar se dados foram armazenados
@@ -262,23 +263,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(userData);
           setIsAuthenticated(true);
           setLoading(false);
-          console.log(
-            "✅ Login via Rules bem-sucedido:",
-            userData.username || userData.email,
-          );
+          console.log("✅ Login bem-sucedido:", userData.username || userData.email);
           return true;
         } else {
-          console.error("❌ Dados não foram armazenados após login via Rules");
+          console.error("❌ Dados não foram armazenados após login");
           setLoading(false);
           return false;
         }
       } else {
-        console.error("❌ Login via Rules falhou");
+        console.error("❌ Login falhou");
         setLoading(false);
         return false;
       }
     } catch (error) {
-      console.error("❌ Erro de login via Rules:", error);
+      console.error("❌ Erro de login:", error);
       setLoading(false);
       return false;
     }

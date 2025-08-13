@@ -110,24 +110,50 @@ export class Rules {
    * @returns Resposta da API
    */
   async post(userData: RequestData): Promise<ApiResponse> {
+    console.log("🚀 Rules.post() iniciado com:", {
+      chave: userData.chave,
+      withAuth: userData.withAuth,
+      hasBody: !!userData.body
+    });
+
     const { endpoint, body, fullHeaders } = this.buildRequestParams(userData);
+    console.log("🏗️ Parâmetros construídos:", {
+      endpoint,
+      headers: Object.keys(fullHeaders),
+      bodyKeys: body ? Object.keys(body) : []
+    });
 
     // Consultar o arquivo específico em services/api/PublicPages/ ou PrivatePages/
+    console.log("📡 Obtendo serviço de API...");
     const apiService = await this.getApiService(
       userData.chave,
       userData.withAuth,
     );
 
+    console.log("🔧 Serviço obtido, fazendo requisição POST...");
     const response = await apiService.post(endpoint, body, fullHeaders);
+    console.log("📨 Resposta do serviço:", {
+      success: response.success,
+      status: response.status,
+      hasData: !!response.data
+    });
 
     // Processar resposta através do ResponseParms
-    return responseParms.processResponse({
+    const finalResponse = responseParms.processResponse({
       response,
       chave: userData.chave,
       method: "POST",
       endpoint,
       withAuth: userData.withAuth || false,
     });
+
+    console.log("🎯 Resposta final processada:", {
+      success: finalResponse.success,
+      status: finalResponse.status,
+      message: finalResponse.message
+    });
+
+    return finalResponse;
   }
 
   /**
@@ -224,7 +250,7 @@ export class Rules {
   }
 
   /**
-   * Obtém o serviço de API específico baseado na chave
+   * Obtém serviço de API específico ou genérico
    * @param chave - Chave da operação
    * @param withAuth - Se requer autenticação
    * @returns Serviço de API específico
@@ -249,7 +275,7 @@ export class Rules {
     try {
       console.log("📥 Tentando importar serviço...");
       // Importar dinamicamente o serviço específico
-      const module = await import(servicePath);
+      const module = await import(/* @vite-ignore */ servicePath);
       console.log("✅ Serviço importado com sucesso:", !!module);
       console.log("📦 Módulo tem default?", !!module.default);
       console.log("📦 Chaves do módulo:", Object.keys(module));
@@ -261,10 +287,14 @@ export class Rules {
     } catch (error) {
       console.error("❌ Erro ao importar serviço:", error);
       console.warn(
-        `Serviço específico não encontrado para ${chave}, usando serviço genérico`,
+        `⚠️ Serviço específico não encontrado para ${chave}, usando serviço genérico`,
       );
-      // Fallback para serviço genérico
-      return this.getGenericApiService();
+      
+      // Fallback GARANTIDO para serviço genérico
+      console.log("🔄 Iniciando fallback para serviço genérico...");
+      const genericService = this.getGenericApiService();
+      console.log("✅ Serviço genérico criado:", !!genericService);
+      return genericService;
     }
   }
 
@@ -361,16 +391,27 @@ export class Rules {
    * @returns Serviço genérico
    */
   private getGenericApiService() {
+    console.log("🔧 Criando serviço genérico...");
+    
     return {
       async post(
         endpoint: string,
         body: any,
         headers: HeaderModel,
       ): Promise<ApiResponse> {
+        console.log("📤 GenericService.post() chamado:", {
+          endpoint,
+          hasBody: !!body,
+          headerKeys: Object.keys(headers)
+        });
         return this.makeRequest("POST", endpoint, body, headers);
       },
 
       async get(endpoint: string, headers: HeaderModel): Promise<ApiResponse> {
+        console.log("📥 GenericService.get() chamado:", {
+          endpoint,
+          headerKeys: Object.keys(headers)
+        });
         return this.makeRequest("GET", endpoint, null, headers);
       },
 
@@ -379,6 +420,11 @@ export class Rules {
         body: any,
         headers: HeaderModel,
       ): Promise<ApiResponse> {
+        console.log("📝 GenericService.put() chamado:", {
+          endpoint,
+          hasBody: !!body,
+          headerKeys: Object.keys(headers)
+        });
         return this.makeRequest("PUT", endpoint, body, headers);
       },
 
@@ -386,6 +432,10 @@ export class Rules {
         endpoint: string,
         headers: HeaderModel,
       ): Promise<ApiResponse> {
+        console.log("🗑️ GenericService.delete() chamado:", {
+          endpoint,
+          headerKeys: Object.keys(headers)
+        });
         return this.makeRequest("DELETE", endpoint, null, headers);
       },
 
@@ -396,6 +446,13 @@ export class Rules {
         headers: HeaderModel,
       ): Promise<ApiResponse> {
         try {
+          console.log("🌐 GenericService.makeRequest() iniciado:", {
+            method,
+            endpoint,
+            hasBody: !!body,
+            headerKeys: Object.keys(headers)
+          });
+
           const config: RequestInit = {
             method,
             headers,
@@ -403,24 +460,45 @@ export class Rules {
 
           if (body && method !== "GET") {
             config.body = JSON.stringify(body);
+            console.log("📦 Body stringificado:", typeof config.body);
           }
 
+          console.log("📡 Fazendo fetch...");
           const response = await fetch(endpoint, config);
-          const data = await response.json().catch(() => ({}));
+          console.log("📨 Fetch concluído:", {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok
+          });
 
-          return {
+          const data = await response.json().catch((jsonError) => {
+            console.warn("⚠️ Erro ao parsear JSON:", jsonError);
+            return {};
+          });
+          console.log("📋 Dados parseados:", {
+            hasData: !!data,
+            dataKeys: data ? Object.keys(data) : []
+          });
+
+          const result = {
             success: Rules.getInstance().isSuccessStatus(response.status),
             data,
             status: response.status,
             message: data.message || data.detail,
           };
+
+          console.log("✅ GenericService.makeRequest() resultado:", result);
+          return result;
         } catch (error) {
-          return {
+          console.error("❌ GenericService.makeRequest() erro:", error);
+          const errorResult = {
             success: false,
             status: 0,
             error,
             message: "Network error",
           };
+          console.log("💥 GenericService.makeRequest() erro resultado:", errorResult);
+          return errorResult;
         }
       },
     };
@@ -475,13 +553,33 @@ export const login = async (
   password: string,
   chave: string = "login",
 ): Promise<boolean> => {
-  const response = await rulesInstance.post({
+  console.log("🔐 Rules.login() chamado:", {
+    username,
+    password: "***",
     chave,
-    body: { username, password },
-    withAuth: false,
+    timestamp: new Date().toISOString()
   });
 
-  return response.success;
+  try {
+    const response = await rulesInstance.post({
+      chave,
+      body: { username, password },
+      withAuth: false,
+    });
+
+    console.log("📊 Rules.login() - Resposta do rulesInstance.post:", {
+      success: response.success,
+      status: response.status,
+      message: response.message,
+      hasData: !!response.data,
+      dataKeys: response.data ? Object.keys(response.data) : []
+    });
+
+    return response.success;
+  } catch (error) {
+    console.error("❌ Rules.login() - Erro capturado:", error);
+    return false;
+  }
 };
 
 export const register = async (

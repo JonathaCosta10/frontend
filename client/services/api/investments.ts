@@ -13,6 +13,24 @@ export interface AlocacaoTipo {
   "Renda Fixa": number;
 }
 
+// Nova interface para o formato da API
+export interface AlocacaoTipoItem {
+  tipo: string;
+  valor_atual: number;
+  percentual_alocacao: number;
+  quantidade_ativos: number;
+}
+
+export interface AlocacaoTipoResponse {
+  total_carteira: number;
+  alocacao_por_tipo: AlocacaoTipoItem[];
+  resumo: {
+    tipos_diferentes: number;
+    maior_alocacao: AlocacaoTipoItem;
+    menor_alocacao: AlocacaoTipoItem;
+  };
+}
+
 export interface SetorAcao {
   ticker: string;
   valor_total: number;
@@ -23,6 +41,46 @@ export interface SetorInfo {
   valor_total_setor: number;
   percentual_do_total: number;
   acoes: SetorAcao[];
+}
+
+// Novas interfaces para o formato atual da API
+export interface AtivoSetor {
+  ticker: string;
+  nome_empresarial: string;
+  quantidade: string;
+  preco_atual: number;
+  valor_atual: number;
+  valor_investido: number;
+}
+
+export interface SetorData {
+  setor: string;
+  valor_total: number;
+  percentual_alocacao: number;
+  quantidade_ativos: number;
+  ativos: AtivoSetor[];
+}
+
+export interface SetorResponse {
+  success: boolean;
+  message: string;
+  data: {
+    tipo_analise: string;
+    total_ativos: number;
+    valor_total: number;
+    setores: SetorData[];
+    resumo: {
+      quantidade_setores: number;
+      maior_concentracao: {
+        setor: string;
+        percentual: number;
+      };
+      menor_concentracao: {
+        setor: string;
+        percentual: number;
+      };
+    };
+  };
 }
 
 export interface DividendoMes {
@@ -45,7 +103,7 @@ export interface DividendosResponse {
 
 class InvestmentApiService {
   // API para alocação por tipo
-  async getAlocacaoTipo(): Promise<{ porcentagem_alocacao: AlocacaoTipo }> {
+  async getAlocacaoTipo(): Promise<AlocacaoTipoResponse | { porcentagem_alocacao: AlocacaoTipo }> {
     try {
       secureLog("[INVESTMENTS] Fetching alocacao tipo");
       const response = await api.get("/api/alocacao_tipo");
@@ -72,7 +130,7 @@ class InvestmentApiService {
   }
 
   // API para setores
-  async getSetores(tipo: string = "Acoes"): Promise<{ setores: SetorInfo[] }> {
+  async getSetores(tipo: string = "Acoes"): Promise<SetorResponse | { setores: SetorInfo[] }> {
     try {
       secureLog("[INVESTMENTS] Fetching setores", { tipo });
       const response = await api.get(`/api/setores?tipo=${tipo}`);

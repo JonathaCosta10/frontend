@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui
 // Novo import do serviço infoDailyApi
 import { infoDailyApi } from "../../../services/api/infoDaily";
 import { useProfileVerification } from "../../../hooks/useProfileVerification";
+import DailyInfoPremiumGuard from "../../../components/DailyInfoPremiumGuard";
 import ReactCountryFlag from "react-country-flag";
 
 // Componente otimizado para lazy loading de imagens
@@ -872,20 +873,21 @@ const fetchMarketInsights = useCallback(async () => {
       </div>
 
       {/* Insights de Mercado - Versão Reescrita */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
-            <div className="flex items-center space-x-2">
-              <Activity className="h-5 w-5" />
-              <CardTitle>
-                {marketInsightsData?.titulo || "Insights de Mercado"}
-              </CardTitle>
-              {marketInsightsData?.ultima_atualizacao && (
-                <span className="text-sm text-muted-foreground ml-2">
-                  • {marketInsightsData.ultima_atualizacao}
-                </span>
-              )}
-            </div>
+      <DailyInfoPremiumGuard feature="market_insights">
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+              <div className="flex items-center space-x-2">
+                <Activity className="h-5 w-5" />
+                <CardTitle>
+                  {marketInsightsData?.titulo || "Insights de Mercado"}
+                </CardTitle>
+                {marketInsightsData?.ultima_atualizacao && (
+                  <span className="text-sm text-muted-foreground ml-2">
+                    • {marketInsightsData.ultima_atualizacao}
+                  </span>
+                )}
+              </div>
             <div className="flex flex-wrap items-center gap-2">
               {/* Tabs para Período */}
               <Tabs 
@@ -1090,14 +1092,16 @@ const fetchMarketInsights = useCallback(async () => {
           )}
         </CardContent>
       </Card>
+      </DailyInfoPremiumGuard>
 
       {/* Influencers e Consultores */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Users className="h-5 w-5" />
-            <span>Especialistas</span>
-          </CardTitle>
+      <DailyInfoPremiumGuard feature="specialists">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Users className="h-5 w-5" />
+              <span>Especialistas</span>
+            </CardTitle>
         </CardHeader>
         <CardContent>
           {!isPremium ? (
@@ -1215,6 +1219,7 @@ const fetchMarketInsights = useCallback(async () => {
           )}
         </CardContent>
       </Card>
+      </DailyInfoPremiumGuard>
     </div>
   );
 }

@@ -1,22 +1,11 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
 # Dependencies
-node_modules
-.npm
-.yarn
+node_modules/
+.pnp
+.pnp.js
 
-# Build outputs
-dist
-dist-ssr
-*.local
-*.tsbuildinfo
+# Production build
+/dist
+/build
 
 # Environment variables
 .env
@@ -25,10 +14,12 @@ dist-ssr
 .env.test.local
 .env.production.local
 
-# Cache directories
-.cache/
-.vite/
-.rollup.cache/
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Editor directories and files
 .vscode/*
@@ -41,31 +32,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Temporary files
-*.tmp
-*backup*
-*_backup*
-*_new*
-*_broken*
-*_old*
+# Cache
+.cache/
+.parcel-cache/
 
-# Documentation temp files
-STATUS_*.md
-PREMIUM_*.md
-BUILD_FIXES*.md
-
-# Test files
-*.test.ts
-*.test.tsx
-*.spec.ts
-*.spec.tsx
-
-# Examples
-examples/
-*example*
-
-# OS
-Thumbs.db
-
-.config/
-!.env
+# Netlify
+.netlify/

@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/contexts/TranslationContext";
+import MarketPremiumGuard from "@/components/MarketPremiumGuard";
 import { EconomicIndicatorsApiService } from "@/services/api/entities/economicIndicatorsApi";
 import {
   EconomicIndicator,
@@ -231,7 +232,8 @@ export default function IndicadoresEconomicos() {
   };
 
   return (
-    <div className="space-y-6">
+    <MarketPremiumGuard marketFeature="financial-calculator">
+      <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold flex items-center space-x-2">
@@ -594,5 +596,6 @@ export default function IndicadoresEconomicos() {
         </TabsContent>
       </Tabs>
     </div>
+    </MarketPremiumGuard>
   );
 }

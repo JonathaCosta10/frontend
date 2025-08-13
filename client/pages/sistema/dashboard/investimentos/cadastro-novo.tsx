@@ -1,77 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Plus, Edit, Trash2, TrendingUp, TrendingDown, DollarSign, Percent, Search, AlertCircle, CheckCircle, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 // Import do serviço de investimentos
 import investmentService, { InvestmentAsset, TickerSearchResult } from "@/services/investmentService";
 
-// Interface conforme documentação do backend
+// Interface atualizada sem o campo corretora
 interface Investimento extends InvestmentAsset {}
 
-// Funções helper para converter valores da API
-const toNumber = (value: string | number | undefined | null): number => {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') return parseFloat(value) || 0;
-  return 0;
-};
-
-const formatCurrency = (value: string | number | undefined | null): string => {
-  const numValue = toNumber(value);
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numValue);
-};
-
-const formatPercentage = (value: string | number | undefined | null): string => {
-  const numValue = toNumber(value);
-  return numValue.toFixed(2);
-};
-
-// Funções para formatação de entrada de valores
-const formatInputCurrency = (value: string): string => {
-  // Remove tudo que não é dígito
-  const numbers = value.replace(/[^\d]/g, '');
-  
-  // Se vazio, retorna vazio
-  if (!numbers) return '';
-  
-  // Remove zeros à esquerda
-  const withoutLeadingZeros = numbers.replace(/^0+/, '');
-  if (!withoutLeadingZeros) return '';
-  
-  // Converte para número
-  const numValue = parseFloat(withoutLeadingZeros) / 100;
-  
-  // Formata como moeda brasileira sem o símbolo R$
-  return numValue.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-};
-
-const parseCurrencyInput = (value: string): number => {
-  if (!value) return 0;
-  // Remove formatação e converte para número
-  const cleanValue = value.replace(/[.\s]/g, '').replace(',', '.');
-  return parseFloat(cleanValue) || 0;
-};
-
-const formatQuantityInput = (value: string): string => {
-  // Remove tudo que não é dígito
-  const numbers = value.replace(/[^\d]/g, '');
-  
-  // Se vazio, retorna vazio
-  if (!numbers) return '';
-  
-  // Remove zeros à esquerda, mas mantém pelo menos um dígito
-  const withoutLeadingZeros = numbers.replace(/^0+/, '');
-  return withoutLeadingZeros || '0';
-};
+// Cores para os gráficos
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
 export default function CadastroInvestimentos() {
   const { toast } = useToast();
@@ -86,16 +37,14 @@ export default function CadastroInvestimentos() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInvestimento, setEditingInvestimento] = useState<Investimento | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [formData, setFormData] = useState<{
-    ticker: string;
-    data_compra: string;
-    quantidade: string; // Mudado para string para melhor controle
-    valor_unitario: string; // Mudado para string para formatação
-  }>({
+  const [formData, setFormData] = useState<Omit<Investimento, 'id' | 'valor_total' | 'rentabilidade' | 'percentage'>>({
     ticker: "",
+    nome_empresa: "",
+    tipo: "",
+    quantidade: 0,
+    preco_medio: 0,
     data_compra: "",
-    quantidade: "",
-    valor_unitario: "",
+    observacoes: "",
   });
 
   // Carregar investimentos ao montar o componente
@@ -148,6 +97,8 @@ export default function CadastroInvestimentos() {
     setFormData(prev => ({
       ...prev,
       ticker: ticker.ticker,
+      nome_empresa: ticker.name,
+      tipo: ticker.type,
     }));
     setSearchTerm("");
     setTickerSearchResults([]);
@@ -156,7 +107,7 @@ export default function CadastroInvestimentos() {
   // Função para salvar investimento (criar ou editar)
   const salvarInvestimento = async () => {
     try {
-      if (!formData.ticker || !formData.quantidade || !formData.valor_unitario || !formData.data_compra) {
+      if (!formData.ticker || !formData.nome_empresa || !formData.tipo || !formData.quantidade || !formData.preco_medio || !formData.data_compra) {
         toast({
           title: "Dados incompletos",
           description: "Por favor, preencha todos os campos obrigatórios.",
@@ -167,17 +118,9 @@ export default function CadastroInvestimentos() {
 
       setLoading(true);
 
-      // Converter dados do form para o formato da API
-      const dataToSend = {
-        ticker: formData.ticker,
-        quantidade: parseInt(formData.quantidade) || 0,
-        valor_unitario: parseCurrencyInput(formData.valor_unitario),
-        data_compra: formData.data_compra,
-      };
-
       if (editingInvestimento) {
         // Editar investimento existente
-        await investmentService.editarAtivo(editingInvestimento.id!, dataToSend);
+        await investmentService.editarAtivo(editingInvestimento.id!, formData);
         toast({
           title: "Investimento atualizado",
           description: "O investimento foi atualizado com sucesso.",
@@ -185,7 +128,7 @@ export default function CadastroInvestimentos() {
         });
       } else {
         // Criar novo investimento
-        await investmentService.cadastrarAtivo(dataToSend);
+        await investmentService.cadastrarAtivo(formData);
         toast({
           title: "Investimento cadastrado",
           description: "O investimento foi cadastrado com sucesso.",
@@ -236,9 +179,12 @@ export default function CadastroInvestimentos() {
     setEditingInvestimento(investimento);
     setFormData({
       ticker: investimento.ticker,
-      quantidade: toNumber(investimento.quantidade).toString(),
-      valor_unitario: formatInputCurrency((toNumber(investimento.preco_medio || investimento.valor_unitario) * 100).toString()),
+      nome_empresa: investimento.nome_empresa,
+      tipo: investimento.tipo,
+      quantidade: investimento.quantidade,
+      preco_medio: investimento.preco_medio,
       data_compra: investimento.data_compra,
+      observacoes: investimento.observacoes || "",
     });
     setIsDialogOpen(true);
   };
@@ -247,14 +193,74 @@ export default function CadastroInvestimentos() {
   const resetForm = () => {
     setFormData({
       ticker: "",
+      nome_empresa: "",
+      tipo: "",
+      quantidade: 0,
+      preco_medio: 0,
       data_compra: "",
-      quantidade: "",
-      valor_unitario: "",
+      observacoes: "",
     });
     setEditingInvestimento(null);
     setSearchTerm("");
     setTickerSearchResults([]);
   };
+
+  // Cálculos para métricas e gráficos
+  const metricas = useMemo(() => {
+    if (investimentos.length === 0) return {
+      valorTotal: 0,
+      rentabilidadeTotal: 0,
+      quantidadeAtivos: 0,
+      melhorAtivo: null,
+      piorAtivo: null
+    };
+
+    const valorTotal = investimentos.reduce((acc, inv) => acc + (inv.valor_total || 0), 0);
+    const rentabilidadeTotal = investimentos.reduce((acc, inv) => acc + (inv.rentabilidade || 0), 0) / investimentos.length;
+    
+    const melhorAtivo = investimentos.reduce((melhor, atual) => 
+      (atual.rentabilidade || 0) > (melhor.rentabilidade || 0) ? atual : melhor
+    );
+    
+    const piorAtivo = investimentos.reduce((pior, atual) => 
+      (atual.rentabilidade || 0) < (pior.rentabilidade || 0) ? atual : pior
+    );
+
+    return {
+      valorTotal,
+      rentabilidadeTotal,
+      quantidadeAtivos: investimentos.length,
+      melhorAtivo,
+      piorAtivo
+    };
+  }, [investimentos]);
+
+  // Dados para gráfico de pizza (distribuição por tipo)
+  const dadosGraficoPizza = useMemo(() => {
+    const distribuicaoPorTipo = investimentos.reduce((acc, inv) => {
+      const tipo = inv.tipo || 'Outros';
+      acc[tipo] = (acc[tipo] || 0) + (inv.valor_total || 0);
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(distribuicaoPorTipo).map(([tipo, valor]) => ({
+      name: tipo,
+      value: valor,
+      percentage: (valor / metricas.valorTotal * 100).toFixed(1)
+    }));
+  }, [investimentos, metricas.valorTotal]);
+
+  // Dados para gráfico de barras (top 10 ativos)
+  const dadosGraficoBarras = useMemo(() => {
+    return investimentos
+      .sort((a, b) => (b.valor_total || 0) - (a.valor_total || 0))
+      .slice(0, 10)
+      .map(inv => ({
+        ticker: inv.ticker,
+        valor: inv.valor_total || 0,
+        rentabilidade: inv.rentabilidade || 0
+      }));
+  }, [investimentos]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -263,7 +269,7 @@ export default function CadastroInvestimentos() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestão de Investimentos</h1>
           <p className="text-muted-foreground">
-            Gerencie sua carteira de investimentos conforme API integrada
+            Gerencie sua carteira de investimentos e acompanhe performance
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -287,14 +293,14 @@ export default function CadastroInvestimentos() {
             </DialogHeader>
             
             <div className="grid gap-4 py-4">
-              {/* Busca de Ticker - Campo único melhorado */}
+              {/* Busca de Ticker */}
               <div className="grid gap-2">
-                <Label htmlFor="ticker-search">Código/Ticker *</Label>
+                <Label htmlFor="ticker-search">Buscar Ticker</Label>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="ticker-search"
-                    placeholder={formData.ticker || "Digite o ticker (ex: VALE3, PETR4)..."}
+                    placeholder="Digite o ticker (ex: VALE3, PETR4)..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-8"
@@ -303,27 +309,6 @@ export default function CadastroInvestimentos() {
                     <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin" />
                   )}
                 </div>
-                
-                {/* Ticker selecionado */}
-                {formData.ticker && (
-                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                    <div className="flex items-center justify-between">
-                      <span className="text-green-800 font-medium">Ticker selecionado: {formData.ticker}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setFormData(prev => ({ ...prev, ticker: "" }));
-                          setSearchTerm("");
-                        }}
-                        className="text-green-600 hover:text-green-700"
-                      >
-                        Alterar
-                      </Button>
-                    </div>
-                  </div>
-                )}
                 
                 {/* Resultados da busca */}
                 {tickerSearchResults.length > 0 && (
@@ -335,40 +320,75 @@ export default function CadastroInvestimentos() {
                         onClick={() => selecionarTicker(result)}
                       >
                         <div className="font-medium">{result.ticker}</div>
-                        <div className="text-sm text-muted-foreground">{result.descricao}</div>
-                        <Badge variant="outline" className="text-xs">{result.tipo_ativo}</Badge>
+                        <div className="text-sm text-muted-foreground">{result.name}</div>
+                        <Badge variant="outline" className="text-xs">{result.type}</Badge>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Campos do formulário melhorados */}
+              {/* Campos do formulário */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="ticker">Ticker *</Label>
+                  <Input
+                    id="ticker"
+                    value={formData.ticker}
+                    onChange={(e) => setFormData(prev => ({ ...prev, ticker: e.target.value.toUpperCase() }))}
+                    placeholder="Ex: VALE3"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="tipo">Tipo *</Label>
+                  <Select value={formData.tipo} onValueChange={(value) => setFormData(prev => ({ ...prev, tipo: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Ação">Ação</SelectItem>
+                      <SelectItem value="FII">FII</SelectItem>
+                      <SelectItem value="ETF">ETF</SelectItem>
+                      <SelectItem value="BDR">BDR</SelectItem>
+                      <SelectItem value="Cripto">Cripto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="nome_empresa">Nome da Empresa *</Label>
+                <Input
+                  id="nome_empresa"
+                  value={formData.nome_empresa}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nome_empresa: e.target.value }))}
+                  placeholder="Ex: Vale S.A."
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="quantidade">Quantidade *</Label>
                   <Input
                     id="quantidade"
-                    type="text"
+                    type="number"
+                    min="0"
+                    step="1"
                     value={formData.quantidade}
-                    onChange={(e) => {
-                      const formatted = formatQuantityInput(e.target.value);
-                      setFormData(prev => ({ ...prev, quantidade: formatted }));
-                    }}
+                    onChange={(e) => setFormData(prev => ({ ...prev, quantidade: Number(e.target.value) }))}
                     placeholder="100"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="valor_unitario">Valor Unitário (R$) *</Label>
+                  <Label htmlFor="preco_medio">Preço Médio *</Label>
                   <Input
-                    id="valor_unitario"
-                    type="text"
-                    value={formData.valor_unitario}
-                    onChange={(e) => {
-                      const formatted = formatInputCurrency(e.target.value);
-                      setFormData(prev => ({ ...prev, valor_unitario: formatted }));
-                    }}
-                    placeholder="25,50"
+                    id="preco_medio"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.preco_medio}
+                    onChange={(e) => setFormData(prev => ({ ...prev, preco_medio: Number(e.target.value) }))}
+                    placeholder="25.50"
                   />
                 </div>
               </div>
@@ -380,9 +400,16 @@ export default function CadastroInvestimentos() {
                   type="date"
                   value={formData.data_compra}
                   onChange={(e) => setFormData(prev => ({ ...prev, data_compra: e.target.value }))}
-                  max={new Date().toISOString().split('T')[0]}
-                  min="1900-01-01"
-                  className="h-10"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="observacoes">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={formData.observacoes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                  placeholder="Observações adicionais sobre o investimento..."
                 />
               </div>
             </div>
@@ -401,39 +428,114 @@ export default function CadastroInvestimentos() {
       </div>
 
       {/* Métricas principais */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metricas.valorTotal)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Rentabilidade Média</CardTitle>
+            <Percent className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${metricas.rentabilidadeTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {metricas.rentabilidadeTotal.toFixed(2)}%
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Ativos</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{investimentos.length}</div>
+            <div className="text-2xl font-bold">{metricas.quantidadeAtivos}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Melhor Ativo</CardTitle>
+            {metricas.melhorAtivo && (metricas.melhorAtivo.rentabilidade || 0) >= 0 ? (
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm font-bold">
+              {metricas.melhorAtivo ? metricas.melhorAtivo.ticker : 'N/A'}
+            </div>
+            <div className={`text-xs ${metricas.melhorAtivo && (metricas.melhorAtivo.rentabilidade || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {metricas.melhorAtivo ? `${(metricas.melhorAtivo.rentabilidade || 0).toFixed(2)}%` : '0%'}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Gráficos */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribuição por Tipo</CardTitle>
+            <CardDescription>Alocação da carteira por categoria de investimento</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={dadosGraficoPizza}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percentage }) => `${name} (${percentage}%)`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {dadosGraficoPizza.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))} />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Valor Total Investido</CardTitle>
+            <CardTitle>Top 10 Ativos</CardTitle>
+            <CardDescription>Maiores posições por valor investido</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(
-                investimentos.reduce((acc, inv) => acc + toNumber(inv.valor_investido), 0)
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Valor Atual</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(
-                investimentos.reduce((acc, inv) => acc + toNumber(inv.valor_atual), 0)
-              )}
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={dadosGraficoBarras}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="ticker" />
+                <YAxis tickFormatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact' }).format(value)} />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    name === 'valor' 
+                      ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))
+                      : `${Number(value).toFixed(2)}%`,
+                    name === 'valor' ? 'Valor Investido' : 'Rentabilidade'
+                  ]}
+                />
+                <Legend />
+                <Bar dataKey="valor" fill="#8884d8" name="valor" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
@@ -455,12 +557,12 @@ export default function CadastroInvestimentos() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ticker</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead className="text-right">Quantidade</TableHead>
-                  <TableHead className="text-right">Valor Unitário</TableHead>
-                  <TableHead className="text-right">Valor Investido</TableHead>
-                  <TableHead className="text-right">Preço Atual</TableHead>
-                  <TableHead className="text-right">Valor Atual</TableHead>
-                  <TableHead className="text-right">Variação %</TableHead>
+                  <TableHead className="text-right">Preço Médio</TableHead>
+                  <TableHead className="text-right">Valor Total</TableHead>
+                  <TableHead className="text-right">Rentabilidade</TableHead>
                   <TableHead>Data Compra</TableHead>
                   <TableHead className="text-center">Ações</TableHead>
                 </TableRow>
@@ -476,24 +578,19 @@ export default function CadastroInvestimentos() {
                   investimentos.map((investimento) => (
                     <TableRow key={investimento.id}>
                       <TableCell className="font-medium">{investimento.ticker}</TableCell>
-                      <TableCell className="text-right">{toNumber(investimento.quantidade).toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{investimento.nome_empresa}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{investimento.tipo}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{investimento.quantidade.toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(investimento.preco_medio || investimento.valor_unitario)}
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(investimento.preco_medio)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(investimento.valor_investido)}
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(investimento.valor_total || 0)}
                       </TableCell>
-                      <TableCell className="text-right">
-                        {investimento.preco_atual ? 
-                          formatCurrency(investimento.preco_atual) : 
-                          'N/A'
-                        }
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(investimento.valor_atual)}
-                      </TableCell>
-                      <TableCell className={`text-right ${toNumber(investimento.variacao_percentual) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatPercentage(investimento.variacao_percentual)}%
+                      <TableCell className={`text-right ${(investimento.rentabilidade || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {(investimento.rentabilidade || 0).toFixed(2)}%
                       </TableCell>
                       <TableCell>{new Date(investimento.data_compra).toLocaleDateString('pt-BR')}</TableCell>
                       <TableCell>

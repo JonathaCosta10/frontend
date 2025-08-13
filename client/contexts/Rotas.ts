@@ -93,6 +93,14 @@ export const INVESTMENT_ROUTES = {
   // Reports
   reports: "/api/investments/reports/",
   exportData: "/api/investments/export/",
+
+  // Investimentos Pessoais - NOVAS APIs (URLs corrigidas conforme backend)
+  buscarTickers: "/api/investimentos/buscar-tickers/",
+  ativosPessoais: "/api/investimentos/ativos-pessoais/",
+  cadastrarAtivo: "/api/investimentos/ativos-pessoais/",
+  editarAtivo: "/api/investimentos/ativos-pessoais/",
+  excluirAtivo: "/api/investimentos/ativos-pessoais/deletar/",
+  resumoCarteira: "/api/investimentos/resumo-carteira/",
 };
 
 // Rotas de Market (Públicas)
@@ -209,6 +217,14 @@ export const ROUTES_MAP: Record<string, string> = {
   alocacaoTipo: INVESTMENT_ROUTES.alocacao_tipo,
   setores: INVESTMENT_ROUTES.setores,
   dividendosFii: INVESTMENT_ROUTES.dividendos_fii,
+
+  // Investimentos Pessoais - NOVAS APIs
+  buscarTickers: INVESTMENT_ROUTES.buscarTickers,
+  ativosPessoais: INVESTMENT_ROUTES.ativosPessoais,
+  cadastrarAtivo: INVESTMENT_ROUTES.cadastrarAtivo,
+  editarAtivo: INVESTMENT_ROUTES.editarAtivo,
+  excluirAtivo: INVESTMENT_ROUTES.excluirAtivo,
+  resumoCarteira: INVESTMENT_ROUTES.resumoCarteira,
 
   // Market
   market: MARKET_ROUTES.marketData,

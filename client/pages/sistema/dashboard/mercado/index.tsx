@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
+import MarketPremiumGuard from "@/components/MarketPremiumGuard";
 
 interface FinancialData {
   ticker: string;
@@ -146,7 +147,8 @@ export default function FIIMarket() {
   };
 
   return (
-    <div className="space-y-8">
+    <MarketPremiumGuard marketFeature="ticker-analysis">
+      <div className="space-y-8">
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[t("biggest"), t("popular"), t("new")].map((title) => (
@@ -254,5 +256,6 @@ export default function FIIMarket() {
         </CardContent>
       </Card>
     </div>
+    </MarketPremiumGuard>
   );
 }

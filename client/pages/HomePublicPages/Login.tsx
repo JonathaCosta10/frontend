@@ -44,11 +44,11 @@ export default function Login() {
 
   const onSubmit = async (data: LoginForm) => {
     setIsSubmitting(true);
-    console.log("Login: Iniciando processo de login...");
+    console.log("🚀 Login iniciado");
 
     try {
       const success = await login(data.username, data.password);
-      console.log("Login: Resultado do login:", success);
+      console.log("📊 Resultado do login:", success);
 
       if (success) {
         // Redireciona para a página que o usuário tentou acessar ou para o dashboard
@@ -58,24 +58,21 @@ export default function Login() {
           location.state?.from?.pathname ||
           "/dashboard/orcamento";
 
-        console.log(
-          "Login: Login bem-sucedido, redirecionando para:",
-          redirectTo,
-        );
+        console.log("➡️ Redirecionando para:", redirectTo);
 
         // Pequeno delay para garantir que o estado de autenticação seja propagado
         setTimeout(() => {
           navigate(redirectTo, { replace: true });
         }, 100);
       } else {
-        console.log("Login: Login falhado, exibindo erro");
+        console.log("❌ Login falhado");
         setError("password", {
           type: "manual",
           message: t("incorrect_email_password"),
         });
       }
     } catch (error) {
-      console.error("Login: Erro durante login:", error);
+      console.error("💥 Erro durante login:", error);
       setError("password", {
         type: "manual",
         message: t("login_error_retry"),

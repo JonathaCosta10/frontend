@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -8,19 +8,45 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, PieChart, TrendingUp } from "lucide-react";
+import { BarChart3, PieChart, TrendingUp, Loader2 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import GraficoAlocacaoTipo from "@/components/charts/GraficoAlocacaoTipo";
 import GraficoSetorialAcao from "@/components/charts/GraficoSetorialAcao";
 import GraficoDividendosFII from "@/components/charts/GraficoDividendosFII";
+import InvestmentDividendPremiumGuard from "@/components/InvestmentDividendPremiumGuard";
+import { investmentsApi } from '@/services/api/investments';
+import type { AlocacaoTipoResponse } from '@/services/api/investments';
 
 export default function Investimentos() {
   const { t, formatCurrency } = useTranslation();
   const [tipoSelecionado, setTipoSelecionado] = useState("Acoes");
+  const [alocacaoData, setAlocacaoData] = useState<AlocacaoTipoResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Obter mês e ano do localStorage para os gráficos de dividendos
   const mes = localStorage.getItem("mes") || String(new Date().getMonth() + 1).padStart(2, "0");
   const ano = localStorage.getItem("ano") || String(new Date().getFullYear());
+
+  // Carregar dados da API
+  useEffect(() => {
+    const carregarDados = async () => {
+      try {
+        setLoading(true);
+        const data = await investmentsApi.getAlocacaoTipo();
+        
+        // Verificar se é o novo formato
+        if ('alocacao_por_tipo' in data) {
+          setAlocacaoData(data as AlocacaoTipoResponse);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados de alocação:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarDados();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -45,10 +71,48 @@ export default function Investimentos() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(125430)}</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-success">+2.1%</span> {t('vs_previous_month')}
-            </p>
+            {loading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">Carregando...</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {alocacaoData ? formatCurrency(alocacaoData.total_carteira) : formatCurrency(0)}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-success">+2.1%</span> {t('vs_previous_month')}
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t('diversification')}</CardTitle>
+            <PieChart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">Carregando...</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {alocacaoData ? `${alocacaoData.resumo.tipos_diferentes} tipos` : "0 tipos"}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {alocacaoData?.resumo.maior_alocacao ? 
+                    `${alocacaoData.resumo.maior_alocacao.tipo}: ${alocacaoData.resumo.maior_alocacao.percentual_alocacao.toFixed(1)}%` : 
+                    "Nenhum investimento"
+                  }
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -65,31 +129,20 @@ export default function Investimentos() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('dividends')}</CardTitle>
-            <PieChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(2830)}</div>
-            <p className="text-xs text-muted-foreground">
-              {t('received_month')}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('diversification')}</CardTitle>
-            <PieChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">85%</div>
-            <p className="text-xs text-muted-foreground">
-              {t('diversification_score')}
-            </p>
-          </CardContent>
-        </Card>
+        <InvestmentDividendPremiumGuard feature="dividends_card">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t('dividends')}</CardTitle>
+              <PieChart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(2830)}</div>
+              <p className="text-xs text-muted-foreground">
+                {t('received_month')}
+              </p>
+            </CardContent>
+          </Card>
+        </InvestmentDividendPremiumGuard>
       </div>
 
       {/* Gráficos principais */}
@@ -140,31 +193,33 @@ export default function Investimentos() {
       </div>
 
       {/* Histórico de Dividendos */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5" />
-                <span>{t('dividend_history')} - {tipoSelecionado}</span>
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {t('dividend_evolution_over_time')}
-              </p>
+      <InvestmentDividendPremiumGuard feature="dividends_history">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center space-x-2">
+                  <TrendingUp className="h-5 w-5" />
+                  <span>{t('dividend_history')} - {tipoSelecionado}</span>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {t('dividend_evolution_over_time')}
+                </p>
+              </div>
+              <Badge variant="secondary">
+                {mes}/{ano}
+              </Badge>
             </div>
-            <Badge variant="secondary">
-              {mes}/{ano}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <GraficoDividendosFII
-            mes={mes}
-            ano={ano}
-            tipoSelecionado={tipoSelecionado}
-          />
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <GraficoDividendosFII
+              mes={mes}
+              ano={ano}
+              tipoSelecionado={tipoSelecionado}
+            />
+          </CardContent>
+        </Card>
+      </InvestmentDividendPremiumGuard>
 
       {/* Insights e Recomendações */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -196,11 +251,13 @@ export default function Investimentos() {
             <CardTitle>{t('next_steps')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="p-3 border-l-4 border-l-primary bg-primary/5 rounded-r-lg">
-              <p className="text-sm">
-                <strong>{t('leverage_dividends')}:</strong> {t('received_this_month_consider_reinvest', { amount: formatCurrency(2830) })}
-              </p>
-            </div>
+            <InvestmentDividendPremiumGuard feature="dividends_insights">
+              <div className="p-3 border-l-4 border-l-primary bg-primary/5 rounded-r-lg">
+                <p className="text-sm">
+                  <strong>{t('leverage_dividends')}:</strong> {t('received_this_month_consider_reinvest', { amount: formatCurrency(2830) })}
+                </p>
+              </div>
+            </InvestmentDividendPremiumGuard>
             <div className="p-3 border-l-4 border-l-purple-500 bg-purple-50 dark:bg-purple-950 rounded-r-lg">
               <p className="text-sm">
                 <strong>{t('explore_new_sectors')}:</strong> {t('portfolio_concentrated_diversify')}
