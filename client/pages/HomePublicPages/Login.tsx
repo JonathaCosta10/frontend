@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import OAuthService from "@/services/oauth";
+import EnvironmentDebugger from "@/components/EnvironmentDebugger";
 
 interface LoginForm {
   username: string; // email ou usuário
@@ -317,6 +318,7 @@ export default function Login() {
           </Card>
         </div>
       </main>
+      <EnvironmentDebugger />
     </div>
   );
 }
