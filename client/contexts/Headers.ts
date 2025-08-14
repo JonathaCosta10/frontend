@@ -13,6 +13,7 @@ export interface HeaderModel {
 const BASE_HEADERS: HeaderModel = {
   "Content-Type": "application/json",
   "X-API-Key": getApiKey(), // Sempre incluir por padrão
+  "X-Client-Version": "1.0.0",
 };
 
 // Headers para páginas públicas (sem autenticação)

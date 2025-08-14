@@ -101,7 +101,9 @@ export const shouldIncludeApiKey = (
  * @returns string - API_KEY atual
  */
 export const getApiKey = (): string => {
-  return import.meta.env.VITE_API_KEY || "organizesee-api-key-2025-secure";
+  const apiKey = import.meta.env.VITE_API_KEY || "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+";
+  console.log("📌 Using API Key:", apiKey.substring(0, 10) + "...");
+  return apiKey;
 };
 
 /**
