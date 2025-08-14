@@ -8,157 +8,157 @@ const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
 // Rotas de Autenticação
 export const AUTH_ROUTES = {
-  login: "/api/auth/login/",
-  register: "/api/auth/register/",
-  refreshToken: "/api/auth/token/refresh/",
-  logout: "/api/auth/logout/",
-  user: "/api/auth/user/",
-  profile: "/api/auth/profile/",
-  changePassword: "/api/auth/change-password/",
-  resetPassword: "/api/auth/reset-password/",
-  confirmEmail: "/api/auth/confirm-email/",
+  login: "/auth/login/",
+  register: "/auth/register/",
+  refreshToken: "/auth/token/refresh/",
+  logout: "/auth/logout/",
+  user: "/auth/user/",
+  profile: "/auth/profile/",
+  changePassword: "/auth/change-password/",
+  resetPassword: "/auth/reset-password/",
+  confirmEmail: "/auth/confirm-email/",
 };
 
 // Rotas de Dashboard
 export const DASHBOARD_ROUTES = {
-  overview: "/api/dashboard/overview/",
-  stats: "/api/dashboard/stats/",
-  recent: "/api/dashboard/recent/",
-  notifications: "/api/dashboard/notifications/",
-  infodaily: "/api/infodaily/",
-  marketIndices: "/api/infodaily/",
-  marketInsights: "/api/insights-mercado/",
+  overview: "/dashboard/overview/",
+  stats: "/dashboard/stats/",
+  recent: "/dashboard/recent/",
+  notifications: "/dashboard/notifications/",
+  infodaily: "/infodaily/",
+  marketIndices: "/infodaily/",
+  marketInsights: "/insights-mercado/",
 };
 
 // Rotas de Orçamento
 export const BUDGET_ROUTES = {
   // Custos
-  custos: "/api/budget/custos/",
-  maioresCustos: "/api/maiores_custos",
-  custosCategoria: "/api/budget/custos/categoria/",
-  cadastrarCusto: "/api/cadastrar_custo/",
-  excluirCusto: "/api/excluir_custo/",
-  atualizarFlagCusto: "/api/atualizar_flag_custo/",
+  custos: "/budget/custos/",
+  maioresCustos: "/maiores_custos",
+  custosCategoria: "/budget/custos/categoria/",
+  cadastrarCusto: "/cadastrar_custo/",
+  excluirCusto: "/excluir_custo/",
+  atualizarFlagCusto: "/atualizar_flag_custo/",
 
   // Dívidas
-  dividas: "/api/budget/dividas/",
-  maioresDividas: "/api/maiores_dividas",
-  dividasTipo: "/api/budget/dividas/tipo/",
-  cadastrarDivida: "/api/cadastrar_divida/",
-  excluirDivida: "/api/excluir_divida/",
-  atualizarFlagDivida: "/api/atualizar_flag_divida/",
+  dividas: "/budget/dividas/",
+  maioresDividas: "/maiores_dividas",
+  dividasTipo: "/budget/dividas/tipo/",
+  cadastrarDivida: "/cadastrar_divida/",
+  excluirDivida: "/excluir_divida/",
+  atualizarFlagDivida: "/atualizar_flag_divida/",
 
   // Entradas
-  entradas: "/api/budget/entradas/",
-  maioresEntradas: "/api/maiores_entradas",
-  entradasTipo: "/api/budget/entradas/tipo/",
-  variacao_entrada: "/api/variacao_entrada",
-  cadastrarEntrada: "/api/cadastrar_entrada/",
-  excluirEntrada: "/api/excluir_entrada/",
-  atualizarFlagEntrada: "/api/atualizar_flag_entrada/",
+  entradas: "/budget/entradas/",
+  maioresEntradas: "/maiores_entradas",
+  entradasTipo: "/budget/entradas/tipo/",
+  variacao_entrada: "/variacao_entrada",
+  cadastrarEntrada: "/cadastrar_entrada/",
+  excluirEntrada: "/excluir_entrada/",
+  atualizarFlagEntrada: "/atualizar_flag_entrada/",
 
   // Metas
-  metas: "/api/budget/metas/",
-  metasProgresso: "/api/budget/metas/progresso/",
-  metasCategoria: "/api/budget/metas/categoria/",
+  metas: "/budget/metas/",
+  metasProgresso: "/budget/metas/progresso/",
+  metasCategoria: "/budget/metas/categoria/",
 
   // Overview
-  overview: "/api/budget_overview",
-  distribuicao_gastos: "/api/distribuicao_gastos",
-  summary: "/api/budget/summary/",
+  overview: "/budget_overview",
+  distribuicao_gastos: "/distribuicao_gastos",
+  summary: "/budget/summary/",
 };
 
 // Rotas de Investimentos
 export const INVESTMENT_ROUTES = {
   // Portfolio
-  portfolio: "/api/investments/portfolio/",
-  alocacao_tipo: "/api/alocacao_tipo",
-  setores: "/api/setores",
+  portfolio: "/investments/portfolio/",
+  alocacao_tipo: "/alocacao_tipo",
+  setores: "/setores",
 
   // Ações
-  acoes: "/api/investments/acoes/",
-  acoesSetores: "/api/investments/acoes/setores/",
-  acoesRanking: "/api/investments/acoes/ranking/",
+  acoes: "/investments/acoes/",
+  acoesSetores: "/investments/acoes/setores/",
+  acoesRanking: "/investments/acoes/ranking/",
 
   // FIIs
-  fiis: "/api/investments/fiis/",
-  dividendos_fii: "/api/dividendos_fii",
-  fiisRanking: "/api/investments/fiis/ranking/",
+  fiis: "/investments/fiis/",
+  dividendos_fii: "/dividendos_fii",
+  fiisRanking: "/investments/fiis/ranking/",
 
   // Análises
-  analysis: "/api/investments/analysis/",
-  comparatives: "/api/investments/comparatives/",
-  performance: "/api/investments/performance/",
+  analysis: "/investments/analysis/",
+  comparatives: "/investments/comparatives/",
+  performance: "/investments/performance/",
 
   // Reports
-  reports: "/api/investments/reports/",
-  exportData: "/api/investments/export/",
+  reports: "/investments/reports/",
+  exportData: "/investments/export/",
 
   // Investimentos Pessoais - NOVAS APIs (URLs corrigidas conforme backend)
-  buscarTickers: "/api/investimentos/buscar-tickers/",
-  ativosPessoais: "/api/investimentos/ativos-pessoais/",
-  cadastrarAtivo: "/api/investimentos/ativos-pessoais/",
-  editarAtivo: "/api/investimentos/ativos-pessoais/",
-  excluirAtivo: "/api/investimentos/ativos-pessoais/deletar/",
-  resumoCarteira: "/api/investimentos/resumo-carteira/",
+  buscarTickers: "/investimentos/buscar-tickers/",
+  ativosPessoais: "/investimentos/ativos-pessoais/",
+  cadastrarAtivo: "/investimentos/ativos-pessoais/",
+  editarAtivo: "/investimentos/ativos-pessoais/",
+  excluirAtivo: "/investimentos/ativos-pessoais/deletar/",
+  resumoCarteira: "/investimentos/resumo-carteira/",
 };
 
 // Rotas de Market (Públicas)
 export const MARKET_ROUTES = {
   // Dados de mercado
-  marketData: "/api/market/data/",
-  marketOverview: "/api/market/overview/",
+  marketData: "/market/data/",
+  marketOverview: "/market/overview/",
 
   // Ranking público
-  rankingPublic: "/api/rankingPublic/",
-  ranking: "/api/market/ranking/",
+  rankingPublic: "/rankingPublic/",
+  ranking: "/market/ranking/",
 
   // Análises de ticker
-  tickerAnalysis: "/api/market/ticker/analysis/",
-  tickerData: "/api/market/ticker/",
+  tickerAnalysis: "/market/ticker/analysis/",
+  tickerData: "/market/ticker/",
 
   // FII Market
-  fiiMarket: "/api/market/fii/",
-  fiiData: "/api/market/fii/data/",
+  fiiMarket: "/market/fii/",
+  fiiData: "/market/fii/data/",
 
   // Indicadores econômicos
-  economicIndicators: "/api/market/economic-indicators/",
-  indicators: "/api/market/indicators/",
+  economicIndicators: "/market/economic-indicators/",
+  indicators: "/market/indicators/",
 
   // Calculadora financeira
-  calculator: "/api/market/calculator/",
-  financialCalculator: "/api/market/financial-calculator/",
+  calculator: "/market/calculator/",
+  financialCalculator: "/market/financial-calculator/",
 
   // Lista de desejos
-  wishlist: "/api/market/wishlist/",
-  wishlistPublic: "/api/market/wishlist/public/",
+  wishlist: "/market/wishlist/",
+  wishlistPublic: "/market/wishlist/public/",
 };
 
 // Rotas de Crypto
 export const CRYPTO_ROUTES = {
-  overview: "/api/crypto/overview/",
-  portfolio: "/api/crypto/portfolio/",
-  market: "/api/crypto/market/",
-  analysis: "/api/crypto/analysis/",
-  wishlist: "/api/crypto/wishlist/",
-  trading: "/api/crypto/trading/",
+  overview: "/crypto/overview/",
+  portfolio: "/crypto/portfolio/",
+  market: "/crypto/market/",
+  analysis: "/crypto/analysis/",
+  wishlist: "/crypto/wishlist/",
+  trading: "/crypto/trading/",
 };
 
 // Rotas do Sistema
 export const SYSTEM_ROUTES = {
-  config: "/api/system/config/",
-  settings: "/api/system/settings/",
-  logs: "/api/system/logs/",
-  health: "/api/system/health/",
-  version: "/api/system/version/",
+  config: "/system/config/",
+  settings: "/system/settings/",
+  logs: "/system/logs/",
+  health: "/system/health/",
+  version: "/system/version/",
 };
 
 // Rotas de Upload
 export const UPLOAD_ROUTES = {
-  avatar: "/api/upload/avatar/",
-  documents: "/api/upload/documents/",
-  reports: "/api/upload/reports/",
-  import: "/api/upload/import/",
+  avatar: "/upload/avatar/",
+  documents: "/upload/documents/",
+  reports: "/upload/reports/",
+  import: "/upload/import/",
 };
 
 // Mapa principal de rotas
