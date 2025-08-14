@@ -20,6 +20,10 @@
       "destination": "https://restbackend-dc8667cf0950.herokuapp.com/$1"
     },
     {
+      "source": "/auth/(.*)",
+      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/auth/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

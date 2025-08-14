@@ -1,7 +1,30 @@
 import { localStorageManager } from "./localStorage";
 
+// Configuração centralizada para URLs da API
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 const API_KEY = import.meta.env.VITE_API_KEY || "organizesee-api-key-2025-secure";
+
+// Tratamento para consistência de URLs
+const normalizeUrl = (url: string): string => {
+  // Se a URL já começa com o BACKEND_URL, não adicionar prefixo
+  if (url.startsWith(BACKEND_URL) || url.startsWith('http')) {
+    return url;
+  }
+  
+  // Se a URL já começa com /services/api e o BACKEND_URL é /services/api,
+  // não duplicar o prefixo
+  if (url.startsWith('/services/api') && BACKEND_URL === '/services/api') {
+    return url;
+  }
+  
+  // Normalizar URLs que começam com /api/ para usar /services/api/
+  if (url.startsWith('/api/') && BACKEND_URL === '/services/api') {
+    return `/services/api${url.substring(4)}`;
+  }
+  
+  // Caso padrão: concatenar BACKEND_URL com a URL
+  return `${BACKEND_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 interface ExtendedRequestInit extends RequestInit {
   authenticated?: boolean;
@@ -95,8 +118,16 @@ export class ApiService {
     endpoint: string,
     options: ExtendedRequestInit = {},
   ): Promise<any> {
-    const url = `${BACKEND_URL}${endpoint}`;
+    const normalizedUrl = normalizeUrl(endpoint);
     const includeAuth = options.authenticated ?? false;
+
+    // Log para debug da URL normalizada
+    if (import.meta.env.DEV || endpoint.includes("login") || endpoint.includes("refresh")) {
+      console.log(`🔗 Request: ${normalizedUrl}`, { 
+        original: endpoint, 
+        isAuth: includeAuth 
+      });
+    }
 
     // Validar token se autenticação necessária
     if (includeAuth) {
@@ -133,7 +164,7 @@ export class ApiService {
     };
 
     try {
-      let response = await fetch(url, config);
+      let response = await fetch(normalizedUrl, config);
 
       // Tratar 401 Unauthorized
       if (
@@ -147,9 +178,9 @@ export class ApiService {
 
         const refreshed = await this.refreshToken();
         if (refreshed) {
-          // Repetir com novo token
+          // Repetir com novo token usando a URL normalizada
           const newHeaders = this.buildHeaders(options.headers || {}, true);
-          response = await fetch(url, { ...config, headers: newHeaders });
+          response = await fetch(normalizedUrl, { ...config, headers: newHeaders });
         } else {
           this.handleAuthFailure();
           const error = new Error(

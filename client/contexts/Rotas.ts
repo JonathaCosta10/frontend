@@ -8,6 +8,7 @@ const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
 // Rotas de Autenticação
 export const AUTH_ROUTES = {
+  // Rotas principais (compatíveis com todos os endpoints listados)
   login: "/auth/login/",
   register: "/auth/register/",
   refreshToken: "/auth/token/refresh/",
@@ -15,7 +16,8 @@ export const AUTH_ROUTES = {
   user: "/auth/user/",
   profile: "/auth/profile/",
   changePassword: "/auth/change-password/",
-  resetPassword: "/auth/reset-password/",
+  resetPassword: "/auth/recuperar-senha/",
+  validarRedefinirSenha: "/auth/validar-redefinir-senha/",
   confirmEmail: "/auth/confirm-email/",
 };
 

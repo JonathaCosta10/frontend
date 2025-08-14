@@ -245,9 +245,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   ): Promise<boolean> => {
     try {
       setLoading(true);
+      
+      // Log com mais detalhes sobre a URL utilizada
       console.log("🔐 Iniciando login:", {
         username,
         backendUrl: BACKEND_URL,
+        fullUrl: `${BACKEND_URL}/auth/login/`,
+        environment: import.meta.env.MODE || 'development'
       });
 
       // Usar Rules para login
@@ -264,6 +268,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setIsAuthenticated(true);
           setLoading(false);
           console.log("✅ Login bem-sucedido:", userData.username || userData.email);
+          
+          // Log de sucesso com mais detalhes
+          console.log("🔑 Detalhes da sessão:", {
+            userId: userData.id,
+            premiumStatus: userData.subscription_type || "free",
+            tokenValido: isTokenValid(token),
+            tokenExpira: token ? JSON.parse(atob(token.split(".")[1])).exp : null
+          });
+          
           return true;
         } else {
           console.error("❌ Dados não foram armazenados após login");
@@ -271,12 +284,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return false;
         }
       } else {
-        console.error("❌ Login falhou");
+        console.error("❌ Login falhou - verifique URL e credenciais");
         setLoading(false);
         return false;
       }
     } catch (error) {
       console.error("❌ Erro de login:", error);
+      console.error("📌 Verifique se a URL está correta:", `${BACKEND_URL}/auth/login/`);
       setLoading(false);
       return false;
     }

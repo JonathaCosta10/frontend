@@ -35,18 +35,31 @@ export class Rules {
     let endpoint = getRoute(chave);
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
     
-    // Se a URL já começar com /api/ ou se for o refreshToken, não adicionar BACKEND_URL duplicado
-    if (endpoint.startsWith('/api/') && BACKEND_URL.endsWith('/api')) {
-      // Remove /api do início do endpoint para evitar duplicação
+    // Tratamento para evitar duplicação de URLs e garantir compatibilidade
+    // com todos os padrões de endpoints do backend
+    
+    // 1. Se o endpoint já tiver o prefixo correto, não adicionar BACKEND_URL
+    if (endpoint.startsWith('/services/api/')) {
+      // Não adicionar nada, já está no formato correto
+      console.log(`🔄 URL já no formato correto: ${endpoint}`);
+    } 
+    // 2. Se o BACKEND_URL for /services/api e o endpoint começar com /api/
+    else if (endpoint.startsWith('/api/') && BACKEND_URL === '/services/api') {
+      // Remover /api/ e adicionar o BACKEND_URL
       endpoint = endpoint.substring(4);  // Remove '/api'
       endpoint = `${BACKEND_URL}${endpoint}`;
-    } else if (chave === 'refreshToken' && BACKEND_URL.includes('/api')) {
-      // Caso especial para o refreshToken para evitar duplicação
+    } 
+    // 3. Caso especial para o refreshToken para evitar duplicação
+    else if (chave === 'refreshToken') {
+      // Garantir que o refreshToken use o caminho correto
       endpoint = `${BACKEND_URL}/auth/token/refresh/`;
-    } else {
+    }
+    // 4. Caso padrão: concatenar BACKEND_URL com endpoint
+    else {
       endpoint = `${BACKEND_URL}${endpoint}`;
     }
     
+    // Adicionar parâmetros de query, se houver
     if (params && Object.keys(params).length > 0) {
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
@@ -178,6 +191,8 @@ export const refreshTokenApi = async (
 ): Promise<any> => {
   console.log("🔄 Refreshing token with chave:", chave);
   
+  // Garantir que estamos usando o endpoint correto conforme listado no backend
+  // Endpoint esperado: /services/api/auth/token/refresh/
   const response = await rulesInstance.post({
     chave,
     body: { refresh: refreshToken },
@@ -186,6 +201,10 @@ export const refreshTokenApi = async (
 
   if (response.success) {
     console.log("✅ Token refresh successful!");
+    // Log do token para depuração (apenas primeiros caracteres por segurança)
+    if (response.data && response.data.access) {
+      console.log(`🔑 Novo token recebido: ${response.data.access.substring(0, 10)}...`);
+    }
   } else {
     console.warn("❌ Token refresh failed:", response.message || "Unknown error");
   }

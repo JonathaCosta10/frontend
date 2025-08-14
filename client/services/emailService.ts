@@ -47,7 +47,8 @@ export class EmailService {
    */
   static async recuperarSenha(data: RecuperarSenhaRequest): Promise<{ message: string }> {
     try {
-      const response = await api.post("/api/auth/recuperar-senha/", data, false);
+      // Usar endpoint correto conforme configurado no backend
+      const response = await api.post("/services/api/auth/recuperar-senha/", data, false);
       return response;
     } catch (error: any) {
       throw new Error(
