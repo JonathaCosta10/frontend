@@ -258,44 +258,12 @@ export class Rules {
   private async getApiService(chave: string, withAuth: boolean = false) {
     console.log("🔍 getApiService chamado para chave:", chave);
     
-    // Determinar se é página pública ou privada
-    const isPublicPage = this.isPublicPageKey(chave);
-    const basePath = isPublicPage ? "PublicPages" : "PrivatePages";
-    
-    console.log("📁 Tipo de página:", isPublicPage ? "Pública" : "Privada");
-    console.log("📂 BasePath:", basePath);
-
-    // Mapear chave para arquivo específico
-    const serviceFile = this.getServiceFile(chave);
-    console.log("📄 Arquivo de serviço:", serviceFile);
-    
-    const servicePath = `../services/api/${basePath}/${serviceFile}.js`;
-    console.log("🛤️ Caminho completo:", servicePath);
-
-    try {
-      console.log("📥 Tentando importar serviço...");
-      // Importar dinamicamente o serviço específico
-      const module = await import(/* @vite-ignore */ servicePath);
-      console.log("✅ Serviço importado com sucesso:", !!module);
-      console.log("📦 Módulo tem default?", !!module.default);
-      console.log("📦 Chaves do módulo:", Object.keys(module));
-      
-      const service = module.default || module;
-      console.log("🎯 Serviço final:", !!service);
-      
-      return service;
-    } catch (error) {
-      console.error("❌ Erro ao importar serviço:", error);
-      console.warn(
-        `⚠️ Serviço específico não encontrado para ${chave}, usando serviço genérico`,
-      );
-      
-      // Fallback GARANTIDO para serviço genérico
-      console.log("🔄 Iniciando fallback para serviço genérico...");
-      const genericService = this.getGenericApiService();
-      console.log("✅ Serviço genérico criado:", !!genericService);
-      return genericService;
-    }
+    // SEMPRE usar serviço genérico em produção
+    // A importação dinâmica não funciona corretamente no build de produção
+    console.log("🔄 Usando serviço genérico (produção compatível)...");
+    const genericService = this.getGenericApiService();
+    console.log("✅ Serviço genérico criado:", !!genericService);
+    return genericService;
   }
 
   /**
@@ -463,7 +431,8 @@ export class Rules {
         method,
         endpoint,
         hasBody: !!body,
-        headerKeys: Object.keys(headers)
+        headerKeys: Object.keys(headers),
+        bodyContent: body ? JSON.stringify(body).substring(0, 100) + "..." : null
       });
 
       const config: RequestInit = {
@@ -473,34 +442,67 @@ export class Rules {
 
       if (body && method !== "GET") {
         config.body = JSON.stringify(body);
-        console.log("📦 Body stringificado:", typeof config.body);
+        console.log("📦 Body adicionado:", {
+          bodyType: typeof config.body,
+          bodyLength: config.body.length,
+          bodyPreview: config.body.substring(0, 200) + "..."
+        });
       }
 
-      console.log("📡 Fazendo fetch...");
+      console.log("📡 Fazendo fetch para:", endpoint);
+      console.log("⚙️ Configuração do fetch:", {
+        method: config.method,
+        headers: config.headers,
+        hasBody: !!config.body
+      });
+
       const response = await fetch(endpoint, config);
+      
       console.log("📨 Fetch concluído:", {
         status: response.status,
         statusText: response.statusText,
-        ok: response.ok
+        ok: response.ok,
+        url: response.url,
+        type: response.type
       });
 
-      const data = await response.json().catch((jsonError) => {
-        console.warn("⚠️ Erro ao parsear JSON:", jsonError);
-        return {};
-      });
-      console.log("📋 Dados parseados:", {
-        hasData: !!data,
-        dataKeys: data ? Object.keys(data) : []
-      });
+      const contentType = response.headers.get('content-type');
+      console.log("📋 Content-Type da resposta:", contentType);
+
+      let data;
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+        console.log("✅ JSON parseado com sucesso:", {
+          hasData: !!data,
+          dataKeys: data ? Object.keys(data) : []
+        });
+      } else {
+        console.warn("⚠️ Resposta não é JSON, tentando parsear mesmo assim...");
+        const textResponse = await response.text();
+        console.log("📄 Resposta como texto (primeiros 500 chars):", textResponse.substring(0, 500));
+        try {
+          data = JSON.parse(textResponse);
+          console.log("✅ Conseguiu parsear JSON do texto");
+        } catch {
+          console.warn("❌ Não conseguiu parsear como JSON, retornando como texto");
+          data = { message: textResponse };
+        }
+      }
 
       const result = {
         success: this.isSuccessStatus(response.status),
         data,
         status: response.status,
-        message: data.message || data.detail,
+        message: data.message || data.detail || `HTTP ${response.status}`,
       };
 
-      console.log("✅ makeRequest() resultado:", result);
+      console.log("✅ makeRequest() resultado final:", {
+        success: result.success,
+        status: result.status,
+        message: result.message,
+        hasData: !!result.data
+      });
+      
       return result;
     } catch (error) {
       console.error("❌ makeRequest() erro:", error);
@@ -508,7 +510,7 @@ export class Rules {
         success: false,
         status: 0,
         error,
-        message: "Network error",
+        message: "Network error: " + (error instanceof Error ? error.message : "Unknown error"),
       };
       console.log("💥 makeRequest() erro resultado:", errorResult);
       return errorResult;
