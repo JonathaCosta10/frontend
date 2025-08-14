@@ -58,7 +58,7 @@ export default defineConfig({
           });
           proxy.on('proxyReq', (proxyReq, req, _res) => {
             // Adicionar o cabeçalho X-API-Key em todas as requisições
-            const apiKey = process.env.VITE_API_KEY || "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+";
+            const apiKey = "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+";
             proxyReq.setHeader('X-API-Key', apiKey);
             
             console.log('Sending Request to the Target:', req.method, req.url);

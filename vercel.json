@@ -13,17 +13,11 @@
   "rewrites": [
     {
       "source": "/services/api/(.*)",
-      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/$1",
-      "headers": {
-        "X-API-Key": "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+"
-      }
+      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/$1"
     },
     {
       "source": "/api/(.*)",
-      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/$1",
-      "headers": {
-        "X-API-Key": "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+"
-      }
+      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/$1"
     },
     {
       "source": "/(.*)",
@@ -41,6 +35,24 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "X-API-Key",
+          "value": "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+"
+        }
+      ]
+    },
+    {
+      "source": "/services/api/(.*)",
+      "headers": [
+        {
+          "key": "X-API-Key",
+          "value": "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+"
         }
       ]
     }
