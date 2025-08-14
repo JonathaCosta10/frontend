@@ -362,6 +362,9 @@ export class Rules {
   private getGenericApiService() {
     console.log("🔧 Criando serviço genérico...");
     
+    // Manter referência para usar nos métodos
+    const rulesInstance = this;
+    
     return {
       async post(
         endpoint: string,
@@ -373,7 +376,7 @@ export class Rules {
           hasBody: !!body,
           headerKeys: Object.keys(headers)
         });
-        return this.makeRequest("POST", endpoint, body, headers);
+        return rulesInstance.makeRequest("POST", endpoint, body, headers);
       },
 
       async get(endpoint: string, headers: HeaderModel): Promise<ApiResponse> {
@@ -381,7 +384,7 @@ export class Rules {
           endpoint,
           headerKeys: Object.keys(headers)
         });
-        return this.makeRequest("GET", endpoint, null, headers);
+        return rulesInstance.makeRequest("GET", endpoint, null, headers);
       },
 
       async put(
@@ -394,7 +397,7 @@ export class Rules {
           hasBody: !!body,
           headerKeys: Object.keys(headers)
         });
-        return this.makeRequest("PUT", endpoint, body, headers);
+        return rulesInstance.makeRequest("PUT", endpoint, body, headers);
       },
 
       async delete(
@@ -405,72 +408,80 @@ export class Rules {
           endpoint,
           headerKeys: Object.keys(headers)
         });
-        return this.makeRequest("DELETE", endpoint, null, headers);
-      },
-
-      async makeRequest(
-        method: string,
-        endpoint: string,
-        body: any,
-        headers: HeaderModel,
-      ): Promise<ApiResponse> {
-        try {
-          console.log("🌐 GenericService.makeRequest() iniciado:", {
-            method,
-            endpoint,
-            hasBody: !!body,
-            headerKeys: Object.keys(headers)
-          });
-
-          const config: RequestInit = {
-            method,
-            headers,
-          };
-
-          if (body && method !== "GET") {
-            config.body = JSON.stringify(body);
-            console.log("📦 Body stringificado:", typeof config.body);
-          }
-
-          console.log("📡 Fazendo fetch...");
-          const response = await fetch(endpoint, config);
-          console.log("📨 Fetch concluído:", {
-            status: response.status,
-            statusText: response.statusText,
-            ok: response.ok
-          });
-
-          const data = await response.json().catch((jsonError) => {
-            console.warn("⚠️ Erro ao parsear JSON:", jsonError);
-            return {};
-          });
-          console.log("📋 Dados parseados:", {
-            hasData: !!data,
-            dataKeys: data ? Object.keys(data) : []
-          });
-
-          const result = {
-            success: Rules.getInstance().isSuccessStatus(response.status),
-            data,
-            status: response.status,
-            message: data.message || data.detail,
-          };
-
-          console.log("✅ GenericService.makeRequest() resultado:", result);
-          return result;
-        } catch (error) {
-          console.error("❌ GenericService.makeRequest() erro:", error);
-          const errorResult = {
-            success: false,
-            status: 0,
-            error,
-            message: "Network error",
-          };
-          console.log("💥 GenericService.makeRequest() erro resultado:", errorResult);
-          return errorResult;
-        }
-      },
+        return rulesInstance.makeRequest("DELETE", endpoint, null, headers);
+      }
     };
+  }
+
+  /**
+   * Faz a requisição HTTP real
+   * @param method - Método HTTP
+   * @param endpoint - URL endpoint
+   * @param body - Corpo da requisição
+   * @param headers - Headers da requisição
+   * @returns Resposta da API
+   */
+  private async makeRequest(
+    method: string,
+    endpoint: string,
+    body: any,
+    headers: HeaderModel,
+  ): Promise<ApiResponse> {
+    try {
+      console.log("🌐 makeRequest() iniciado:", {
+        method,
+        endpoint,
+        hasBody: !!body,
+        headerKeys: Object.keys(headers)
+      });
+
+      const config: RequestInit = {
+        method,
+        headers,
+      };
+
+      if (body && method !== "GET") {
+        config.body = JSON.stringify(body);
+        console.log("📦 Body stringificado:", typeof config.body);
+      }
+
+      console.log("📡 Fazendo fetch...");
+      const response = await fetch(endpoint, config);
+      console.log("📨 Fetch concluído:", {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
+      const data = await response.json().catch((jsonError) => {
+        console.warn("⚠️ Erro ao parsear JSON:", jsonError);
+        return {};
+      });
+      console.log("📋 Dados parseados:", {
+        hasData: !!data,
+        dataKeys: data ? Object.keys(data) : []
+      });
+
+      const result = {
+        success: this.isSuccessStatus(response.status),
+        data,
+        status: response.status,
+        message: data.message || data.detail,
+      };
+
+      console.log("✅ makeRequest() resultado:", result);
+      return result;
+    } catch (error) {
+      console.error("❌ makeRequest() erro:", error);
+      const errorResult = {
+        success: false,
+        status: 0,
+        error,
+        message: "Network error",
+      };
+      console.log("💥 makeRequest() erro resultado:", errorResult);
+      return errorResult;
+    }
   }
 
   /**
