@@ -1604,6 +1604,7 @@ const translations = {
     two_months_free: "2 meses grátis",
     twofa_by_email: "2FA por Email",
     twofa_by_sms: "2FA por SMS",
+    two_fa_by_email: "2FA por Email",
     type: "Tipo",
     typical_annual_range: "Faixa típica ao ano",
 

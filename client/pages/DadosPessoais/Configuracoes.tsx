@@ -400,34 +400,7 @@ export default function Configuracoes() {
                         )}
                       </div>
                       <div className="text-center">
-                        <p className="text-sm font-medium">{t('2fa_by_email')}</p>
-                        <Badge
-                          variant={twoFactorStatus.email ? "default" : "destructive"}
-                          className="text-xs mt-1"
-                        >
-                          {twoFactorStatus.email ? t('configured') : t('not_configured')}
-                        </Badge>
-                      </div>
-                    </Button>
-                  </div>
-                </Link>
-                <Link to="/2fa/email">
-                  <div className={`border-2 rounded-lg p-3 transition-colors ${
-                    twoFactorStatus.email
-                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                      : 'border-red-300 bg-red-50 dark:bg-red-900/20'
-                  }`}>
-                    <Button variant="ghost" size="sm" className="w-full h-auto flex-col space-y-2 p-2">
-                      <div className="flex items-center space-x-2">
-                        <Mail className="h-4 w-4" />
-                        {twoFactorStatus.email ? (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-600" />
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-medium">{t('2fa_by_email')}</p>
+                        <p className="text-sm font-medium">{t('two_fa_by_email')}</p>
                         <Badge
                           variant={twoFactorStatus.email ? "default" : "destructive"}
                           className="text-xs mt-1"

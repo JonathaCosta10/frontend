@@ -226,9 +226,12 @@ export default function Suporte() {
 
   const systemStatus = [
     { service: "API Principal", status: "operational", uptime: "99.9%" },
-    { service: "Integração B3", status: "operational", uptime: "99.7%" },
+    { service: "Integração B3", status: "maintenance", uptime: "98.5%" },
     { service: "Sistema de Login", status: "operational", uptime: "99.95%" },
-    { service: "Relatórios", status: "maintenance", uptime: "99.8%" },
+    { service: "Relatórios", status: "operational", uptime: "99.8%" },
+    { service: "Integração PIX", status: "operational", uptime: "99.7%" },
+    { service: "Extrato Bancário", status: "down", uptime: "95.2%" },
+    { service: "Cotações em Tempo Real", status: "operational", uptime: "99.6%" },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
