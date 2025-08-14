@@ -12,6 +12,10 @@
   ],
   "rewrites": [
     {
+      "source": "/services/api/(.*)",
+      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/$1"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "https://restbackend-dc8667cf0950.herokuapp.com/$1"
     },
