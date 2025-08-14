@@ -220,7 +220,7 @@ export const mockNewMarketInsightsData: NewMarketInsightsData = {
       "7D": [],
       "30D": []
     },
-    fiis: {
+    FII: {
       titulo: "FIIs",
       "1D": [
         {
@@ -265,7 +265,7 @@ export const mockNewMarketInsightsData: NewMarketInsightsData = {
       "7D": [],
       "30D": []
     },
-    fiis: {
+    FII: {
       titulo: "FIIs",
       "1D": [
         {

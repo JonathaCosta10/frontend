@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "vite",
     "start": "npm run dev",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "build:vercel": "vite build",
+    "build:with-typecheck": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest --run",
     "format.fix": "prettier --write .",

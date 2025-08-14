@@ -99,6 +99,17 @@ export interface DividendoTicker {
 export interface DividendosResponse {
   dividendos_por_mes: DividendoMes[];
   dividendos_por_ticker: DividendoTicker[];
+  valores_totais_por_mes: Array<{
+    data_referencia: string;
+    valor_total: number;
+  }>;
+  resumo: Array<{
+    ticker: string;
+    dados: Array<{
+      data_referencia: string;
+      valor_hoje: number;
+    }>;
+  }>;
 }
 
 class InvestmentApiService {
@@ -322,6 +333,38 @@ class InvestmentApiService {
             { data_referencia: "2024-09", valor_dividendo: 60.15 },
             { data_referencia: "2024-10", valor_dividendo: 57.9 },
             { data_referencia: "2024-11", valor_dividendo: 61.85 },
+          ],
+        },
+      ],
+      valores_totais_por_mes: [
+        { data_referencia: "2024-06", valor_total: 485.75 },
+        { data_referencia: "2024-07", valor_total: 512.3 },
+        { data_referencia: "2024-08", valor_total: 498.9 },
+        { data_referencia: "2024-09", valor_total: 535.4 },
+        { data_referencia: "2024-10", valor_total: 523.15 },
+        { data_referencia: "2024-11", valor_total: 548.8 },
+      ],
+      resumo: [
+        {
+          ticker: "HGLG11",
+          dados: [
+            { data_referencia: "2024-06", valor_hoje: 125.3 },
+            { data_referencia: "2024-07", valor_hoje: 128.75 },
+            { data_referencia: "2024-08", valor_hoje: 132.1 },
+            { data_referencia: "2024-09", valor_hoje: 135.45 },
+            { data_referencia: "2024-10", valor_hoje: 138.8 },
+            { data_referencia: "2024-11", valor_hoje: 142.15 },
+          ],
+        },
+        {
+          ticker: "XPLG11",
+          dados: [
+            { data_referencia: "2024-06", valor_hoje: 95.2 },
+            { data_referencia: "2024-07", valor_hoje: 98.15 },
+            { data_referencia: "2024-08", valor_hoje: 94.8 },
+            { data_referencia: "2024-09", valor_hoje: 102.3 },
+            { data_referencia: "2024-10", valor_hoje: 99.75 },
+            { data_referencia: "2024-11", valor_hoje: 105.4 },
           ],
         },
       ],
