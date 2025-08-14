@@ -48,9 +48,10 @@ export default defineConfig({
     // Proxy para requisições de API (opcional)
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: 'https://restbackend-dc8667cf0950.herokuapp.com',
         changeOrigin: true,
-        secure: false,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
             console.log('proxy error', err);

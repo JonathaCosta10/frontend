@@ -12,12 +12,16 @@
   ],
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
   "env": {
-    "VITE_BACKEND_URL": "https://restbackend.herokuapp.com",
+    "VITE_BACKEND_URL": "/api",
     "VITE_API_KEY": "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+"
   },
   "headers": [
