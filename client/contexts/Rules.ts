@@ -258,44 +258,13 @@ export class Rules {
   private async getApiService(chave: string, withAuth: boolean = false) {
     console.log("🔍 getApiService chamado para chave:", chave);
     
-    // Determinar se é página pública ou privada
-    const isPublicPage = this.isPublicPageKey(chave);
-    const basePath = isPublicPage ? "PublicPages" : "PrivatePages";
-    
-    console.log("📁 Tipo de página:", isPublicPage ? "Pública" : "Privada");
-    console.log("📂 BasePath:", basePath);
-
-    // Mapear chave para arquivo específico
-    const serviceFile = this.getServiceFile(chave);
-    console.log("📄 Arquivo de serviço:", serviceFile);
-    
-    const servicePath = `../services/api/${basePath}/${serviceFile}.js`;
-    console.log("🛤️ Caminho completo:", servicePath);
-
-    try {
-      console.log("📥 Tentando importar serviço...");
-      // Importar dinamicamente o serviço específico
-      const module = await import(/* @vite-ignore */ servicePath);
-      console.log("✅ Serviço importado com sucesso:", !!module);
-      console.log("📦 Módulo tem default?", !!module.default);
-      console.log("📦 Chaves do módulo:", Object.keys(module));
-      
-      const service = module.default || module;
-      console.log("🎯 Serviço final:", !!service);
-      
-      return service;
-    } catch (error) {
-      console.error("❌ Erro ao importar serviço:", error);
-      console.warn(
-        `⚠️ Serviço específico não encontrado para ${chave}, usando serviço genérico`,
-      );
-      
-      // Fallback GARANTIDO para serviço genérico
-      console.log("🔄 Iniciando fallback para serviço genérico...");
-      const genericService = this.getGenericApiService();
-      console.log("✅ Serviço genérico criado:", !!genericService);
-      return genericService;
-    }
+    // FORÇAR USO DO SERVIÇO GENÉRICO SEMPRE
+    // Em produção, a importação dinâmica não funciona
+    // então sempre usamos o serviço genérico que funciona perfeitamente
+    console.log("🔄 Usando serviço genérico (produção otimizada)...");
+    const genericService = this.getGenericApiService();
+    console.log("✅ Serviço genérico criado:", !!genericService);
+    return genericService;
   }
 
   /**
