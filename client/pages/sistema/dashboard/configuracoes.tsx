@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import SubscriptionGuard from "../../../components/SubscriptionGuard";
 import {
   Settings,
   Bell,
@@ -372,21 +373,22 @@ export default function Configuracoes() {
           </CardContent>
         </Card>
 
-        {/* Integração B3 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Database className="h-5 w-5" />
-              <span>{t('b3_integration')}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>{t('authorize_b3_data_integration')}</Label>
-                <p className="text-sm text-muted-foreground">
-                  {t('allows_access_b3_data')}
-                </p>
+        {/* Integração Portal Investidor */}
+        <SubscriptionGuard>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Database className="h-5 w-5" />
+                <span>Integração Portal Investidor</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>{t('authorize_b3_data_integration')}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('allows_access_b3_data')}
+                  </p>
               </div>
               <Switch
                 checked={settings.b3Integration || false}
@@ -421,6 +423,7 @@ export default function Configuracoes() {
             )}
           </CardContent>
         </Card>
+        </SubscriptionGuard>
 
         {/* Segurança */}
         <Card>
@@ -619,79 +622,9 @@ export default function Configuracoes() {
           </CardContent>
         </Card>
 
-        {/* Premium Settings */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <DollarSign className="h-5 w-5 text-yellow-500" />
-              <span>{t('premium_settings')}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>{t('premium_auto_renewal')}</Label>
-                <p className="text-sm text-muted-foreground">
-                  {t('automatically_renews_premium')}
-                </p>
-              </div>
-              <Switch
-                checked={settings.premiumSettings.autoRenewal}
-                onCheckedChange={(value) =>
-                  handleSettingChange("premiumSettings", "autoRenewal", value)
-                }
-              />
-            </div>
-            <Separator />
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">{t('current_payment_method')}</span>
-                <span className="text-sm font-medium">{t('card_ending', { lastFour: '1234' })}</span>
-              </div>
-              <Button variant="outline" className="w-full">
-                {t('manage_payment_options')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Dados e Backup */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Database className="h-5 w-5" />
-              <span>{t('data_and_backup')}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>{t('automatic_backup')}</Label>
-                <p className="text-sm text-muted-foreground">
-                  {t('automatically_backup_data')}
-                </p>
-              </div>
-              <Switch
-                checked={settings.dataBackup}
-                onCheckedChange={(value) =>
-                  handleSimpleSettingChange("dataBackup", value)
-                }
-              />
-            </div>
-            <Separator />
-            <div className="flex flex-col md:flex-row gap-3">
-              <Button variant="outline" className="flex-1">
-                {t('export_data')}
-              </Button>
-              <Button variant="outline" className="flex-1">
-                {t('import_data')}
-              </Button>
-              <Button variant="destructive" className="flex-1">
-                {t('delete_account')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+
+
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import { useTranslation } from "../../../contexts/TranslationContext";
 import { localStorageManager } from "../../../lib/localStorage";
 import { api } from "../../../lib/api";
 import { useViaCep } from "../../../hooks/useViaCep";
+import SubscriptionGuard from "../../../components/SubscriptionGuard";
 import { 
   User, 
   Settings, 
@@ -981,13 +982,14 @@ const PerfilPage: React.FC = () => {
           {/* Grid para as duas seções abaixo */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mt-8">{/* added mt-8 for spacing */}
             {/* Status Premium */}
-            <Card className="border-l-4 border-l-yellow-500 bg-gradient-to-br from-yellow-50 to-orange-50">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Crown className="h-5 w-5 text-yellow-500" />
-                  <span>Status Premium</span>
-                </CardTitle>
-              </CardHeader>
+            <SubscriptionGuard>
+              <Card className="border-l-4 border-l-yellow-500 bg-gradient-to-br from-yellow-50 to-orange-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Crown className="h-5 w-5 text-yellow-500" />
+                    <span>Status Premium</span>
+                  </CardTitle>
+                </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
@@ -1026,28 +1028,30 @@ const PerfilPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+            </SubscriptionGuard>
 
             {/* Resumo Financeiro */}
-            <Card className="border-l-4 border-l-blue-500">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <BarChart3 className="h-5 w-5 text-blue-500" />
-                  <span>Resumo Financeiro</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="h-4 w-4 text-green-500" />
-                      <span className="text-sm text-muted-foreground">Total Investido</span>
+            <SubscriptionGuard>
+              <Card className="border-l-4 border-l-blue-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <BarChart3 className="h-5 w-5 text-blue-500" />
+                    <span>Resumo Financeiro</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <TrendingUp className="h-4 w-4 text-green-500" />
+                        <span className="text-sm text-muted-foreground">Total Investido</span>
+                      </div>
+                      <span className="text-lg font-bold text-green-600">{stats.totalInvestments}</span>
                     </div>
-                    <span className="text-lg font-bold text-green-600">{stats.totalInvestments}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="h-4 w-4 text-blue-500" />
-                      <span className="text-sm text-muted-foreground">Renda Mensal</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="h-4 w-4 text-blue-500" />
+                        <span className="text-sm text-muted-foreground">Renda Mensal</span>
                     </div>
                     <span className="text-lg font-bold text-blue-600">{stats.monthlyIncome}</span>
                   </div>
@@ -1097,14 +1101,16 @@ const PerfilPage: React.FC = () => {
                 </Button>
               </CardContent>
             </Card>
+            </SubscriptionGuard>
           </div>
 
           {/* Conquistas */}
-          <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-pink-50">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Trophy className="h-5 w-5 text-purple-500" />
-                <span>Conquistas</span>
+          <SubscriptionGuard>
+            <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-pink-50">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Trophy className="h-5 w-5 text-purple-500" />
+                  <span>Conquistas</span>
                 <Badge variant="outline" className="ml-auto">
                   {achievements.filter(a => a.isEarned).length}/{achievements.length}
                 </Badge>
@@ -1180,6 +1186,7 @@ const PerfilPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          </SubscriptionGuard>
         </div>
       )}
     </div>

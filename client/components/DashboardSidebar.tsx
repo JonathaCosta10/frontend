@@ -197,13 +197,18 @@ export default function DashboardSidebar({ onCollapseChange, onMobileClose }: Da
               <User className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm truncate">
-                {personalData?.nome_completo || 
-                 user.full_name || 
-                 `${user.first_name || ''} ${user.last_name || ''}`.trim() || 
-                 user.name || 
-                 user.username}
-              </p>
+              <div className="flex items-center">
+                <p className="font-medium text-sm truncate">
+                  {personalData?.nome_completo || 
+                   user.full_name || 
+                   `${user.first_name || ''} ${user.last_name || ''}`.trim() || 
+                   user.name || 
+                   user.username}
+                </p>
+                <Link to="/dashboard/pagamento">
+                  <Crown className="h-4 w-4 ml-1 text-gray-800 cursor-pointer" />
+                </Link>
+              </div>
               {personalData?.nome_completo && (
                 <p className="text-xs text-muted-foreground truncate">
                   {user.email}

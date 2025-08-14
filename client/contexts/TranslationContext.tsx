@@ -149,8 +149,10 @@ const translations = {
     distribution_by_category: "Distribuição por Categoria",
 
     // B
-    b3_integration: "Integração B3",
-    b3_integration_service: "Integração B3",
+    b3_integration: "Integração Portal Investidor",
+    b3_integration_service: "Integração Portal Investidor",
+    authorize_b3_data_integration: "Autorizar integração com Portal Investidor",
+    allows_access_b3_data: "Permite acesso aos dados do Portal Investidor",
     back: "Voltar",
     back_button: "Voltar",
     back_to_dashboard: "Voltar ao Dashboard",
@@ -290,6 +292,8 @@ const translations = {
     completed_goals: "Metas Concluídas",
     compound_interest: "Juros Compostos",
     compound_interest_calculator: "Calculadora de Juros Compostos",
+    compound_interest_calculator_description: "Calcule o crescimento de seus investimentos com juros compostos ao longo do tempo.",
+    compound_interest_calculator_subtitle: "Entenda o poder dos juros compostos no crescimento do seu patrimônio.",
     compound_interest_results: "Resultados dos Juros Compostos",
     conditions: "Termos de uso",
     configured: "Configurado",
@@ -305,6 +309,7 @@ const translations = {
     expense_control_tip: "Controle de Gastos",
     expense_control_description:
       "Revise suas despesas e identifique onde é possível economizar",
+    expenses_flag_description: "Sinalizar despesas recorrentes automaticamente",
     confirm: "Confirmar",
     confirm_delete_cost: "Confirma a exclusão deste custo?",
     confirm_delete_debt: "Confirma a exclusão desta dívida?",
@@ -621,6 +626,101 @@ const translations = {
     finance_mba: "MBA em Finanças",
     financial_calculator: "Calculadora Financeira",
     financial_calculator_title: "Calculadora Financeira",
+    financial_calculators: "Calculadoras Financeiras",
+    financial_calculators_description: "Calcule juros compostos, empréstimos, investimentos e planos de aposentadoria com nossas calculadoras financeiras.",
+    
+    // Abas de calculadoras
+    compound_interest_tab: "Juros Compostos",
+    investment_tab: "Investimento",
+    retirement_tab: "Aposentadoria",
+    loan_tab: "Empréstimo",
+    financing_tab: "Financiamento",
+    rent_vs_buy_tab: "Alugar vs Comprar",
+    
+    // Campos comuns das calculadoras
+    use_calculator: "Usar Calculadora",
+    back_to_calculators: "Voltar às Calculadoras",
+    initial_amount: "Valor Inicial",
+    principal: "Principal",
+    time_period_years: "Período (anos)",
+    monthly_deposit: "Depósito Mensal",
+    deposit_frequency: "Frequência de Depósitos",
+    calculate_interest: "Calcular Juros",
+    expected_annual_return: "Retorno Anual Esperado",
+    life_expectancy: "Expectativa de Vida",
+    current_savings: "Poupança Atual",
+    desired_monthly_income: "Renda Mensal Desejada",
+    inflation_rate: "Taxa de Inflação",
+    calculating_result: "Calculando...",
+    years: "anos",
+    
+    // Chaves que estavam duplicadas e foram removidas daqui:
+    // annual_rate, current_age
+    
+    // Calculadora de Juros Compostos
+    future_value: "Valor Futuro",
+    total_contributions: "Total de Contribuições",
+    total_earnings: "Total de Rendimentos",
+    monthly_progression: "Progressão Mensal",
+    
+    // Calculadora de Investimentos
+    calculation_type: "Tipo de Cálculo",
+    how_much_to_invest: "Quanto Investir",
+    how_long_to_goal: "Quanto Tempo",
+    calculate_contribution_needed: "Calcular Contribuição Necessária",
+    calculate_time_to_goal: "Calcular Tempo até o Objetivo",
+    monthly_contribution_needed: "Contribuição Mensal Necessária",
+    years_to_reach_goal: "Anos para Atingir Meta",
+    to_reach_goal_in_x_years: "Para atingir a meta em {years} anos",
+    with_monthly_contribution: "Com contribuição mensal de {amount}",
+    money_you_invested: "Valor que você investiu",
+    return_on_investment: "Retorno sobre investimento",
+    yearly_progression: "Progressão Anual",
+    investment_desired_salary: "Salário Desejado",
+    desired_assets: "Patrimônio Desejado",
+    investment_annual_rate: "Taxa de Juros Anual (%)",
+    
+    // Calculadora de Empréstimos
+    loan_monthly_payment: "Pagamento Mensal",
+    total_payment: "Pagamento Total",
+    loan_total_interest: "Juros Total",
+    amortization_table: "Tabela de Amortização",
+    payment: "Pagamento",
+    of_loan_value: "do valor do empréstimo",
+    total_value_paid: "Valor Total Pago",
+    decreasing_payment_sac: "Pagamento Decrescente (SAC)",
+    
+    // Avisos e informações adicionais
+    excluding_taxes: "(Faltando o desconto do imposto)",
+    
+    // Calculadora Alugar vs Comprar
+    rent_vs_buy_calculator: "Calculadora Alugar vs Comprar",
+    rent_vs_buy_calculator_description: "Compare os custos de alugar versus comprar um imóvel ao longo do tempo.",
+    compare_options: "Comparar Opções",
+    rent_option: "Opção de Aluguel",
+    buy_option: "Opção de Compra",
+    monthly_rent: "Aluguel Mensal",
+    property_value: "Valor do Imóvel",
+    annual_rent_increase: "Aumento Anual do Aluguel (%)",
+    investment_return_rate: "Taxa de Retorno do Investimento (%)",
+    time_horizon_years: "Horizonte de Tempo (anos)",
+    property_appreciation: "Valorização do Imóvel (%)",
+    property_tax: "Imposto sobre o Imóvel (%)",
+    mortgage_term: "Prazo do Financiamento (anos)",
+    
+    // Calculadora de Aposentadoria
+    calculate_retirement: "Calcular Aposentadoria",
+    at_age: "Na idade",
+    retirement_monthly_income: "Renda Mensal",
+    meets_goal: "Atinge a meta",
+    below_goal: "Abaixo da meta",
+    funds_deplete_at_age: "Fundos acabam aos {age} anos",
+    funds_last_lifetime: "Fundos duram toda a vida",
+    accumulation_phase: "Fase de Acumulação",
+    withdrawal_phase: "Fase de Retiradas",
+    yearly_withdrawal: "Retirada Anual",
+    remaining_balance: "Saldo Remanescente",
+    
     financial_insights: "Insights Financeiros",
     financial_freedom: "Liberdade Financeira",
     financial_health: "Saúde Financeira",
@@ -810,6 +910,11 @@ const translations = {
     investment_flag_description: "Descrição da flag de investimentos",
     investment_funds: "Fundos de investimentos",
     investment_goals_calculator: "Calculadora de Metas de Investimento",
+    investment_calculator: "Calculadora de Investimentos",
+    investment_calculator_description: "Projete o crescimento dos seus investimentos e planeje metas financeiras.",
+    investment_calculator_subtitle: "Descubra quanto investir mensalmente para alcançar seus objetivos financeiros.",
+    investment_goal: "Meta de Investimento",
+    investment_results: "Resultados do Investimento",
     investment_management: "Gerenciamento de investimentos",
     investment_nav_comparatives: "Comparativos",
     investment_nav_overview: "Visão Geral",
@@ -866,6 +971,11 @@ const translations = {
     limited_features: "Funcionalidades limitadas",
     liquidity: "Liquidez",
     loan: "Empréstimo",
+    loan_calculator: "Calculadora de Empréstimos",
+    loan_calculator_description: "Simule empréstimos, financiamentos e calcule parcelas mensais.",
+    loan_calculator_subtitle: "Planeje seus empréstimos e entenda o impacto das taxas de juros.",
+    loan_amount: "Valor do Empréstimo",
+    loan_term: "Prazo do Empréstimo",
     loading: "Carregando...",
     loading_costs: "Carregando custos...",
     loading_debts: "Carregando dívidas...",
@@ -1170,7 +1280,6 @@ const translations = {
     price_alert_activated: "ativado",
     price_alert_deactivated: "desativado",
     price_alert_status: "Alerta de preço",
-    principal: "Principal",
     priority: "Prioridade",
     priority_support: "Suporte Prioritário",
     priority_support_desc:
@@ -1215,6 +1324,17 @@ const translations = {
     real_time_alerts: "Alertas em tempo real",
     real_time_chat: "Chat em tempo real",
     real_time_data: "Dados em tempo real",
+    
+    // Calculadora de Aposentadoria
+    retirement: "Aposentadoria",
+    retirement_calculator: "Calculadora de Aposentadoria",
+    retirement_calculator_description: "Planeje sua aposentadoria e calcule quanto poupar para o futuro.",
+    retirement_calculator_subtitle: "Garanta sua tranquilidade financeira calculando seu plano de aposentadoria.",
+    retirement_age: "Idade de Aposentadoria",
+    retirement_projections: "Projeções de Aposentadoria",
+    retirement_fund: "Fundo de Aposentadoria",
+    retirement_duration: "Duração da Aposentadoria",
+    
     received_month: "Recebidos no mês",
     received_this_month_consider_reinvest:
       "Recebidos este mês, considere reinvestir",
@@ -1266,6 +1386,9 @@ const translations = {
     resend_in: "Reenviar em",
     reserve_for_emergencies: "Reserve para emergências",
     reset: "Redefinir",
+    receive_announcements: "Receber anúncios",
+    receive_portfolio_reports: "Receber relatórios de carteira",
+    receive_market_news: "Receber notícias do mercado",
     response_time_24h: "Resposta em até 24h",
     response_within_24h: "Resposta em até 24h",
     restricted_access: "Acesso Restrito",
@@ -1449,7 +1572,6 @@ const translations = {
     total_goals: "metas totais",
     total_income: "Total de Entradas",
     total_installments: "Total de Parcelas",
-    total_interest: "Total de Juros",
     total_interest_value: "Valor Total em Juros",
     total_invested: "Total Investido",
     total_invested_value: "Valor Total Investido",
@@ -1933,12 +2055,14 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({
   const formatCurrency = (value: number): string => {
     const options = {
       style: "currency" as const,
-      currency: currency,
+      currency: "BRL",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     };
 
-    return new Intl.NumberFormat(language, options).format(value);
+    // Formatação personalizada para o estilo brasileiro 
+    const formatted = new Intl.NumberFormat("pt-BR", options).format(value);
+    return formatted;
   };
 
   const formatNumber = (value: number): string => {

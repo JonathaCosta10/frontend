@@ -2,7 +2,7 @@ import { localStorageManager } from "./localStorage";
 
 // Configuração centralizada para URLs da API
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
-const API_KEY = import.meta.env.VITE_API_KEY || "organizesee-api-key-2025-secure";
+const API_KEY = import.meta.env.VITE_API_KEY || "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+";
 
 // Tratamento para consistência de URLs
 const normalizeUrl = (url: string): string => {

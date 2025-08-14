@@ -61,24 +61,23 @@ export const mockLoanResult: LoanResult = {
 };
 
 export const mockInvestmentResult: InvestmentResult = {
-  futureValue: 185000.00,
-  totalInvested: 120000.00,
-  profit: 65000.00,
-  profitPercentage: 54.17,
-  monthsToGoal: 84,
-  yearsToGoal: 7,
-  investmentProjection: [
+  monthlyContribution: 1200.00,
+  yearsToReachGoal: 7,
+  finalBalance: 185000.00,
+  totalContributed: 120000.00,
+  totalEarnings: 65000.00,
+  yearlyResults: [
     {
       year: 1,
-      invested: 12000,
-      value: 13200,
-      profit: 1200
+      balance: 13200,
+      contributions: 12000,
+      earnings: 1200
     },
     {
       year: 2,
-      invested: 24000,
-      value: 27840,
-      profit: 3840
+      balance: 27840,
+      contributions: 24000,
+      earnings: 3840
     },
     // ... more yearly projections
   ]
@@ -177,41 +176,52 @@ export const calculateInvestmentMock = async (input: InvestmentInput): Promise<I
   await simulateApiDelay(700);
   
   const monthlyRate = input.expectedReturn / 100 / 12;
-  const months = input.years * 12;
+  let monthlyAmount = input.monthlyAmount;
+  let years = input.years;
+  let calculatedMonths = input.years * 12;
   
-  // Calculate future value
-  const futureValue = input.monthlyAmount * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
-  const totalInvested = input.monthlyAmount * months;
-  const profit = futureValue - totalInvested;
-  
-  // Calculate time to reach goal
-  let monthsToGoal = undefined;
-  if (input.goal && input.goal > 0) {
-    monthsToGoal = Math.log(1 + (input.goal * monthlyRate) / input.monthlyAmount) / Math.log(1 + monthlyRate);
+  // Caso esteja calculando a contribuição mensal necessária
+  if (input.type === "contribution") {
+    // Calcula o valor da contribuição mensal para atingir o objetivo
+    monthlyAmount = input.goal / (((Math.pow(1 + monthlyRate, calculatedMonths) - 1) / monthlyRate));
+    years = input.years;
+  } 
+  // Caso esteja calculando o tempo necessário
+  else if (input.type === "time") {
+    // Calcula o tempo para atingir o objetivo
+    if (input.goal && input.goal > 0 && input.monthlyAmount > 0) {
+      const monthsToGoal = Math.log(1 + (input.goal * monthlyRate) / input.monthlyAmount) / Math.log(1 + monthlyRate);
+      years = monthsToGoal / 12;
+      calculatedMonths = Math.ceil(monthsToGoal);
+    }
   }
   
+  // Calculate final balance
+  const finalBalance = monthlyAmount * ((Math.pow(1 + monthlyRate, calculatedMonths) - 1) / monthlyRate);
+  const totalContributed = monthlyAmount * calculatedMonths;
+  const totalEarnings = finalBalance - totalContributed;
+  
   // Generate yearly projection
-  const investmentProjection = [];
-  for (let year = 1; year <= input.years; year++) {
-    const yearMonths = year * 12;
-    const yearValue = input.monthlyAmount * ((Math.pow(1 + monthlyRate, yearMonths) - 1) / monthlyRate);
-    const yearInvested = input.monthlyAmount * yearMonths;
+  const yearlyResults = [];
+  for (let year = 1; year <= Math.ceil(years); year++) {
+    const yearMonths = Math.min(year * 12, calculatedMonths);
+    const yearBalance = monthlyAmount * ((Math.pow(1 + monthlyRate, yearMonths) - 1) / monthlyRate);
+    const yearContributions = monthlyAmount * yearMonths;
     
-    investmentProjection.push({
+    yearlyResults.push({
       year,
-      invested: yearInvested,
-      value: yearValue,
-      profit: yearValue - yearInvested
+      balance: yearBalance,
+      contributions: yearContributions,
+      earnings: yearBalance - yearContributions
     });
   }
   
   return {
-    futureValue,
-    totalInvested,
-    profit,
-    profitPercentage: (profit / totalInvested) * 100,
-    monthsToGoal,
-    yearsToGoal: monthsToGoal ? monthsToGoal / 12 : undefined,
-    investmentProjection
+    monthlyContribution: monthlyAmount,
+    yearsToReachGoal: years,
+    finalBalance: finalBalance,
+    totalContributed: totalContributed,
+    totalEarnings: totalEarnings,
+    yearlyResults: yearlyResults
   };
 };
