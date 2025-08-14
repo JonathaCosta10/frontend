@@ -75,7 +75,7 @@ export default function DailyInfoPremiumGuard({
                 onClick={redirectToPayment}
               >
                 <Crown className="h-4 w-4 mr-2" />
-                Assinar Premium por R$29,90/mês
+                {t('subscribe_premium')}
               </Button>
               
               <p className="text-sm text-muted-foreground">
@@ -129,7 +129,7 @@ export default function DailyInfoPremiumGuard({
                 onClick={redirectToPayment}
               >
                 <Crown className="h-4 w-4 mr-2" />
-                Assinar Premium por R$29,90/mês
+                {t('subscribe_premium')}
               </Button>
               
               <p className="text-sm text-muted-foreground">
@@ -154,7 +154,7 @@ export default function DailyInfoPremiumGuard({
           className="border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white"
           onClick={redirectToPayment}
         >
-          Desbloquear Premium
+          {t('unlock_premium')}
         </Button>
       </div>
     );

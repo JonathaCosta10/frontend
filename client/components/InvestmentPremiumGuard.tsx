@@ -149,7 +149,7 @@ export default function InvestmentPremiumGuard({ children, featureType }: Invest
                 onClick={redirectToPayment}
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Assinar Premium por R$29,90/mês
+                {t('subscribe_premium')}
               </Button>
               
               <p className="text-sm text-muted-foreground">

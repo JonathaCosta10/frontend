@@ -57,7 +57,7 @@ export default function InvestmentDividendPremiumGuard({
                 className="bg-amber-600 hover:bg-amber-700 text-white"
                 onClick={redirectToPayment}
               >
-                Desbloquear
+                {t('unlock')}
               </Button>
             </div>
           </CardContent>
@@ -107,7 +107,7 @@ export default function InvestmentDividendPremiumGuard({
                 onClick={redirectToPayment}
               >
                 <Crown className="h-4 w-4 mr-2" />
-                Assinar Premium por R$29,90/mês
+                {t('subscribe_premium')}
               </Button>
               
               <p className="text-sm text-muted-foreground">
@@ -132,7 +132,7 @@ export default function InvestmentDividendPremiumGuard({
           className="border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-white"
           onClick={redirectToPayment}
         >
-          Desbloquear Premium
+          {t('unlock_premium')}
         </Button>
       </div>
     );

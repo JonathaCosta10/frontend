@@ -60,10 +60,10 @@ export default function Home() {
   ];
 
   const stats = [
-    { label: t('monitored_funds'), value: "500+" },
-    { label: t('active_users'), value: "25k+" },
-    { label: t('daily_volume'), value: "R$ 2.3B" },
-    { label: t('generated_reports'), value: "100k+" },
+    { label: t('quick_response'), value: "24h" },
+    { label: t('user_satisfaction'), value: "98%" },
+    { label: t('platform_updates'), value: "Semanal" },
+    { label: t('financial_insights'), value: "Diário" },
   ];
 
   return (
@@ -127,7 +127,7 @@ export default function Home() {
         <section className="py-20 text-center">
           <div className="max-w-4xl mx-auto">
             <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20">
-              🚀 {t('leading_platform')}
+              🚀 Organizesee
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               {t('organize_investments')}

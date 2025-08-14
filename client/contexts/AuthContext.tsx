@@ -45,7 +45,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   loading: boolean;
-  register: (userData: RegisterData) => Promise<boolean>;
+  register: (userData: RegisterData) => Promise<{ success: boolean; error?: any }>;
   refreshToken: () => Promise<boolean>;
   hasPermission: (permission: string) => boolean;
   isPremiumUser: () => boolean;
@@ -69,7 +69,7 @@ const defaultAuthValue: AuthContextType = {
   loading: true,
   login: async () => false,
   logout: () => {},
-  register: async () => false,
+  register: async () => ({ success: false, error: "Context not initialized" }),
   refreshToken: async () => false,
   hasPermission: () => false,
   isPremiumUser: () => false,
@@ -296,7 +296,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (userData: RegisterData): Promise<boolean> => {
+  const register = async (userData: RegisterData): Promise<{ success: boolean; error?: any }> => {
     try {
       setLoading(true);
       console.log("📝 Iniciando registro via Rules:", {
@@ -305,9 +305,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       // Usar Rules para registro
-      const success = await registerRules(userData, "register");
+      const result = await registerRules(userData, "register");
 
-      if (success) {
+      if (result.success) {
         // Verificar se dados foram armazenados (pode ter auto-login)
         const token = localStorageManager.getAuthToken();
         const user = localStorageManager.getUserData();
@@ -324,16 +324,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         setLoading(false);
-        return true;
+        return { success: true };
       } else {
-        console.error("❌ Registro via Rules falhou");
+        console.error("❌ Registro via Rules falhou:", result.error);
         setLoading(false);
-        return false;
+        return { success: false, error: result.error };
       }
     } catch (error) {
       console.error("❌ Erro de registro via Rules:", error);
       setLoading(false);
-      return false;
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Registration failed" 
+      };
     }
   };
 

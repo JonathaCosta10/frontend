@@ -167,16 +167,28 @@ export const login = async (
 };
 
 // Função de registro
-export const register = async (userData: any, chave: string = "register"): Promise<boolean> => {
+export const register = async (userData: any, chave: string = "register"): Promise<{ success: boolean; error?: any }> => {
   try {
     const response = await rulesInstance.post({
       chave,
       body: userData,
       withAuth: false,
     });
-    return response.success;
+    
+    if (response.success) {
+      return { success: true };
+    } else {
+      // Retornar o erro específico se disponível
+      return { 
+        success: false, 
+        error: response.error || response.message || "Registration failed" 
+      };
+    }
   } catch (error) {
-    return false;
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Network error" 
+    };
   }
 };
 

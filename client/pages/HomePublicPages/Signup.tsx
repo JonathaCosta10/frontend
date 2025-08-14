@@ -82,7 +82,7 @@ export default function Signup() {
     setIsSubmitting(true);
 
     try {
-      const success = await registerUser({
+      const result = await registerUser({
         username: data.username,
         email: data.email,
         password: data.password,
@@ -91,17 +91,48 @@ export default function Signup() {
         last_name: data.lastName,
       });
 
-      if (success) {
+      if (result.success) {
         // Redireciona para a página que o usuário tentou acessar ou para o dashboard
         const searchParams = new URLSearchParams(location.search);
         const redirectTo =
           searchParams.get("redirect") || "/dashboard/orcamento";
         navigate(redirectTo, { replace: true });
       } else {
-        setError("email", {
-          type: "manual",
-          message: t("account_creation_error"),
-        });
+        // Verificar o tipo de erro para exibir a mensagem apropriada
+        const errorMessage = result.error;
+        
+        // Se o erro contém informações sobre email ou username duplicados
+        if (typeof errorMessage === 'object' && errorMessage !== null) {
+          if (errorMessage.email) {
+            setError("email", {
+              type: "manual",
+              message: Array.isArray(errorMessage.email) 
+                ? errorMessage.email[0] 
+                : String(errorMessage.email),
+            });
+          }
+          if (errorMessage.username) {
+            setError("username", {
+              type: "manual", 
+              message: Array.isArray(errorMessage.username)
+                ? errorMessage.username[0]
+                : String(errorMessage.username),
+            });
+          }
+          // Se não há erro específico de campo, mostrar erro geral
+          if (!errorMessage.email && !errorMessage.username) {
+            setError("email", {
+              type: "manual",
+              message: t("account_creation_error"),
+            });
+          }
+        } else {
+          // Erro de string simples
+          setError("email", {
+            type: "manual",
+            message: String(errorMessage) || t("account_creation_error"),
+          });
+        }
       }
     } catch (error) {
       setError("email", {
