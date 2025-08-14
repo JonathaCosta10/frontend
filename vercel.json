@@ -20,7 +20,6 @@
     "VITE_BACKEND_URL": "https://restbackend.herokuapp.com",
     "VITE_API_KEY": "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+"
   },
-  "functions": {},
   "headers": [
     {
       "source": "/assets/(.*)",
