@@ -170,7 +170,7 @@ export default function InformacoesSemanais() {
   const isPremium = user?.plano === "premium";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -183,7 +183,7 @@ export default function InformacoesSemanais() {
       </div>
 
       {/* Primeira seção: Índices e Mercado + WishList */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
         {/* Índices e Mercado */}
         <Card>
           <CardHeader>
@@ -284,7 +284,7 @@ export default function InformacoesSemanais() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
+            <div className="space-y-3 md:space-y-6">
               {marketInsights.map((insight, index) => (
                 <div key={index} className="space-y-3">
                   <h3 className="text-lg font-semibold">{insight.title}</h3>

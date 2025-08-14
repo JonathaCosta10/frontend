@@ -291,9 +291,9 @@ export default function Entradas() {
 
   // ========================= RENDER =========================
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -451,7 +451,7 @@ export default function Entradas() {
       </Card>
 
       {/* Layout lado a lado: Gráfico à esquerda e Cadastro à direita */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
         {/* Seção do Gráfico */}
         <Card>
           <CardHeader>

@@ -132,8 +132,8 @@ export default function BudgetOverview() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="space-y-3 md:space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
@@ -152,7 +152,7 @@ export default function BudgetOverview() {
   // Verificar se há dados para o mês selecionado
   if (budgetData && !mesDisponivel) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-3 md:space-y-6">
         {/* Orientação específica para o módulo de orçamento */}
         <BudgetNoDataGuidance />
       </div>
@@ -161,9 +161,9 @@ export default function BudgetOverview() {
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div className="space-y-3 md:space-y-6">
         {/* Cards de Resumo Principal */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-6">
           <Card className="border-l-4 border-l-success">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium flex items-center space-x-1">

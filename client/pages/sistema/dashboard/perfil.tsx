@@ -659,7 +659,7 @@ const PerfilPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <div className="container mx-auto px-4 py-6 space-y-3 md:space-y-6">
       {/* Header Section */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
         <div className="flex items-center justify-between">
@@ -696,7 +696,7 @@ const PerfilPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3 md:space-y-6">
           {/* Dados Pessoais */}
           <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
@@ -916,7 +916,7 @@ const PerfilPage: React.FC = () => {
                 </>
               ) : (
                 // Modo de Visualização
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
                   <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">Nome Completo</Label>
                     <p className="font-semibold text-gray-900">{personalData.nomeCompleto || "Não informado"}</p>
@@ -979,7 +979,7 @@ const PerfilPage: React.FC = () => {
           </Card>
 
           {/* Grid para as duas seções abaixo */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">{/* added mt-8 for spacing */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mt-8">{/* added mt-8 for spacing */}
             {/* Status Premium */}
             <Card className="border-l-4 border-l-yellow-500 bg-gradient-to-br from-yellow-50 to-orange-50">
               <CardHeader>

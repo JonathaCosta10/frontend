@@ -14,6 +14,9 @@ import {
   Shield,
   Zap,
   Users,
+  Menu,
+  X,
+  Play,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
@@ -22,6 +25,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -83,7 +87,8 @@ export default function Home() {
               <h1 className="text-2xl font-bold text-primary">Organizesee</h1>
             </Link>
 
-            <div className="flex items-center space-x-4">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
               {/* Language and Currency Selector */}
               <LanguageSelector variant="compact" showCurrency={false} size="sm" />
 
@@ -100,7 +105,7 @@ export default function Home() {
                 )}
               </Button>
 
-              <div className="hidden md:flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
                 <Link to="/login">
                   <Button
                     variant="ghost"
@@ -118,11 +123,101 @@ export default function Home() {
                 </Link>
               </div>
             </div>
+
+            {/* Mobile Navigation */}
+            <div className="flex md:hidden items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleDarkMode}
+                className="w-9 h-9"
+              >
+                {darkMode ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="w-9 h-9"
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-4 w-4" />
+                ) : (
+                  <Menu className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 py-4 border-t border-border">
+              <div className="flex flex-col space-y-4">
+                {/* Main Action Buttons */}
+                <div className="flex flex-col space-y-3 px-2">
+                  <Link to="/login" className="w-full">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full justify-center flex items-center space-x-2 text-lg py-6"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <LogIn className="h-5 w-5" />
+                      <span>{t("login")}</span>
+                    </Button>
+                  </Link>
+                  <Link to="/signup" className="w-full">
+                    <Button
+                      size="lg"
+                      className="w-full justify-center flex items-center space-x-2 text-lg py-6 bg-primary hover:bg-primary/90"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <User className="h-5 w-5" />
+                      <span>{t("signup")}</span>
+                    </Button>
+                  </Link>
+                </div>
+                
+                {/* Quick Actions */}
+                <div className="px-2 pt-2 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-3">Navegação:</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Link to="/demo" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Demonstração
+                      </Button>
+                    </Link>
+                    <Link to="/market" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Mercado
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className={`container mx-auto px-4 ${isScrolled ? 'pt-20' : ''}`}>
+      <main className={`container mx-auto px-4 pb-32 md:pb-8 ${isScrolled ? 'pt-20' : ''}`}>
         {/* Hero Section */}
         <section className="py-20 text-center">
           <div className="max-w-4xl mx-auto">
@@ -280,6 +375,37 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Action Buttons for Mobile */}
+      <div className="fixed bottom-6 left-4 right-4 md:hidden z-40">
+        <div className="flex flex-col space-y-3">
+          {/* Primary CTA - Signup */}
+          <Link to="/signup" className="w-full">
+            <Button
+              size="lg"
+              className="w-full justify-center flex items-center space-x-2 text-lg py-4 bg-primary hover:bg-primary/90 shadow-lg transform transition-transform hover:scale-105"
+            >
+              <User className="h-5 w-5" />
+              <span className="font-semibold">{t("signup")}</span>
+              <Badge variant="secondary" className="ml-2 bg-white text-primary text-xs px-2">
+                GRÁTIS
+              </Badge>
+            </Button>
+          </Link>
+          
+          {/* Secondary CTA - Login */}
+          <Link to="/login" className="w-full">
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full justify-center flex items-center space-x-2 text-lg py-4 bg-background hover:bg-muted shadow-lg border-2 transform transition-transform hover:scale-105"
+            >
+              <LogIn className="h-5 w-5" />
+              <span className="font-semibold">{t("login")}</span>
+            </Button>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

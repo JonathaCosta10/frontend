@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Moon, Sun, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Moon, Sun, Eye, EyeOff, ArrowLeft, Menu, X, Play, TrendingUp, Home } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +24,7 @@ export default function Login() {
   const [darkMode, setDarkMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
     register,
     handleSubmit,
@@ -86,7 +87,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/home" className="flex items-center space-x-2">
@@ -98,14 +99,8 @@ export default function Login() {
               <h1 className="text-2xl font-bold text-primary">Organizesee</h1>
             </Link>
 
-            <div className="flex items-center space-x-4">
-              {/* Language and Currency Selector */}
-              <LanguageSelector
-                variant="compact"
-                showCurrency={false}
-                size="sm"
-              />
-
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
               <Button
                 variant="ghost"
                 size="icon"
@@ -126,7 +121,83 @@ export default function Login() {
                 </Button>
               </Link>
             </div>
+
+            {/* Mobile Navigation */}
+            <div className="flex md:hidden items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleDarkMode}
+                className="w-9 h-9"
+              >
+                {darkMode ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="w-9 h-9"
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-4 w-4" />
+                ) : (
+                  <Menu className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 py-4 border-t border-border">
+              <div className="flex flex-col space-y-4">
+                {/* Navigation Options */}
+                <div className="px-2">
+                  <p className="text-sm text-muted-foreground mb-3">Navegação:</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Link to="/home" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Home className="h-4 w-4 mr-2" />
+                        Início
+                      </Button>
+                    </Link>
+                    <Link to="/demo" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Demonstração
+                      </Button>
+                    </Link>
+                    <Link to="/market" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Mercado
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 

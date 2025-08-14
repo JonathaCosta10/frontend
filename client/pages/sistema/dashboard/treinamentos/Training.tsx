@@ -8,7 +8,7 @@ export default function Training() {
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* Header */}
       <div className="flex items-center space-x-3">
         <GraduationCap className="h-8 w-8 text-primary" />

@@ -233,7 +233,7 @@ export default function IndicadoresEconomicos() {
 
   return (
     <MarketPremiumGuard marketFeature="financial-calculator">
-      <div className="space-y-6">
+      <div className="space-y-3 md:space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold flex items-center space-x-2">
@@ -253,7 +253,7 @@ export default function IndicadoresEconomicos() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">
@@ -349,7 +349,7 @@ export default function IndicadoresEconomicos() {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-3 md:space-y-6">
           {/* Search and Filters */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
@@ -535,8 +535,8 @@ export default function IndicadoresEconomicos() {
         </TabsContent>
 
         {/* Categories Tab */}
-        <TabsContent value="categories" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <TabsContent value="categories" className="space-y-3 md:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
             {indicatorGroups.map((group) => (
               <Card
                 key={group.category}

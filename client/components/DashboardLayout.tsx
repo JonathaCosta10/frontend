@@ -171,7 +171,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Content Area - Responsive padding */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-2 md:p-6">
           <Outlet />
         </main>
       </div>

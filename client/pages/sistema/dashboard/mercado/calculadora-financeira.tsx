@@ -196,7 +196,7 @@ export default function CalculadoraFinanceira() {
 
   return (
     <MarketPremiumGuard marketFeature="financial-calculator">
-      <div className="space-y-6">
+      <div className="space-y-3 md:space-y-6">
         {/* Header */}
         <div>
           <h2 className="text-2xl font-bold">{t("financial_calc_header")}</h2>
@@ -216,7 +216,7 @@ export default function CalculadoraFinanceira() {
           </TabsList>
 
           {/* COMPOUND INTEREST CALCULATOR - LINEAR LAYOUT */}
-          <TabsContent value="compound" className="space-y-6">
+          <TabsContent value="compound" className="space-y-3 md:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -429,7 +429,7 @@ export default function CalculadoraFinanceira() {
           </TabsContent>
 
           {/* LOAN CALCULATOR - LINEAR LAYOUT */}
-          <TabsContent value="loan" className="space-y-6">
+          <TabsContent value="loan" className="space-y-3 md:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -728,7 +728,7 @@ export default function CalculadoraFinanceira() {
           </TabsContent>
 
           {/* RETIREMENT CALCULATOR - LINEAR LAYOUT */}
-          <TabsContent value="retirement" className="space-y-6">
+          <TabsContent value="retirement" className="space-y-3 md:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -948,7 +948,7 @@ export default function CalculadoraFinanceira() {
           </TabsContent>
 
           {/* INVESTMENT CALCULATOR - LINEAR LAYOUT */}
-          <TabsContent value="investment" className="space-y-6">
+          <TabsContent value="investment" className="space-y-3 md:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
