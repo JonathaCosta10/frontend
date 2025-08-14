@@ -879,6 +879,7 @@ const translations = {
     login_verification_info:
       "A partir de agora, você receberá um código por email a cada login para confirmar sua identidade.",
     login_failed: "Falha no login. Verifique suas credenciais e tente novamente.",
+    incorrect_email_password: "Email ou senha incorretos. Tente novamente.",
     logging_in: "Entrando...",
     logout: "Sair",
     low: "Baixo",
@@ -1651,6 +1652,7 @@ const translations = {
     return_to_home: "Return to Home",
     authentication_failed: "Authentication Failed",
     login_failed: "Login failed. Please check your credentials and try again.",
+    incorrect_email_password: "Incorrect email or password. Please try again.",
     session_expired: "Your session has expired. Please login again.",
     main_section: "Main",
     learn_more: "Learn More",
@@ -1751,6 +1753,7 @@ const translations = {
     return_to_home: "Volver al Inicio",
     authentication_failed: "Autenticación Fallida",
     login_failed: "Error de inicio de sesión. Por favor verifica tus credenciales e intenta nuevamente.",
+    incorrect_email_password: "Correo electrónico o contraseña incorrectos. Inténtalo de nuevo.",
     session_expired: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
     annual_revenue: "Facturación Anual",
     monthly_average: "Promedio Mensual",

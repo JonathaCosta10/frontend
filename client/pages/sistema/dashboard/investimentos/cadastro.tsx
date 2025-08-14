@@ -17,18 +17,24 @@ interface Investimento extends InvestmentAsset {}
 
 // Funções helper para converter valores da API
 const toNumber = (value: string | number | undefined | null): number => {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') return parseFloat(value) || 0;
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return isNaN(value) ? 0 : value;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  }
   return 0;
 };
 
 const formatCurrency = (value: string | number | undefined | null): string => {
   const numValue = toNumber(value);
+  if (numValue === 0 && (value === null || value === undefined)) return 'N/A';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numValue);
 };
 
 const formatPercentage = (value: string | number | undefined | null): string => {
   const numValue = toNumber(value);
+  if (numValue === 0 && (value === null || value === undefined)) return '0.00';
   return numValue.toFixed(2);
 };
 
@@ -116,14 +122,26 @@ export default function CadastroInvestimentos() {
   const carregarInvestimentos = async () => {
     setLoading(true);
     try {
+      console.log('Carregando investimentos...');
       const data = await investmentService.buscarAtivosPessoais();
-      setInvestimentos(data);
+      console.log('Dados recebidos:', data);
+      
+      // Verificar se data é um array válido
+      if (Array.isArray(data)) {
+        setInvestimentos(data);
+        console.log('Investimentos carregados com sucesso:', data.length, 'itens');
+      } else {
+        console.warn('Dados recebidos não são um array:', data);
+        setInvestimentos([]);
+      }
     } catch (error) {
+      console.error('Erro ao carregar investimentos:', error);
       toast({
         title: "Erro ao carregar investimentos",
         description: error instanceof Error ? error.message : "Erro interno do servidor",
         variant: "destructive",
       });
+      setInvestimentos([]); // Garantir que seja um array vazio em caso de erro
     } finally {
       setLoading(false);
     }
@@ -473,9 +491,9 @@ export default function CadastroInvestimentos() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  investimentos.map((investimento) => (
-                    <TableRow key={investimento.id}>
-                      <TableCell className="font-medium">{investimento.ticker}</TableCell>
+                  investimentos.filter(inv => inv && typeof inv === 'object').map((investimento) => (
+                    <TableRow key={investimento.id || Math.random()}>
+                      <TableCell className="font-medium">{investimento.ticker || 'N/A'}</TableCell>
                       <TableCell className="text-right">{toNumber(investimento.quantidade).toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(investimento.preco_medio || investimento.valor_unitario)}
@@ -490,12 +508,14 @@ export default function CadastroInvestimentos() {
                         }
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(investimento.valor_atual)}
+                        {investimento.valor_atual ? formatCurrency(investimento.valor_atual) : 'N/A'}
                       </TableCell>
-                      <TableCell className={`text-right ${toNumber(investimento.variacao_percentual) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatPercentage(investimento.variacao_percentual)}%
+                      <TableCell className={`text-right ${toNumber(investimento.percentual_valorizacao || investimento.variacao_percentual) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatPercentage(investimento.percentual_valorizacao || investimento.variacao_percentual)}
                       </TableCell>
-                      <TableCell>{new Date(investimento.data_compra).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell>
+                        {investimento.data_compra ? new Date(investimento.data_compra).toLocaleDateString('pt-BR') : 'N/A'}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-2">
                           <Button

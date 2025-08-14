@@ -29,10 +29,13 @@ export interface InvestmentAsset {
   valor_investido?: number; // calculado
   preco_atual?: number | string; // vem da API como string
   valor_atual?: number | string; // calculado, vem como string
+  valorizacao?: number | string; // campo da API (ganho/perda absoluto)
+  percentual_valorizacao?: number | string; // campo da API (ganho/perda percentual)
   variacao_absoluta?: number | string; // campo da API
   variacao_percentual?: number | string; // calculado, vem como string
   ganho_perda?: number | string; // calculado, vem como string
-  data_ultimo_preco?: string; // campo da API
+  data_ultima_cotacao?: string; // campo da API
+  tem_cotacao_atual?: boolean; // campo da API
   fonte_preco?: string; // campo da API
   data_criacao?: string; // campo da API
   data_atualizacao?: string; // campo da API
@@ -118,9 +121,17 @@ export const buscarAtivosPessoais = async (): Promise<InvestmentAsset[]> => {
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data.data || data || [];
+    const responseData = await response.json();
+    
+    // Verificar se a resposta tem a estrutura esperada
+    if (responseData.success && responseData.data && responseData.data.ativos) {
+      return responseData.data.ativos;
+    }
+    
+    // Fallback para outros formatos de resposta
+    return responseData.data || responseData.ativos || responseData || [];
   } catch (error) {
+    console.error('Erro ao buscar ativos pessoais:', error);
     handleApiError(error);
     return [];
   }
