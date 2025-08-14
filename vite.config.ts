@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./client"),
     },
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
   },
   build: {
     // Otimizações para produção
