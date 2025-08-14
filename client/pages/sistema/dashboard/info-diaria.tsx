@@ -512,6 +512,15 @@ const processApiInsights = (apiData: ApiInsightsResponse): OrganizedInsightsData
 // Função otimizada para buscar insights de mercado
 const fetchMarketInsights = useCallback(async () => {
   try {
+    // Verificar se o usuário é premium ANTES de fazer qualquer requisição
+    const isPremiumUser = user?.ispaid || user?.plano === "premium";
+    
+    if (!isPremiumUser) {
+      console.log("🚫 Usuário não premium - não fazendo requisição para insights de mercado");
+      setIsLoadingInsightsData(false);
+      return;
+    }
+
     // Verificar cache primeiro
     const cacheKey = 'market_insights_v2';
     const cachedData = dataCache.get(cacheKey);
@@ -525,7 +534,7 @@ const fetchMarketInsights = useCallback(async () => {
 
     setIsLoadingInsightsData(true);
     
-    console.log("🔄 Buscando insights de mercado via API...");
+    console.log("🔄 Buscando insights de mercado via API... (Usuário Premium)");
     
     const data = await infoDailyApi.getMarketInsights();
     

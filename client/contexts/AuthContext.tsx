@@ -6,6 +6,8 @@ import React, {
   ReactNode,
 } from "react";
 import { localStorageManager } from "../lib/localStorage";
+import { authCookies, userPreferences } from "../lib/cookies";
+import { cacheManager, CACHE_KEYS } from "../lib/cache";
 import {
   login as loginRules,
   register as registerRules,
@@ -187,8 +189,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const clearAuthData = () => {
     localStorageManager.clearAuthData();
     localStorageManager.remove("isPaidUser"); // Limpar status premium
+    
+    // Limpar cookies de autenticação
+    authCookies.clearAuthTokens();
+    
+    // Limpar cache do usuário se houver
+    if (user?.id) {
+      cacheManager.clearUser(user.id);
+    }
+    
     setUser(null);
     setIsAuthenticated(false);
+    
+    console.log("🧹 Auth data, cookies e cache limpos");
   };
 
   const performTokenRefresh = async (
@@ -264,6 +277,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userData = localStorageManager.getUserData();
 
         if (token && userData) {
+          // Salvar tokens em cookies também para persistência
+          authCookies.setAuthToken(token);
+          
+          // Salvar dados do usuário no cache
+          cacheManager.setUserData(CACHE_KEYS.USER_PROFILE, userData, userData.id);
+          
           setUser(userData);
           setIsAuthenticated(true);
           setLoading(false);
@@ -274,7 +293,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             userId: userData.id,
             premiumStatus: userData.subscription_type || "free",
             tokenValido: isTokenValid(token),
-            tokenExpira: token ? JSON.parse(atob(token.split(".")[1])).exp : null
+            tokenExpira: token ? JSON.parse(atob(token.split(".")[1])).exp : null,
+            cookiesSalvos: true,
+            cacheSalvo: true
           });
           
           return true;
