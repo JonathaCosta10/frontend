@@ -31,15 +31,37 @@ export class Rules {
     const hardCode: HeaderModel = {
       "Content-Type": "application/json",
     };
+    
     let endpoint = getRoute(chave);
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
-    endpoint = `${BACKEND_URL}${endpoint}`;
+    
+    // Se a URL já começar com /api/ ou se for o refreshToken, não adicionar BACKEND_URL duplicado
+    if (endpoint.startsWith('/api/') && BACKEND_URL.endsWith('/api')) {
+      // Remove /api do início do endpoint para evitar duplicação
+      endpoint = endpoint.substring(4);  // Remove '/api'
+      endpoint = `${BACKEND_URL}${endpoint}`;
+    } else if (chave === 'refreshToken' && BACKEND_URL.includes('/api')) {
+      // Caso especial para o refreshToken para evitar duplicação
+      endpoint = `${BACKEND_URL}/auth/token/refresh/`;
+    } else {
+      endpoint = `${BACKEND_URL}${endpoint}`;
+    }
+    
     if (params && Object.keys(params).length > 0) {
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         queryParams.append(key, String(value));
       });
       endpoint = `${endpoint}?${queryParams.toString()}`;
+    }
+    
+    // Log para debug de URLs em ambiente de desenvolvimento
+    if (import.meta.env.DEV || chave === 'refreshToken') {
+      console.log(`🔗 API Request [${chave}]:`, {
+        endpoint,
+        method: body ? 'POST' : 'GET',
+        withAuth
+      });
     }
     const requestBody = body;
     const baseHeaders = getHeaders(chave, withAuth);
@@ -154,11 +176,19 @@ export const refreshTokenApi = async (
   refreshToken: string,
   chave: string = "refreshToken",
 ): Promise<any> => {
+  console.log("🔄 Refreshing token with chave:", chave);
+  
   const response = await rulesInstance.post({
     chave,
     body: { refresh: refreshToken },
     withAuth: false,
   });
+
+  if (response.success) {
+    console.log("✅ Token refresh successful!");
+  } else {
+    console.warn("❌ Token refresh failed:", response.message || "Unknown error");
+  }
 
   return response.success ? response.data : null;
 };
