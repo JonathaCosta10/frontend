@@ -1116,6 +1116,22 @@ const translations = {
     plans_below: "Planos abaixo",
     platform_description_complete:
       "A plataforma com tudo e mais um pouco para você gerenciar seus investimentos, orçamento, desejos e planos de vida de forma inteligente com a qualidade e auxilio profissional.",
+    
+    // Testimonials para página demo
+    carlos_silva_testimonial: "A Organizesee revolucionou minha gestão financeira. Agora consigo acompanhar meus investimentos em tempo real e tomar decisões mais estratégicas.",
+    carlos_silva_name: "Carlos Silva",
+    carlos_silva_role: "Empresário e Investidor",
+    
+    ana_rodrigues_testimonial: "Finalmente encontrei uma plataforma que integra tudo que preciso: orçamento, investimentos e análise de mercado. Simplesmente fantástica!",
+    ana_rodrigues_name: "Ana Rodrigues", 
+    ana_rodrigues_role: "Analista Financeira",
+    
+    roberto_costa_testimonial: "Como iniciante em investimentos, a Organizesee me deu a confiança e as ferramentas necessárias para começar a investir com segurança.",
+    roberto_costa_name: "Roberto Costa",
+    roberto_costa_role: "Engenheiro de Software",
+    
+    ready_to_start: "Pronto para começar sua jornada financeira?",
+
     pleasures: "Prazeres",
     platform_updates: "Atualizações da Plataforma",
     points: " pts",
@@ -1678,6 +1694,23 @@ const translations = {
     market_description: "Track the financial market in real time",
     crypto_description: "Cryptocurrency investments and market analysis",
     settings_description: "Account settings and system preferences",
+    
+    // Testimonials for demo page
+    carlos_silva_testimonial: "Organizesee revolutionized my financial management. Now I can track my investments in real time and make more strategic decisions.",
+    carlos_silva_name: "Carlos Silva",
+    carlos_silva_role: "Entrepreneur and Investor",
+    
+    ana_rodrigues_testimonial: "Finally found a platform that integrates everything I need: budget, investments and market analysis. Simply fantastic!",
+    ana_rodrigues_name: "Ana Rodrigues", 
+    ana_rodrigues_role: "Financial Analyst",
+    
+    roberto_costa_testimonial: "As a beginner in investments, Organizesee gave me the confidence and tools needed to start investing safely.",
+    roberto_costa_name: "Roberto Costa",
+    roberto_costa_role: "Software Engineer",
+    
+    ready_to_start: "Ready to start your financial journey?",
+    platform_description_complete: "The platform with everything and a little more for you to manage your investments, budget, desires and life plans intelligently with professional quality and assistance.",
+
   },
   "es-ES": {
     // Add Spanish translations here
@@ -1784,6 +1817,23 @@ const translations = {
     market_description: "Sigue el mercado financiero en tiempo real",
     crypto_description: "Inversiones en criptomonedas y análisis de mercado",
     settings_description: "Configuración de cuenta y preferencias del sistema",
+    
+    // Testimonials para página demo
+    carlos_silva_testimonial: "Organizesee revolucionó mi gestión financiera. Ahora puedo seguir mis inversiones en tiempo real y tomar decisiones más estratégicas.",
+    carlos_silva_name: "Carlos Silva",
+    carlos_silva_role: "Empresario e Inversor",
+    
+    ana_rodrigues_testimonial: "Finalmente encontré una plataforma que integra todo lo que necesito: presupuesto, inversiones y análisis de mercado. ¡Simplemente fantástica!",
+    ana_rodrigues_name: "Ana Rodrigues", 
+    ana_rodrigues_role: "Analista Financiera",
+    
+    roberto_costa_testimonial: "Como principiante en inversiones, Organizesee me dio la confianza y las herramientas necesarias para empezar a invertir con seguridad.",
+    roberto_costa_name: "Roberto Costa",
+    roberto_costa_role: "Ingeniero de Software",
+    
+    ready_to_start: "¿Listo para comenzar tu viaje financiero?",
+    platform_description_complete: "La plataforma con todo y un poco más para que gestiones tus inversiones, presupuesto, deseos y planes de vida de forma inteligente con calidad y asistencia profesional.",
+
   },
 };
 
