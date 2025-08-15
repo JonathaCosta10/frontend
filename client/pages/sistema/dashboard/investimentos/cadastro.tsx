@@ -38,6 +38,12 @@ const formatPercentage = (value: string | number | undefined | null): string => 
   return numValue.toFixed(2);
 };
 
+// Calcula a rentabilidade com base no valor investido e no valor atual
+const calcularRentabilidade = (valorInvestido: number, valorAtual: number): number => {
+  if (valorInvestido <= 0) return 0;
+  return ((valorAtual - valorInvestido) / valorInvestido) * 100;
+};
+
 // Funções para formatação de entrada de valores
 const formatInputCurrency = (value: string): string => {
   // Remove tudo que não é dígito
@@ -510,8 +516,16 @@ export default function CadastroInvestimentos() {
                       <TableCell className="text-right">
                         {investimento.valor_atual ? formatCurrency(investimento.valor_atual) : 'N/A'}
                       </TableCell>
-                      <TableCell className={`text-right ${toNumber(investimento.percentual_valorizacao || investimento.variacao_percentual) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatPercentage(investimento.percentual_valorizacao || investimento.variacao_percentual)}
+                      <TableCell className={`text-right ${
+                        calcularRentabilidade(
+                          toNumber(investimento.valor_investido), 
+                          toNumber(investimento.valor_atual)
+                        ) >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {formatPercentage(calcularRentabilidade(
+                          toNumber(investimento.valor_investido), 
+                          toNumber(investimento.valor_atual)
+                        ))}%
                       </TableCell>
                       <TableCell>
                         {investimento.data_compra ? new Date(investimento.data_compra).toLocaleDateString('pt-BR') : 'N/A'}

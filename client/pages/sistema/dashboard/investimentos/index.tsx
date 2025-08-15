@@ -81,9 +81,6 @@ export default function Investimentos() {
                 <div className="text-2xl font-bold">
                   {alocacaoData ? formatCurrency(alocacaoData.total_carteira) : formatCurrency(0)}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-success">+2.1%</span> {t('vs_previous_month')}
-                </p>
               </>
             )}
           </CardContent>

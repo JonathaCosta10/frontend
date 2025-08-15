@@ -205,7 +205,7 @@ export default function DashboardSidebar({ onCollapseChange, onMobileClose }: Da
                    user.name || 
                    user.username}
                 </p>
-                <Link to="/dashboard/pagamento">
+                <Link to="/pagamento">
                   <Crown className="h-4 w-4 ml-1 text-gray-800 cursor-pointer" />
                 </Link>
               </div>
