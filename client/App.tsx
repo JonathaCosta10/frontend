@@ -51,7 +51,8 @@ const Metas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/metas
 
 // Lazy loaded system pages - Investments
 const Investment = React.lazy(() => import("./pages/sistema/dashboard/investimentos/Investment"));
-const Investimentos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/index"));
+// Usando a versão corrigida para produção
+const Investimentos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/index-prod"));
 const Comparativos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/comparativos"));
 const Cadastro = React.lazy(() => import("./pages/sistema/dashboard/investimentos/cadastro"));
 const Ranking = React.lazy(() => import("./pages/sistema/dashboard/investimentos/ranking"));
