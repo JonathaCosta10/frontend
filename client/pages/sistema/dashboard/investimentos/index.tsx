@@ -16,12 +16,32 @@ import GraficoDividendosFII from "@/components/charts/GraficoDividendosFII";
 import InvestmentDividendPremiumGuard from "@/components/InvestmentDividendPremiumGuard";
 import { investmentsApi } from '@/services/api/investments';
 import type { AlocacaoTipoResponse } from '@/services/api/investments';
+import investmentService, { InvestmentAsset } from "@/services/investmentService";
+
+// Funções auxiliares para cálculos
+const toNumber = (value: string | number | undefined | null): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return isNaN(value) ? 0 : value;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
+// Calcula a rentabilidade com base no valor investido e no valor atual
+const calcularRentabilidade = (valorInvestido: number, valorAtual: number): number => {
+  if (valorInvestido <= 0) return 0;
+  return ((valorAtual - valorInvestido) / valorInvestido) * 100;
+};
 
 export default function Investimentos() {
   const { t, formatCurrency } = useTranslation();
   const [tipoSelecionado, setTipoSelecionado] = useState("Acoes");
   const [alocacaoData, setAlocacaoData] = useState<AlocacaoTipoResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [investimentos, setInvestimentos] = useState<InvestmentAsset[]>([]);
+  const [rentabilidadeTotal, setRentabilidadeTotal] = useState<number>(0);
 
   // Obter mês e ano do localStorage para os gráficos de dividendos
   const mes = localStorage.getItem("mes") || String(new Date().getMonth() + 1).padStart(2, "0");
@@ -38,8 +58,23 @@ export default function Investimentos() {
         if ('alocacao_por_tipo' in data) {
           setAlocacaoData(data as AlocacaoTipoResponse);
         }
+        
+        // Buscar ativos pessoais para calcular rentabilidade
+        const ativosData = await investmentService.buscarAtivosPessoais();
+        setInvestimentos(ativosData);
+        
+        // Calcular rentabilidade total
+        if (ativosData && ativosData.length > 0) {
+          const totalInvestido = ativosData.reduce((acc, inv) => acc + toNumber(inv.valor_investido), 0);
+          const totalAtual = ativosData.reduce((acc, inv) => acc + toNumber(inv.valor_atual), 0);
+          const rentabilidade = calcularRentabilidade(totalInvestido, totalAtual);
+          setRentabilidadeTotal(rentabilidade);
+          
+          // Salvar no localStorage para uso futuro se necessário
+          localStorage.setItem("rentabilidadeTotal", rentabilidade.toFixed(2));
+        }
       } catch (error) {
-        console.error("Erro ao carregar dados de alocação:", error);
+        console.error("Erro ao carregar dados:", error);
       } finally {
         setLoading(false);
       }
@@ -119,10 +154,21 @@ export default function Investimentos() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">+8.5%</div>
-            <p className="text-xs text-muted-foreground">
-              {t('accumulated_year')}
-            </p>
+            {loading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">Carregando...</span>
+              </div>
+            ) : (
+              <>
+                <div className={`text-2xl font-bold ${rentabilidadeTotal >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {rentabilidadeTotal >= 0 ? '+' : ''}{rentabilidadeTotal.toFixed(2)}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('accumulated_year')}
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
