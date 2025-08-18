@@ -131,6 +131,7 @@ function App() {
                 {/* OAuth Callbacks */}
                 <Route path="/auth/callback" element={<GoogleOAuthCallback />} />
                 <Route path="/auth/callbackflowName=GeneralOAuthFlow" element={<GoogleOAuthCallback />} />
+                <Route path="/auth/callbackflowName=GeneralOAuthFlow/*" element={<GoogleOAuthCallback />} />
                 <Route path="/auth/error" element={<OAuthErrorHandler />} />
 
                 {/* Auth Routes */}

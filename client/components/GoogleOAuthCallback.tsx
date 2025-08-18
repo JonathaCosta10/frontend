@@ -22,10 +22,14 @@ const GoogleOAuthCallback: React.FC = () => {
         // Tentar corrigir um formato de URL malformado (sem o '?' entre callback e flowName)
         let searchParams;
         if (fullUrl.includes('callbackflowName=')) {
-          const correctedUrl = fullUrl.replace('callbackflowName=', 'callback?flowName=');
-          const urlObj = new URL(correctedUrl);
-          searchParams = urlObj.searchParams;
-          console.log("🔧 URL corrigida:", correctedUrl);
+          // Para URL do tipo: /auth/callbackflowName=GeneralOAuthFlow&success=true&access_token=...
+          const queryStart = fullUrl.indexOf('callbackflowName=');
+          const queryString = fullUrl.substring(queryStart);
+          // Adicionar um '?' no início se não existir
+          const correctedQuery = queryString.startsWith('?') ? queryString : '?' + queryString;
+          searchParams = new URLSearchParams(correctedQuery.replace('callbackflowName=', 'flowName='));
+          console.log("🔧 Query string extraída e corrigida:", correctedQuery);
+          console.log("🔧 SearchParams processados:", Array.from(searchParams.entries()));
         } else {
           searchParams = new URLSearchParams(location.search);
         }
