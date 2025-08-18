@@ -20,7 +20,6 @@ import {
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
 import Footer from "@/components/Footer";
-import LanguageSelector from "@/components/LanguageSelector";
 
 export default function Demo() {
   const [darkMode, setDarkMode] = useState(false);
@@ -165,13 +164,6 @@ export default function Demo() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* Language and Currency Selector */}
-              <LanguageSelector
-                variant="compact"
-                showCurrency={false}
-                size="sm"
-              />
-
               <Button
                 variant="ghost"
                 size="icon"
@@ -240,11 +232,6 @@ export default function Demo() {
               <div className="flex flex-col space-y-4">
                 {/* Language Selector Mobile */}
                 <div className="px-2">
-                  <LanguageSelector
-                    variant="compact"
-                    showCurrency={false}
-                    size="sm"
-                  />
                 </div>
                 
                 {/* Main Action Buttons */}

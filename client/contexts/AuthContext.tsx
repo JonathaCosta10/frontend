@@ -9,6 +9,7 @@ import { localStorageManager } from "../lib/localStorage";
 import { authCookies, userPreferences } from "../lib/cookies";
 import { cacheManager, CACHE_KEYS } from "../lib/cache";
 import { clearAllAuthState } from "../lib/authUtils";
+import { getApiKey } from "../lib/apiKeyUtils";
 import {
   login as loginRules,
   register as registerRules,
@@ -18,7 +19,6 @@ import {
 import { eventEmitter, EVENTS } from "../lib/eventEmitter";
 
 // Configuração do ambiente
-const API_KEY = import.meta.env.VITE_API_KEY || "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
 // Interfaces
@@ -48,6 +48,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   loading: boolean;
+  isLoggingOut: boolean;
   register: (userData: RegisterData) => Promise<{ success: boolean; error?: any }>;
   refreshToken: () => Promise<boolean>;
   hasPermission: (permission: string) => boolean;
@@ -71,6 +72,7 @@ const defaultAuthValue: AuthContextType = {
   isAuthenticated: false,
   user: null,
   loading: true,
+  isLoggingOut: false,
   login: async () => false,
   logout: () => {},
   register: async () => ({ success: false, error: "Context not initialized" }),
@@ -106,11 +108,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   // Estado para forçar rerender quando dados premium mudam
   const [premiumStatusVersion, setPremiumStatusVersion] = useState(0);
   // Estado para forçar revalidação manual de autenticação
   const [revalidationCounter, setRevalidationCounter] = useState(0);
+
+  // Sistema de logout automático por inatividade (5 minutos)
+  useEffect(() => {
+    let inactivityTimer: NodeJS.Timeout;
+    const INACTIVITY_TIME = 5 * 60 * 1000; // 5 minutos em millisegundos
+
+    const resetInactivityTimer = () => {
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+      
+      // Só iniciar timer se usuário estiver autenticado
+      if (isAuthenticated) {
+        inactivityTimer = setTimeout(() => {
+          console.log("⏰ Logout automático por inatividade (5 minutos)");
+          logout();
+        }, INACTIVITY_TIME);
+      }
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    // Adicionar listeners para detectar atividade
+    events.forEach(event => {
+      document.addEventListener(event, resetInactivityTimer, true);
+    });
+
+    // Iniciar timer quando usuário está autenticado
+    if (isAuthenticated) {
+      resetInactivityTimer();
+    }
+
+    // Cleanup
+    return () => {
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+      events.forEach(event => {
+        document.removeEventListener(event, resetInactivityTimer, true);
+      });
+    };
+  }, [isAuthenticated]);
 
   // Verificar se estamos voltando de um redirecionamento OAuth
   useEffect(() => {
@@ -317,6 +362,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const clearAuthData = () => {
+    // Limpar localStorage
     localStorageManager.clearAuthData();
     localStorageManager.remove("isPaidUser"); // Limpar status premium
     
@@ -328,10 +374,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       cacheManager.clearUser(user.id);
     }
     
+    // Limpar todos os dados relacionados do localStorage
+    const keysToRemove = [
+      'auth_token',
+      'refresh_token', 
+      'user_data',
+      'user_permissions',
+      'isPaidUser',
+      'premium_status',
+      'subscription_data',
+      'last_activity',
+      'session_data'
+    ];
+    
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    // Limpar sessionStorage relacionado à autenticação
+    const sessionKeysToRemove = [
+      'oauth_state',
+      'oauth_base_state', 
+      'auth_redirect_attempted',
+      'login_attempt'
+    ];
+    
+    sessionKeysToRemove.forEach(key => {
+      sessionStorage.removeItem(key);
+    });
+    
     setUser(null);
     setIsAuthenticated(false);
     
-    console.log("🧹 Auth data, cookies e cache limpos");
+    console.log("🧹 Auth data, cookies, cache e dados temporários completamente limpos");
   };
 
   const performTokenRefresh = async (
@@ -549,7 +624,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-              'X-API-Key': API_KEY,
+              'X-API-Key': getApiKey(),
               'Authorization': `Bearer ${tokenToValidate}`
             },
             credentials: 'include',
@@ -621,28 +696,74 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    console.log("🚪 Logout do usuário");
-    clearAuthData();
-
-    // Redirecionar para página de login se não estiver em página pública
-    const currentPath = window.location.pathname;
-    const publicPages = [
-      "/",
-      "/home",
-      "/market",
-      "/login",
-      "/signup",
-      "/demo",
-      "/public",
-    ];
-    const isPublicPage = publicPages.some((page) =>
-      currentPath.startsWith(page),
-    );
-
-    if (!isPublicPage) {
-      window.location.href = "/login";
+  const logout = async () => {
+    console.log("🚪 Fazendo logout...");
+    
+    // Definir estado de logout em progresso
+    setIsLoggingOut(true);
+    setLoading(false); // Não mostrar loading genérico
+    
+    // Obter token atual antes de limpar
+    const currentToken = localStorageManager.getAuthToken();
+    
+    // Fazer chamada para o backend para invalidar o token
+    if (currentToken) {
+      try {
+        // Debug: verificar se a API_KEY está sendo lida corretamente
+        const apiKey = getApiKey();
+        console.log("🔑 API_KEY length:", apiKey?.length);
+        console.log("🔑 API_KEY preview:", apiKey?.substring(0, 10) + "...");
+        
+        const response = await fetch(`${BACKEND_URL}/auth/logout/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${currentToken}`,
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey,
+          },
+        });
+        
+        if (response.ok) {
+          const responseData = await response.json();
+          console.log("✅ Logout realizado com sucesso no backend:", responseData);
+        } else {
+          const errorData = await response.text();
+          console.warn("⚠️ Falha ao invalidar token no backend:", response.status, errorData);
+        }
+      } catch (error) {
+        console.warn("⚠️ Erro ao comunicar com backend para logout:", error);
+      }
     }
+    
+    // Limpar todos os dados locais
+    clearAuthData();
+    
+    // Limpar sessionStorage completamente
+    sessionStorage.clear();
+    
+    // Limpar todos os caches do navegador relacionados à aplicação
+    try {
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+        console.log("✅ Caches do navegador limpos");
+      }
+    } catch (error) {
+      console.warn("⚠️ Erro ao limpar caches:", error);
+    }
+
+    // Definir explicitamente que não está mais autenticado
+    setIsAuthenticated(false);
+    setUser(null);
+    setIsLoggingOut(false);
+    setLoading(false);
+
+    console.log("✅ Logout concluído, redirecionando para home...");
+    
+    // Redirecionar para home sempre após logout
+    window.location.href = "/";
   };
 
   const hasPermission = (permission: string): boolean => {
@@ -714,6 +835,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         login,
         logout,
         loading,
+        isLoggingOut,
         register,
         refreshToken,
         hasPermission,

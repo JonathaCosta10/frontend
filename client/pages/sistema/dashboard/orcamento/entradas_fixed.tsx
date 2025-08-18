@@ -364,7 +364,7 @@ export default function Entradas() {
                   <TableCell colSpan={4} className="text-center">
                     <div className="py-8">
                       <p className="text-green-600">
-                        {t("no_entries_registered_for_user")}
+                        {t("no_entries_registered")}
                       </p>
                     </div>
                   </TableCell>

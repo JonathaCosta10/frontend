@@ -78,8 +78,8 @@ export const BUDGET_ROUTES = {
 export const INVESTMENT_ROUTES = {
   // Portfolio
   portfolio: "/investments/portfolio/",
-  alocacao_tipo: "/alocacao_tipo",
-  setores: "/setores",
+  alocacao_tipo: "/api/alocacao_tipo",
+  setores: "/api/setores",
 
   // Ações
   acoes: "/investments/acoes/",
@@ -88,7 +88,7 @@ export const INVESTMENT_ROUTES = {
 
   // FIIs
   fiis: "/investments/fiis/",
-  dividendos_fii: "/dividendos_fii",
+  dividendos_fii: "/api/dividendos_fii",
   fiisRanking: "/investments/fiis/ranking/",
 
   // Análises
@@ -101,12 +101,12 @@ export const INVESTMENT_ROUTES = {
   exportData: "/investments/export/",
 
   // Investimentos Pessoais - NOVAS APIs (URLs corrigidas conforme backend)
-  buscarTickers: "/investimentos/buscar-tickers/",
-  ativosPessoais: "/investimentos/ativos-pessoais/",
-  cadastrarAtivo: "/investimentos/ativos-pessoais/",
-  editarAtivo: "/investimentos/ativos-pessoais/",
-  excluirAtivo: "/investimentos/ativos-pessoais/deletar/",
-  resumoCarteira: "/investimentos/resumo-carteira/",
+  buscarTickers: "/api/investimentos/buscar-tickers/",
+  ativosPessoais: "/api/investimentos/ativos-pessoais/",
+  cadastrarAtivo: "/api/investimentos/ativos-pessoais/",
+  editarAtivo: "/api/investimentos/ativos-pessoais/",
+  excluirAtivo: "/api/investimentos/ativos-pessoais/deletar/",
+  resumoCarteira: "/api/investimentos/resumo-carteira/",
 };
 
 // Rotas de Market (Públicas)

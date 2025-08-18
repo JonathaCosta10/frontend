@@ -32,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import LanguageSelector from "../components/LanguageSelector";
 import Footer from "../components/Footer";
 
 // Interface para os dados globais da API
@@ -243,8 +242,6 @@ function MarketPage() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              <LanguageSelector variant="compact" showCurrency={false} size="sm" />
-
               <Button
                 variant="ghost"
                 size="icon"

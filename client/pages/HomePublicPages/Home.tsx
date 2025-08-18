@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
-import LanguageSelector from "@/components/LanguageSelector";
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
@@ -86,9 +85,6 @@ export default function Home() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* Language and Currency Selector */}
-              <LanguageSelector variant="compact" showCurrency={false} size="sm" />
-
               <Button
                 variant="ghost"
                 size="icon"

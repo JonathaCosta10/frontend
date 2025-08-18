@@ -73,7 +73,7 @@ const GraficoAlocacaoTipo = () => {
     );
   }
 
-  if (error || !data) {
+  if (error || !data || !data.resumo || !data.alocacao_por_tipo || data.alocacao_por_tipo.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <div className="text-center">

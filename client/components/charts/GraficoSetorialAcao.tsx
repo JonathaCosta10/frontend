@@ -66,7 +66,7 @@ const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSeleciona
     );
   }
 
-  if (error || !data) {
+  if (error || !data || !data.data || !data.data.resumo || !data.data.setores || data.data.setores.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <div className="text-center">

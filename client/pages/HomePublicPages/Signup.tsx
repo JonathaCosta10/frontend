@@ -20,7 +20,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { TermsAndPrivacyModal } from "@/components/TermsAndPrivacyModal";
 import { useToast } from "@/hooks/use-toast";
-import LanguageSelector from "@/components/LanguageSelector";
 import OAuthService from "@/services/oauth";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
 import Footer from "@/components/Footer";
@@ -206,13 +205,6 @@ export default function Signup() {
             </Link>
 
             <div className="flex items-center space-x-4">
-              {/* Language and Currency Selector */}
-              <LanguageSelector
-                variant="compact"
-                showCurrency={false}
-                size="sm"
-              />
-
               <Button
                 variant="ghost"
                 size="icon"

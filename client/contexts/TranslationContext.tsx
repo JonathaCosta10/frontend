@@ -252,6 +252,7 @@ const translations = {
     change_password: "Alterar senha",
     check_inbox_spam: "Verifique sua caixa de entrada e pasta de spam",
     checking_authentication: "Verificando autenticação...",
+    logging_out: "Fazendo logout...",
     choose_annual: "Escolher Anual",
     choose_monthly: "Escolher Mensal",
     choose_premium: "Escolher Premium",

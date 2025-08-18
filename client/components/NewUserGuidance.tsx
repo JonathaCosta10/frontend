@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, ArrowRight, TrendingUp, Plus } from 'lucide-react';
+import { User, ArrowRight, TrendingUp, Plus, BarChart3, PieChart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/TranslationContext';
 

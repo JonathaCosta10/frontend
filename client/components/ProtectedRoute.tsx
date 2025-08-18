@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslation } from "../contexts/TranslationContext";
 import { localStorageManager } from "../lib/localStorage";
 
 interface ProtectedRouteProps {
@@ -8,7 +9,8 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, loading, user, revalidateAuth } = useAuth();
+  const { isAuthenticated, loading, user, revalidateAuth, isLoggingOut } = useAuth();
+  const { t } = useTranslation();
   const location = useLocation();
   const [manualCheck, setManualCheck] = useState<boolean | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -92,6 +94,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     isVerifying
   });
 
+  // Se estamos fazendo logout, mostrar mensagem específica
+  if (isLoggingOut) {
+    console.log("ProtectedRoute: Fazendo logout...");
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">{t("logging_out")}</p>
+        </div>
+      </div>
+    );
+  }
+
   // Se ainda estamos carregando, verificando ou temos confirmação manual de autenticação
   if (loading || isVerifying || (manualCheck === true && !isAuthenticated)) {
     console.log("ProtectedRoute: Aguardando verificação de autenticação...");
@@ -99,7 +114,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verificando autenticação...</p>
+          <p className="text-muted-foreground">{t("checking_authentication")}</p>
         </div>
       </div>
     );

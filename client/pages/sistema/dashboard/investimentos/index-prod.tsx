@@ -17,6 +17,7 @@ import InvestmentDividendPremiumGuard from "@/components/InvestmentDividendPremi
 import { investmentsApi } from '@/services/api/investments';
 import type { AlocacaoTipoResponse } from '@/services/api/investments';
 import investmentService, { InvestmentAsset } from "@/services/investmentService";
+import { InvestmentsNoDataGuidance } from "@/components/NewUserGuidance";
 
 // VERSÃO DE PRODUÇÃO COM CORREÇÕES ESPECÍFICAS
 
@@ -84,6 +85,27 @@ export default function Investimentos() {
 
     carregarDados();
   }, []);
+
+  // Verificações de dados
+  const temInvestimentos = !loading && investimentos && investimentos.length > 0;
+  const temAlocacaoData = !loading && alocacaoData && alocacaoData.total_carteira > 0;
+
+  // Renderizar loading
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex flex-col items-center space-y-3">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Carregando investimentos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Renderizar guidance se não houver dados
+  if (!temInvestimentos && !temAlocacaoData) {
+    return <InvestmentsNoDataGuidance />;
+  }
 
   return (
     <div className="space-y-6">

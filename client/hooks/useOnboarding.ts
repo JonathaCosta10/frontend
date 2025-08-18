@@ -22,10 +22,21 @@ export function useOnboarding() {
     if (!user) return;
 
     const hasSeenOnboarding = localStorage.getItem(`${ONBOARDING_KEY}_${user.id}`) === 'true';
-    const isFirstLogin = localStorage.getItem(`${FIRST_LOGIN_KEY}_${user.id}`) !== 'false';
+    const firstLoginValue = localStorage.getItem(`${FIRST_LOGIN_KEY}_${user.id}`);
     
-    // Check if user is truly new (no personal data, no previous onboarding)
+    // User is considered first-time if they've never had the first_login flag set, or it's explicitly null
+    // This ensures Google OAuth users (who may not have this flag initially) are treated as new users
+    const isFirstLogin = firstLoginValue === null || firstLoginValue !== 'false';
+    
+    // Check if user is truly new (no previous onboarding completion)
     const shouldShowOnboarding = !hasSeenOnboarding && isFirstLogin;
+
+    console.log(`🔍 Onboarding Debug for user ${user.id}:`, {
+      hasSeenOnboarding,
+      firstLoginValue,
+      isFirstLogin,
+      shouldShowOnboarding
+    });
 
     setOnboardingState({
       hasSeenOnboarding,
@@ -33,19 +44,22 @@ export function useOnboarding() {
       shouldShowOnboarding
     });
 
-    // Mark that user has logged in at least once
-    if (isFirstLogin) {
-      localStorage.setItem(`${FIRST_LOGIN_KEY}_${user.id}`, 'false');
-    }
+    // Only mark first login as completed when onboarding is actually completed
+    // This prevents immediate marking that could interfere with onboarding display
   }, [user]);
 
   const completeOnboarding = () => {
     if (!user) return;
     
+    // Mark onboarding as completed
     localStorage.setItem(`${ONBOARDING_KEY}_${user.id}`, 'true');
+    // Mark first login as completed (user has now seen the onboarding)
+    localStorage.setItem(`${FIRST_LOGIN_KEY}_${user.id}`, 'false');
+    
     setOnboardingState(prev => ({
       ...prev,
       hasSeenOnboarding: true,
+      isFirstLogin: false,
       shouldShowOnboarding: false
     }));
   };
