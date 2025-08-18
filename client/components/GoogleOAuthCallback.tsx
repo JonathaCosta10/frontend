@@ -193,11 +193,12 @@ const GoogleOAuthCallback: React.FC = () => {
           }
         }
         
+        // Se chegamos aqui e temos flowName, mas não temos success=true, é um callback tradicional
         if (!code || !state) {
           throw new Error('Parâmetros de autenticação incompletos');
         }
         
-        // Processar o código de autorização
+        // Processar o código de autorização apenas para casos que não são success=true
         setStatus('Processando código de autorização...');
         const result = await OAuthService.handleOAuthCallback();
         
