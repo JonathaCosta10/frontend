@@ -34,15 +34,73 @@ const GoogleOAuthCallback: React.FC = () => {
         const state = searchParams.get('state');
         const error = searchParams.get('error');
         
+        // Verificar se recebemos tokens diretamente na URL (sucesso do backend)
+        const accessToken = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+        const success = searchParams.get('success');
+        const userId = searchParams.get('user_id');
+        const email = searchParams.get('email');
+        const name = searchParams.get('name');
+        const type = searchParams.get('type');
+        
         console.log("🔄 Callback de autenticação recebido:", { 
           hasCode: !!code,
           hasState: !!state,
           error: error || 'nenhum',
-          flowName: searchParams.get('flowName') || 'não especificado'
+          flowName: searchParams.get('flowName') || 'não especificado',
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          success: success,
+          type: type
         });
         
         if (error) {
           throw new Error(`Erro de autenticação: ${error}`);
+        }
+        
+        // Se recebemos tokens diretamente, processar imediatamente
+        if (success === 'true' && accessToken && refreshToken) {
+          console.log("✅ Tokens recebidos diretamente do backend, processando...");
+          setStatus('Tokens recebidos, autenticando usuário...');
+          
+          // Montar dados do usuário
+          const userData = {
+            id: userId,
+            email: email,
+            name: name,
+            auth_type: type
+          };
+          
+          // Armazenar tokens e dados do usuário
+          localStorageManager.setAuthToken(accessToken);
+          localStorageManager.setRefreshToken(refreshToken);
+          localStorageManager.setUserData(userData);
+          
+          // Disparar eventos de autenticação
+          window.dispatchEvent(new CustomEvent('auth:login:success', { 
+            detail: { user: userData }
+          }));
+          
+          try {
+            const { eventEmitter } = await import('../lib/eventEmitter');
+            eventEmitter.emit('auth:login:success', { user: userData });
+          } catch (ee) {
+            console.warn("⚠️ Não foi possível emitir pelo eventEmitter:", ee);
+          }
+          
+          setStatus('Login bem-sucedido! Redirecionando...');
+          
+          toast({
+            title: t("login_success"),
+            description: t("redirecting_to_dashboard"),
+          });
+          
+          // Redirecionar para o dashboard
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 1000);
+          
+          return;
         }
         
         if (!code || !state) {
@@ -54,7 +112,7 @@ const GoogleOAuthCallback: React.FC = () => {
         const result = await OAuthService.handleOAuthCallback();
         
         if (result.success && result.user) {
-          setStatus('Autenticando login para o sistema...');
+          setStatus('Login bem-sucedido! Redirecionando...');
           
           // Verificar se o token de autenticação foi armazenado corretamente
           const authToken = localStorageManager.getAuthToken();
@@ -266,12 +324,31 @@ const GoogleOAuthCallback: React.FC = () => {
     processOAuthCallback();
   }, [navigate, toast, t]);
   
+  // Obtém parâmetros para exibição
+  const params = new URLSearchParams(window.location.search);
+  const urlState = params.get('state') || 'Não encontrado';
+  const storedState = sessionStorage.getItem("oauth_state") || 'Não encontrado';
+  const baseState = sessionStorage.getItem("oauth_base_state") || 'Não encontrado';
+  
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
       <div className="flex flex-col items-center justify-center space-y-4 text-center">
         <h1 className="text-2xl font-bold tracking-tight">{status}</h1>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="text-muted-foreground">Autenticando login para o sistema</p>
+        <p className="text-muted-foreground">Redirecionando para o dashboard...</p>
+        
+        {/* Informações de depuração - remover em produção */}
+        {import.meta.env.DEV && (
+          <div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-left max-w-lg">
+            <h3 className="text-sm font-medium mb-2">Informações de depuração (apenas desenvolvimento)</h3>
+            <div className="text-xs space-y-1">
+              <p><span className="font-medium">URL:</span> {window.location.href}</p>
+              <p><span className="font-medium">State na URL:</span> {urlState}</p>
+              <p><span className="font-medium">State armazenado:</span> {storedState}</p>
+              <p><span className="font-medium">Base state:</span> {baseState}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
