@@ -65,20 +65,35 @@ const GoogleOAuthCallback: React.FC = () => {
         // Se recebemos tokens diretamente, processar imediatamente
         if (success === 'true' && accessToken && refreshToken) {
           console.log("✅ Tokens recebidos diretamente do backend, processando...");
+          console.log("📊 Dados recebidos:", { 
+            userId, email, name, type, 
+            hasAccessToken: !!accessToken, 
+            hasRefreshToken: !!refreshToken 
+          });
+          
           setStatus('Tokens recebidos, autenticando usuário...');
+          
+          // Decodificar o nome se estiver URL encoded
+          const decodedName = name ? decodeURIComponent(name) : '';
+          const decodedEmail = email ? decodeURIComponent(email) : '';
           
           // Montar dados do usuário
           const userData = {
             id: userId,
-            email: email,
-            name: name,
-            auth_type: type
+            email: decodedEmail,
+            name: decodedName,
+            full_name: decodedName,
+            auth_type: type || 'google_login'
           };
+          
+          console.log("👤 Dados do usuário processados:", userData);
           
           // Armazenar tokens e dados do usuário
           localStorageManager.setAuthToken(accessToken);
           localStorageManager.setRefreshToken(refreshToken);
           localStorageManager.setUserData(userData);
+          
+          console.log("💾 Tokens e dados salvos no localStorage");
           
           // Disparar eventos de autenticação
           window.dispatchEvent(new CustomEvent('auth:login:success', { 
@@ -88,6 +103,7 @@ const GoogleOAuthCallback: React.FC = () => {
           try {
             const { eventEmitter } = await import('../lib/eventEmitter');
             eventEmitter.emit('auth:login:success', { user: userData });
+            console.log("✅ Eventos de autenticação disparados");
           } catch (ee) {
             console.warn("⚠️ Não foi possível emitir pelo eventEmitter:", ee);
           }
@@ -95,14 +111,15 @@ const GoogleOAuthCallback: React.FC = () => {
           setStatus('Login bem-sucedido! Redirecionando...');
           
           toast({
-            title: t("login_success"),
-            description: t("redirecting_to_dashboard"),
+            title: "Login realizado com sucesso",
+            description: "Redirecionando para o dashboard...",
           });
           
           // Redirecionar para o dashboard
           setTimeout(() => {
+            console.log("🔀 Redirecionando para dashboard...");
             navigate('/dashboard', { replace: true });
-          }, 1000);
+          }, 1500);
           
           return;
         }
