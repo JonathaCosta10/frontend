@@ -1,9 +1,10 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/finance-logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="google-signin-client_id" content="460141148400-djs1tkkr0e4eneqmetf7gfsvotphutcu.apps.googleusercontent.com">
     
     <!-- SEO Meta Tags -->
     <title>Organizesee</title>
@@ -17,14 +18,29 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://curry-oasis.netlify.app" />
     
-    <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://127.0.0.1:8000 http://localhost:8000 https://restbackend-dc8667cf0950.herokuapp.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000 https://restbackend-dc8667cf0950.herokuapp.com /api /services /services/api;" />
+    <!-- Security Headers - Updated with expanded permissions for Google Sign-In -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://127.0.0.1:8000 http://localhost:8000 http://localhost:3000 http://localhost:3001 https://restbackend-dc8667cf0950.herokuapp.com https://accounts.google.com https://apis.google.com https://ssl.gstatic.com https://www.gstatic.com https://oauth2.googleapis.com https://*.googleusercontent.com https://*.googleapis.com https://lh3.googleusercontent.com https://www.google.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com https://ssl.gstatic.com https://www.gstatic.com https://oauth2.googleapis.com https://*.gstatic.com https://securepubads.g.doubleclick.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://*.gstatic.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000 http://localhost:3001 http://localhost:3000 https://restbackend-dc8667cf0950.herokuapp.com https://accounts.google.com https://apis.google.com https://oauth2.googleapis.com https://*.googleapis.com https://securetoken.googleapis.com https://www.google.com;" />
     
     <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://apis.google.com" />
+    <link rel="preconnect" href="https://accounts.google.com" />
+    <link rel="preconnect" href="https://ssl.gstatic.com" />
     
     <!-- Critical CSS será injetado pelo Vite -->
+    <!-- Nova API do Google Identity Services com nonce para segurança -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Adicionar uma variável global para verificar o carregamento do Google Identity Services -->
+    <script>
+      window.googleAuthLoaded = false;
+      window.onGoogleScriptLoad = function() {
+        window.googleAuthLoaded = true;
+        console.log("Google Identity Services carregado pelo script global");
+        // Disparar evento customizado para notificar componentes
+        window.dispatchEvent(new Event('googleAuthLoaded'));
+      };
+    </script>
   </head>
   <body>
     <div id="root"></div>

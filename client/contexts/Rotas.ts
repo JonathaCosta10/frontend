@@ -19,6 +19,10 @@ export const AUTH_ROUTES = {
   resetPassword: "/auth/recuperar-senha/",
   validarRedefinirSenha: "/auth/validar-redefinir-senha/",
   confirmEmail: "/auth/confirm-email/",
+  // Google OAuth (canonical paths – backend aceita variações)
+  googleSignin: "/auth/google/signin/",
+  googleStatus: "/auth/google/status/",
+  googleDisconnect: "/auth/google/disconnect/",
 };
 
 // Rotas de Dashboard
@@ -140,7 +144,7 @@ export const MARKET_ROUTES = {
 export const CRYPTO_ROUTES = {
   overview: "/crypto/overview/",
   portfolio: "/crypto/portfolio/",
-  market: "/crypto/market/",
+  market: "/market/crypto/",
   analysis: "/crypto/analysis/",
   wishlist: "/crypto/wishlist/",
   trading: "/crypto/trading/",
@@ -172,6 +176,10 @@ export const ROUTES_MAP: Record<string, string> = {
   logout: AUTH_ROUTES.logout,
   user: AUTH_ROUTES.user,
   profile: AUTH_ROUTES.profile,
+  // Google OAuth
+  googleSignin: AUTH_ROUTES.googleSignin,
+  googleStatus: AUTH_ROUTES.googleStatus,
+  googleDisconnect: AUTH_ROUTES.googleDisconnect,
 
   // Dashboard
   dashboard: DASHBOARD_ROUTES.overview,

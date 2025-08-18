@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import FinanceLogo from "@/components/FinanceLogo";
 import { cn } from "@/lib/utils";
 import {
   Calculator,
@@ -158,21 +159,13 @@ export default function DashboardSidebar({ onCollapseChange, onMobileClose }: Da
       <div className="flex items-center justify-between p-4 border-b">
         {!collapsed && (
           <Link to="/dashboard/info-diaria" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">
-                O
-              </span>
-            </div>
+            <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-8 h-8" />
             <span className="font-bold text-lg">Organizesee</span>
           </Link>
         )}
         {collapsed && (
           <Link to="/dashboard/info-diaria" className="flex items-center justify-center">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">
-                O
-              </span>
-            </div>
+            <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-8 h-8" />
           </Link>
         )}
         <Button

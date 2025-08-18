@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="50" y="30" width="190" height="190" rx="20" fill="#0D2B32"/>
+  <rect x="60" y="40" width="170" height="170" rx="15" fill="#10B981"/>
+  
+  <!-- Dollar Sign -->
+  <path d="M150 65C135 65 125 75 125 90C125 105 135 115 150 115C165 115 175 125 175 140C175 155 165 165 150 165M150 65V50M150 165V180" stroke="#0D2B32" stroke-width="25" stroke-linecap="round"/>
+  
+  <!-- Circuit Lines -->
+  <path d="M240 180L300 180C310 180 320 190 320 200L320 260" stroke="#0D2B32" stroke-width="15" stroke-linecap="round"/>
+  <path d="M240 125L280 125C290 125 300 135 300 145L300 300" stroke="#0D2B32" stroke-width="15" stroke-linecap="round"/>
+  <path d="M120 220L120 280C120 290 130 300 140 300L230 300" stroke="#0D2B32" stroke-width="15" stroke-linecap="round"/>
+  
+  <!-- Circuit Nodes -->
+  <circle cx="360" cy="200" r="15" fill="#0D2B32"/>
+  <circle cx="360" cy="260" r="15" fill="#0D2B32"/>
+  <circle cx="300" cy="300" r="15" fill="#0D2B32"/>
+  <circle cx="230" cy="300" r="15" fill="#0D2B32"/>
+</svg>

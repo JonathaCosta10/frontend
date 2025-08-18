@@ -8,6 +8,7 @@ import React, {
 import { localStorageManager } from "../lib/localStorage";
 import { authCookies, userPreferences } from "../lib/cookies";
 import { cacheManager, CACHE_KEYS } from "../lib/cache";
+import { clearAllAuthState } from "../lib/authUtils";
 import {
   login as loginRules,
   register as registerRules,
@@ -53,6 +54,7 @@ interface AuthContextType {
   isPremiumUser: () => boolean;
   refreshPremiumStatus: () => void;
   premiumStatusVersion: number;
+  revalidateAuth: () => Promise<void>; // Novo método para revalidar autenticação
 }
 
 interface RegisterData {
@@ -77,6 +79,7 @@ const defaultAuthValue: AuthContextType = {
   isPremiumUser: () => false,
   refreshPremiumStatus: () => {},
   premiumStatusVersion: 0,
+  revalidateAuth: async () => {}, // Método padrão vazio
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthValue);
@@ -106,6 +109,132 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   
   // Estado para forçar rerender quando dados premium mudam
   const [premiumStatusVersion, setPremiumStatusVersion] = useState(0);
+  // Estado para forçar revalidação manual de autenticação
+  const [revalidationCounter, setRevalidationCounter] = useState(0);
+
+  // Verificar se estamos voltando de um redirecionamento OAuth
+  useEffect(() => {
+    const oauthRedirect = sessionStorage.getItem('auth_redirect_attempted');
+    if (oauthRedirect) {
+      console.log("🔄 AuthContext: Detectado redirecionamento recente do OAuth:", oauthRedirect);
+      // Forçar revalidação do estado de autenticação
+      setRevalidationCounter(prev => prev + 1);
+      // Limpar flag do redirecionamento para não reprocessar
+      sessionStorage.removeItem('auth_redirect_attempted');
+    }
+  }, []);
+
+  // Listener para eventos de login do OAuth e revalidação
+  useEffect(() => {
+    const handleLoginSuccess = (event: CustomEvent) => {
+      try {
+        console.log("🔔 AuthContext: Evento de login bem-sucedido detectado (window event)");
+        
+        // Buscar dados do localStorage
+        const token = localStorageManager.getAuthToken();
+        const userData = localStorageManager.getUserData();
+        
+        if (token && userData) {
+          console.log("🔔 AuthContext: Atualizando estado com dados de login OAuth");
+          setUser(userData);
+          setIsAuthenticated(true);
+          setLoading(false);
+        } else {
+          console.warn("🔔 AuthContext: Evento de login recebido, mas dados ausentes no localStorage");
+          // Tentar revalidar autenticação após um pequeno atraso
+          setTimeout(() => {
+            checkManualAuth();
+          }, 300);
+        }
+      } catch (error) {
+        console.error("🔔 AuthContext: Erro ao processar evento de login:", error);
+      }
+    };
+    
+    // Handler para eventos emitidos pelo eventEmitter
+    const handleEventEmitterLogin = (data: any) => {
+      try {
+        console.log("🔔 AuthContext: Evento de login detectado via eventEmitter");
+        
+        // Buscar dados do localStorage 
+        const token = localStorageManager.getAuthToken();
+        const userData = localStorageManager.getUserData();
+        
+        // Se não houver dados no localStorage mas recebemos no evento, use-os
+        const userFromEvent = data?.user;
+        
+        if (token && (userData || userFromEvent)) {
+          // Garantir que userData está armazenado
+          if (userFromEvent && !userData) {
+            console.log("🔄 AuthContext: Armazenando dados do usuário do evento");
+            localStorageManager.setUserData(userFromEvent);
+          }
+          
+          const finalUserData = userData || userFromEvent;
+          console.log("✅ AuthContext: Atualizando estado com dados do evento eventEmitter");
+          setUser(finalUserData);
+          setIsAuthenticated(true);
+          setLoading(false);
+        } else {
+          console.warn("🔔 AuthContext: Evento eventEmitter recebido, mas dados insuficientes");
+          setTimeout(() => {
+            checkManualAuth();
+          }, 300);
+        }
+      } catch (error) {
+        console.error("❌ AuthContext: Erro ao processar evento eventEmitter:", error);
+      }
+    };
+    
+    // Handler para solicitações de revalidação
+    const handleRevalidationRequest = (event: CustomEvent) => {
+      try {
+        const source = event.detail?.source || 'desconhecido';
+        console.log(`🔄 AuthContext: Solicitação de revalidação recebida de ${source}`);
+        
+        // Executar revalidação
+        revalidateAuth();
+      } catch (error) {
+        console.error("❌ AuthContext: Erro ao processar solicitação de revalidação:", error);
+      }
+    };
+    
+    // Função para verificar autenticação manualmente
+    const checkManualAuth = () => {
+      try {
+        const token = localStorageManager.getAuthToken();
+        const userData = localStorageManager.getUserData();
+        console.log("🔎 AuthContext: Verificação manual de autenticação", { 
+          token: !!token, 
+          userData: !!userData 
+        });
+        
+        if (token && userData) {
+          setUser(userData);
+          setIsAuthenticated(true);
+          setLoading(false);
+          console.log("✅ AuthContext: Autenticação manual bem-sucedida");
+        }
+      } catch (e) {
+        console.error("❌ AuthContext: Erro na verificação manual", e);
+      }
+    };
+    
+    // Adicionar listeners para eventos
+    window.addEventListener('auth:login:success', handleLoginSuccess as EventListener);
+    window.addEventListener('auth:request:revalidation', handleRevalidationRequest as EventListener);
+    eventEmitter.on('auth:login:success', handleEventEmitterLogin);
+    
+    // Verificar manualmente se já estamos autenticados
+    checkManualAuth();
+    
+    // Limpar listeners quando componente for desmontado
+    return () => {
+      window.removeEventListener('auth:login:success', handleLoginSuccess as EventListener);
+      window.removeEventListener('auth:request:revalidation', handleRevalidationRequest as EventListener);
+      eventEmitter.off('auth:login:success', handleEventEmitterLogin);
+    };
+  }, [revalidationCounter]);
 
   // Verificar status de autenticação no carregamento
   useEffect(() => {
@@ -126,6 +255,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         "/signup",
         "/demo",
         "/public",
+        "/auth/callback", // Adicionar página de callback como pública
       ];
       const isPublicPage =
         publicPages.some((page) => currentPath.startsWith(page)) ||
@@ -372,6 +502,125 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return await performTokenRefresh(refreshTokenValue);
   };
 
+  const revalidateAuth = async (): Promise<void> => {
+    try {
+      console.log("🔄 Revalidando autenticação...");
+      const token = localStorageManager.getAuthToken();
+      const userData = localStorageManager.getUserData();
+      
+      // Verificar dados locais primeiro
+      if (token && userData) {
+        console.log("✅ Dados locais encontrados, verificando validade do token");
+        
+        // Validar o token
+        if (isTokenValid(token)) {
+          console.log("✅ Token é válido por verificação local");
+          setUser(userData);
+          setIsAuthenticated(true);
+          
+          // Notificar outros componentes sobre revalidação bem-sucedida
+          window.dispatchEvent(new CustomEvent('auth:revalidation:success', { 
+            detail: { user: userData }
+          }));
+          
+          // Ainda assim fazer verificação remota para garantir
+          validateWithBackend(token).catch(err => {
+            console.warn("⚠️ Verificação remota falhou, mas token é válido localmente:", err);
+          });
+          
+          return;
+        } else {
+          console.log("⚠️ Token local expirado, tentando refresh...");
+        }
+      } else if (!token) {
+        console.log("❌ Nenhum token encontrado - usuário não autenticado");
+        setIsAuthenticated(false);
+        setUser(null);
+        return;
+      }
+
+      // Função interna para validação com backend
+      async function validateWithBackend(tokenToValidate: string): Promise<boolean> {
+        // Importante: usar 127.0.0.1 em vez de localhost para evitar problemas com cookies
+        const backendUrl = (BACKEND_URL || 'http://127.0.0.1:8000').replace('localhost', '127.0.0.1');
+        
+        try {
+          const profileResponse = await fetch(`${backendUrl}/api/user/profile`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-API-Key': API_KEY,
+              'Authorization': `Bearer ${tokenToValidate}`
+            },
+            credentials: 'include',
+          });
+  
+          if (profileResponse.ok) {
+            console.log("✅ Token verificado com sucesso via API de perfil");
+            const updatedUserData = await profileResponse.json();
+            setUser(updatedUserData);
+            setIsAuthenticated(true);
+            
+            // Atualizar dados locais com informações frescas do servidor
+            localStorageManager.setUserData(updatedUserData);
+            
+            // Notificar outros componentes
+            window.dispatchEvent(new CustomEvent('auth:revalidation:success', { 
+              detail: { user: updatedUserData }
+            }));
+            
+            return true;
+          } 
+          return false;
+        } catch (profileError) {
+          console.error("⚠️ Erro ao validar token com API de perfil:", profileError);
+          return false;
+        }
+      }
+      
+      // Se temos token mas não validamos localmente, tentar validar com backend
+      if (token) {
+        console.log("🔄 Validando token com backend...");
+        const isValid = await validateWithBackend(token);
+        if (isValid) return;
+      }
+      
+      // Tentar refresh token como fallback
+      const refreshTokenValue = localStorageManager.getRefreshToken();
+      
+      if (refreshTokenValue && (await performTokenRefresh(refreshTokenValue))) {
+        console.log("✅ Token atualizado via refresh token");
+        
+        // Verificar novamente com backend após refresh
+        const newToken = localStorageManager.getAuthToken();
+        if (newToken) {
+          await validateWithBackend(newToken);
+        }
+        
+        return;
+      }
+
+      // Se chegou aqui e não conseguiu verificar ou atualizar o token, considerar inválido
+      console.log("⚠️ Não foi possível validar nem atualizar o token");
+      setIsAuthenticated(false);
+      setUser(null);
+      clearAllAuthState();
+      
+      // Notificar outros componentes
+      window.dispatchEvent(new CustomEvent('auth:revalidation:failure'));
+    } catch (error) {
+      console.error("❌ Erro na revalidação:", error);
+      setIsAuthenticated(false);
+      setUser(null);
+      clearAuthData();
+      
+      // Notificar outros componentes
+      window.dispatchEvent(new CustomEvent('auth:revalidation:failure', { 
+        detail: { error }
+      }));
+    }
+  };
+
   const logout = () => {
     console.log("🚪 Logout do usuário");
     clearAuthData();
@@ -471,6 +720,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isPremiumUser,
         refreshPremiumStatus,
         premiumStatusVersion,
+        revalidateAuth,
       }}
     >
       {children}

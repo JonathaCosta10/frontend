@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
+import Footer from "@/components/Footer";
 import LanguageSelector from "@/components/LanguageSelector";
 
 export default function Demo() {
@@ -158,11 +159,7 @@ export default function Demo() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/home" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">
-                  O
-                </span>
-              </div>
+              <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-8 h-8" />
               <h1 className="text-2xl font-bold text-primary">Organizesee</h1>
             </Link>
 
@@ -557,6 +554,8 @@ export default function Demo() {
           </Link>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }

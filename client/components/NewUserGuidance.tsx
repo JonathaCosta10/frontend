@@ -199,3 +199,103 @@ export function BudgetNoDataGuidance() {
     </div>
   );
 }
+
+// Component específico para investimentos quando não há dados
+export function InvestmentsNoDataGuidance() {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-4 max-w-2xl mx-auto">
+      {/* Main guidance card */}
+      <Card className="border-dashed border-2 border-blue-300 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-700">
+        <CardHeader className="text-center pb-4">
+          <div className="flex justify-center mb-3">
+            <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
+              <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+          <CardTitle className="text-lg text-blue-900 dark:text-blue-100">
+            Configure seus Investimentos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          <p className="text-blue-700 dark:text-blue-300 text-sm leading-relaxed">
+            Para visualizar seu dashboard de investimentos, você precisa cadastrar seus ativos. 
+            Adicione suas ações, fundos imobiliários, renda fixa e outros investimentos.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Investment-specific actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border border-green-200 bg-green-50/50 hover:bg-green-50 dark:bg-green-950/20 dark:border-green-800 dark:hover:bg-green-950/30 transition-colors cursor-pointer"
+              onClick={() => navigate('/dashboard/investimentos/cadastro')}>
+          <CardContent className="p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <Plus className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <h3 className="font-medium text-green-900 dark:text-green-100 text-sm mb-1">
+              Cadastrar Investimentos
+            </h3>
+            <p className="text-green-700 dark:text-green-300 text-xs">
+              Registre seus ativos financeiros
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-purple-200 bg-purple-50/50 hover:bg-purple-50 dark:bg-purple-950/20 dark:border-purple-800 dark:hover:bg-purple-950/30 transition-colors cursor-pointer"
+              onClick={() => navigate('/dashboard/investimentos/patrimonio')}>
+          <CardContent className="p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h3 className="font-medium text-purple-900 dark:text-purple-100 text-sm mb-1">
+              Visualizar Patrimônio
+            </h3>
+            <p className="text-purple-700 dark:text-purple-300 text-xs">
+              Acompanhe sua evolução financeira
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-orange-200 bg-orange-50/50 hover:bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800 dark:hover:bg-orange-950/30 transition-colors cursor-pointer"
+              onClick={() => navigate('/dashboard/investimentos/comparativos')}>
+          <CardContent className="p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <BarChart3 className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <h3 className="font-medium text-orange-900 dark:text-orange-100 text-sm mb-1">
+              Comparativos
+            </h3>
+            <p className="text-orange-700 dark:text-orange-300 text-xs">
+              Compare o desempenho dos ativos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-blue-200 bg-blue-50/50 hover:bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800 dark:hover:bg-blue-950/30 transition-colors cursor-pointer"
+              onClick={() => navigate('/dashboard/investimentos/ranking')}>
+          <CardContent className="p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <PieChart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 className="font-medium text-blue-900 dark:text-blue-100 text-sm mb-1">
+              Ranking
+            </h3>
+            <p className="text-blue-700 dark:text-blue-300 text-xs">
+              Veja seus melhores investimentos
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Help text */}
+      <div className="text-center">
+        <p className="text-muted-foreground text-xs">
+          💡 <strong>Dica:</strong> Após cadastrar seus investimentos, você terá acesso a gráficos de alocação, análises setoriais e acompanhamento de dividendos.
+        </p>
+      </div>
+    </div>
+  );
+}

@@ -39,6 +39,10 @@ export const HEADERS_MAP = {
   login: PUBLIC_PAGE_HEADERS,
   register: PUBLIC_PAGE_HEADERS,
   refreshToken: PUBLIC_PAGE_HEADERS,
+  // Google OAuth
+  googleSignin: PUBLIC_PAGE_HEADERS, // pública: recebe idToken e emite JWT
+  googleStatus: PRIVATE_PAGE_HEADERS, // requer JWT
+  googleDisconnect: PRIVATE_PAGE_HEADERS, // requer JWT
 
   // Páginas públicas
   market: PUBLIC_PAGE_HEADERS,

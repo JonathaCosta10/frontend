@@ -24,6 +24,7 @@ import Index from "./pages/HomePublicPages/Index";
 import Home from "./pages/HomePublicPages/Home";
 import Demo from "./pages/HomePublicPages/Demo";
 import PublicMarket from "./pages/HomePublicPages/PublicMarket";
+import MarketPage from "./pages/MarketPage";
 import LoginRequired from "./pages/HomePublicPages/LoginRequired";
 import Login from "./pages/HomePublicPages/Login";
 import Signup from "./pages/HomePublicPages/Signup";
@@ -36,6 +37,10 @@ import ResetPassword from "./pages/HomePublicPages/ResetPassword";
 import NotFound from "./pages/ErrosTratamento/NotFound";
 import AuthenticationError from "./pages/ErrosTratamento/AuthenticationError";
 import LoginError from "./pages/ErrosTratamento/LoginError";
+
+// OAuth Components
+import GoogleOAuthCallback from "./components/GoogleOAuthCallback";
+import OAuthErrorHandler from "./components/OAuthErrorHandler";
 
 // Auth Pages (remain in original location)
 import TwoFactorEmailSetup from "./pages/PagesAuth/TwoFactorEmailSetup";
@@ -105,7 +110,7 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/demo" element={<Demo />} />
-                <Route path="/market" element={<PublicMarket />} />
+                <Route path="/market" element={<MarketPage />} />
                 <Route path="/login-required" element={<LoginRequired />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
@@ -123,9 +128,14 @@ function App() {
                   element={<ResetPassword />}
                 />
 
+                {/* OAuth Callbacks */}
+                <Route path="/auth/callback" element={<GoogleOAuthCallback />} />
+                <Route path="/auth/callbackflowName=GeneralOAuthFlow" element={<GoogleOAuthCallback />} />
+                <Route path="/auth/error" element={<OAuthErrorHandler />} />
+
                 {/* Auth Routes */}
                 <Route path="/2fa/email" element={<TwoFactorEmailSetup />} />
-                <Route path="/2fa/email" element={<TwoFactorEmailSetup />} />
+                <Route path="/2fa/totp" element={<TwoFactorEmailSetup />} />
                 
                 {/* Protected Payment Route */}
                 <Route 

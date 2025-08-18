@@ -17,6 +17,7 @@ import InvestmentDividendPremiumGuard from "@/components/InvestmentDividendPremi
 import { investmentsApi } from '@/services/api/investments';
 import type { AlocacaoTipoResponse } from '@/services/api/investments';
 import investmentService, { InvestmentAsset } from "@/services/investmentService";
+import { InvestmentsNoDataGuidance } from "@/components/NewUserGuidance";
 
 // Funções auxiliares para cálculos
 const toNumber = (value: string | number | undefined | null): number => {
@@ -52,29 +53,44 @@ export default function Investimentos() {
     const carregarDados = async () => {
       try {
         setLoading(true);
-        const data = await investmentsApi.getAlocacaoTipo();
         
-        // Verificar se é o novo formato
-        if ('alocacao_por_tipo' in data) {
-          setAlocacaoData(data as AlocacaoTipoResponse);
+        // Obter dados de alocação
+        try {
+          const data = await investmentsApi.getAlocacaoTipo();
+          
+          // Verificar se é o novo formato
+          if (data && 'alocacao_por_tipo' in data) {
+            setAlocacaoData(data as AlocacaoTipoResponse);
+          }
+        } catch (alocacaoError) {
+          console.error("Erro ao carregar dados de alocação:", alocacaoError);
+          // Não interrompemos completamente o fluxo, apenas registramos o erro
         }
         
         // Buscar ativos pessoais para calcular rentabilidade
-        const ativosData = await investmentService.buscarAtivosPessoais();
-        setInvestimentos(ativosData);
-        
-        // Calcular rentabilidade total
-        if (ativosData && ativosData.length > 0) {
-          const totalInvestido = ativosData.reduce((acc, inv) => acc + toNumber(inv.valor_investido), 0);
-          const totalAtual = ativosData.reduce((acc, inv) => acc + toNumber(inv.valor_atual), 0);
-          const rentabilidade = calcularRentabilidade(totalInvestido, totalAtual);
-          setRentabilidadeTotal(rentabilidade);
+        try {
+          const ativosData = await investmentService.buscarAtivosPessoais();
           
-          // Salvar no localStorage para uso futuro se necessário
-          localStorage.setItem("rentabilidadeTotal", rentabilidade.toFixed(2));
+          if (ativosData) {
+            setInvestimentos(ativosData);
+            
+            // Calcular rentabilidade total
+            if (ativosData.length > 0) {
+              const totalInvestido = ativosData.reduce((acc, inv) => acc + toNumber(inv.valor_investido), 0);
+              const totalAtual = ativosData.reduce((acc, inv) => acc + toNumber(inv.valor_atual), 0);
+              const rentabilidade = calcularRentabilidade(totalInvestido, totalAtual);
+              setRentabilidadeTotal(rentabilidade);
+              
+              // Salvar no localStorage para uso futuro se necessário
+              localStorage.setItem("rentabilidadeTotal", rentabilidade.toFixed(2));
+            }
+          }
+        } catch (ativosError) {
+          console.error("Erro ao carregar ativos pessoais:", ativosError);
+          // Não interrompemos completamente o fluxo, apenas registramos o erro
         }
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        console.error("Erro geral ao carregar dados:", error);
       } finally {
         setLoading(false);
       }
@@ -82,6 +98,35 @@ export default function Investimentos() {
 
     carregarDados();
   }, []);
+
+  // Verificar se há investimentos cadastrados
+  const temInvestimentos = !loading && investimentos && investimentos.length > 0;
+  const temAlocacaoData = !loading && alocacaoData && alocacaoData.total_carteira > 0;
+  
+  // Se estiver carregando, mostrar o loader
+  if (loading) {
+    return (
+      <div className="space-y-3 md:space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  
+  // Se não houver investimentos cadastrados, mostrar orientação
+  if (!temInvestimentos && !temAlocacaoData) {
+    return <InvestmentsNoDataGuidance />;
+  }
 
   return (
     <div className="space-y-6">

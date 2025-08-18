@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import FinanceLogo from "@/components/FinanceLogo";
 import {
   Moon,
   Sun,
@@ -79,11 +80,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">
-                  O
-                </span>
-              </div>
+              <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-8 h-8" />
               <h1 className="text-2xl font-bold text-primary">Organizesee</h1>
             </Link>
 
@@ -221,9 +218,6 @@ export default function Home() {
         {/* Hero Section */}
         <section className="py-20 text-center">
           <div className="max-w-4xl mx-auto">
-            <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20">
-              🚀 Organizesee
-            </Badge>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               {t('organize_investments')}
             </h1>
@@ -232,13 +226,13 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/market">
-                <Button size="lg" className="flex items-center space-x-2">
+                <Button variant="outline" size="lg" className="flex items-center space-x-2">
                   <span>{t('explore_market')}</span>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/demo">
-                <Button variant="outline" size="lg">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
                   {t('watch_demo')}
                 </Button>
               </Link>
@@ -345,7 +339,7 @@ export default function Home() {
                   <p className="text-muted-foreground mb-6">
                     {t('thousands_investors_trust')}
                   </p>
-                  <Link to="/market">
+                  <Link to="/login">
                     <Button size="lg" className="w-full">
                       {t('explore_platform')}
                     </Button>
@@ -362,11 +356,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xs">
-                  O
-                </span>
-              </div>
+              <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-6 h-6" />
               <span className="font-semibold">Organizesee</span>
             </div>
             <p className="text-sm text-muted-foreground">

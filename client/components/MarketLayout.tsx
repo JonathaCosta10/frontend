@@ -47,7 +47,7 @@ export default function MarketLayout({ children }: MarketLayoutProps) {
         <div className="flex items-center space-x-2">
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
-            {t("real_time_data")}
+            {t("real_time_data")} (CoinGecko API)
           </span>
         </div>
       </div>
