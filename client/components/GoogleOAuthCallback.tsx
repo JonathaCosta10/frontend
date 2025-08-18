@@ -62,7 +62,7 @@ const GoogleOAuthCallback: React.FC = () => {
           throw new Error(`Erro de autenticação: ${error}`);
         }
         
-        // Se recebemos tokens diretamente, processar imediatamente
+        // Se recebemos tokens diretamente na URL, processar imediatamente
         if (success === 'true' && accessToken && refreshToken) {
           console.log("✅ Tokens recebidos diretamente do backend, processando...");
           console.log("📊 Dados recebidos:", { 
@@ -115,13 +115,78 @@ const GoogleOAuthCallback: React.FC = () => {
             description: "Redirecionando para o dashboard...",
           });
           
-          // Redirecionar para o dashboard
-          setTimeout(() => {
-            console.log("🔀 Redirecionando para dashboard...");
-            navigate('/dashboard', { replace: true });
-          }, 1500);
+          // Redirecionar para o dashboard imediatamente
+          console.log("🔀 Redirecionando para dashboard...");
+          window.location.replace('/dashboard');
           
           return;
+        }
+        
+        // Se não temos tokens na URL mas temos flowName, fazer requisição ao backend
+        if (searchParams.get('flowName') === 'GeneralOAuthFlow' && !accessToken) {
+          console.log("� Fazendo requisição ao backend para obter tokens...");
+          setStatus('Consultando backend para obter dados de autenticação...');
+          
+          try {
+            // Fazer a requisição para o mesmo endpoint que está retornando os dados
+            const response = await fetch(window.location.href, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log("📦 Resposta do backend:", data);
+              
+              if (data.success && data.tokens) {
+                const userData = {
+                  id: data.user.id,
+                  email: data.user.email,
+                  name: data.user.full_name,
+                  full_name: data.user.full_name,
+                  auth_type: data.auth_type || 'google_login'
+                };
+                
+                // Armazenar tokens e dados do usuário
+                localStorageManager.setAuthToken(data.tokens.access);
+                localStorageManager.setRefreshToken(data.tokens.refresh);
+                localStorageManager.setUserData(userData);
+                
+                console.log("💾 Dados do backend salvos no localStorage");
+                
+                // Disparar eventos de autenticação
+                window.dispatchEvent(new CustomEvent('auth:login:success', { 
+                  detail: { user: userData }
+                }));
+                
+                try {
+                  const { eventEmitter } = await import('../lib/eventEmitter');
+                  eventEmitter.emit('auth:login:success', { user: userData });
+                  console.log("✅ Eventos de autenticação disparados");
+                } catch (ee) {
+                  console.warn("⚠️ Não foi possível emitir pelo eventEmitter:", ee);
+                }
+                
+                setStatus('Login bem-sucedido! Redirecionando...');
+                
+                toast({
+                  title: "Login realizado com sucesso",
+                  description: "Redirecionando para o dashboard...",
+                });
+                
+                // Redirecionar para o dashboard
+                console.log("🔀 Redirecionando para dashboard...");
+                window.location.replace('/dashboard');
+                
+                return;
+              }
+            }
+          } catch (fetchError) {
+            console.error("❌ Erro ao consultar backend:", fetchError);
+          }
         }
         
         if (!code || !state) {
