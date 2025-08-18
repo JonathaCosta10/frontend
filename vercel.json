@@ -20,8 +20,24 @@
       "destination": "https://restbackend-dc8667cf0950.herokuapp.com/$1"
     },
     {
-      "source": "/auth/(.*)",
-      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/auth/$1"
+      "source": "/auth/unified/(.*)",
+      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/auth/unified/$1"
+    },
+    {
+      "source": "/auth/google/(.*)",
+      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/auth/google/$1"
+    },
+    {
+      "source": "/auth/login",
+      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/auth/login"
+    },
+    {
+      "source": "/auth/logout",
+      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/auth/logout"
+    },
+    {
+      "source": "/auth/refresh",
+      "destination": "https://restbackend-dc8667cf0950.herokuapp.com/auth/refresh"
     },
     {
       "source": "/(.*)",

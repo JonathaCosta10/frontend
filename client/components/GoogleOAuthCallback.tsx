@@ -128,8 +128,12 @@ const GoogleOAuthCallback: React.FC = () => {
           setStatus('Consultando backend para obter dados de autenticação...');
           
           try {
-            // Fazer a requisição para o mesmo endpoint que está retornando os dados
-            const response = await fetch(window.location.href, {
+            // Construir a URL para o backend
+            const backendUrl = `https://restbackend-dc8667cf0950.herokuapp.com/auth/callback?${searchParams.toString()}`;
+            console.log("📡 Fazendo requisição para:", backendUrl);
+            
+            // Fazer a requisição para o backend
+            const response = await fetch(backendUrl, {
               method: 'GET',
               headers: {
                 'Accept': 'application/json',
