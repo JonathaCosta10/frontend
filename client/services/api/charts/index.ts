@@ -3,6 +3,7 @@
 
 // Budget Charts (Orçamento)
 export { budgetChartsApi } from './orcamento';
+export { custosChartsApi } from './custos';
 export type { ChartDataPoint, MonthlyData } from './orcamento';
 
 // Investment Charts (Investimentos)
@@ -34,7 +35,7 @@ export const chartApiRegistry = {
   // Budget routes
   '/dashboard/orcamento': budgetChartsApi,
   '/dashboard/orcamento/entradas': budgetChartsApi,
-  '/dashboard/orcamento/custos': budgetChartsApi,
+  '/dashboard/orcamento/custos': custosChartsApi,
   '/dashboard/orcamento/dividas': budgetChartsApi,
   '/dashboard/orcamento/metas': budgetChartsApi,
 
@@ -95,3 +96,10 @@ export const API_ENDPOINTS = {
     RANKING_FIIS: '/api/mercado/ranking_fiis',
   },
 } as const;
+
+// Import APIs for registry usage
+import { budgetChartsApi } from './orcamento';
+import { custosChartsApi } from './custos';
+import { investmentChartsApi } from './investimentos';
+import { cryptoChartsApi } from './cripto';
+import { marketChartsApi } from './mercado';

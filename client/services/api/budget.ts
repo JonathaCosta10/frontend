@@ -362,7 +362,7 @@ class BudgetApiService {
     try {
       secureLog("[BUDGET] Fetching maiores gastos", { categoria, mes, ano });
       const response = await api.get(
-        `/api/maiores_gastos?categoria=${categoria}&mes=${mes}&ano=${ano}`,
+        `/services/api/api/dashboard/orcamento/custos/maiores_gastos?categoria=${categoria}&mes=${mes}&ano=${ano}`,
       );
       return response;
     } catch (error) {
@@ -490,7 +490,7 @@ class BudgetApiService {
   async getMaioresEntradas(categoria: string, mes: string, ano: string) {
     try {
       const response = await api.get(
-        `/api/maiores_entradas?categoria=${categoria}&mes=${mes}&ano=${ano}`,
+        `/services/api/api/dashboard/orcamento/entradas/maiores_entradas?categoria=${categoria}&mes=${mes}&ano=${ano}`,
       );
       return response;
     } catch (error) {
@@ -508,7 +508,7 @@ class BudgetApiService {
 
   async getEntradas(ano: string) {
     try {
-      const response = await api.get(`/api/entradas/${ano}/`);
+      const response = await api.get(`/services/api/api/dashboard/orcamento/entradas/entradas/${ano}/`);
       return response;
     } catch (error) {
       console.error("API Error - getEntradas:", error);
@@ -518,7 +518,7 @@ class BudgetApiService {
 
   async cadastrarEntrada(data: any) {
     try {
-      const response = await api.post("/api/cadastrar_entrada/", data);
+      const response = await api.post("/services/api/api/dashboard/orcamento/entradas/cadastrar_entrada/", data);
       return response;
     } catch (error) {
       console.error("API Error - cadastrarEntrada:", error);
@@ -528,7 +528,7 @@ class BudgetApiService {
 
   async excluirEntrada(id: number) {
     try {
-      const response = await api.delete(`/api/excluir_entrada/${id}/`);
+      const response = await api.delete(`/services/api/api/dashboard/orcamento/entradas/excluir_entrada/${id}/`);
       return response;
     } catch (error) {
       console.error("API Error - excluirEntrada:", error);
@@ -538,7 +538,7 @@ class BudgetApiService {
 
   async atualizarFlagEntrada(id: number, data: { flag: boolean }) {
     try {
-      const response = await api.put(`/api/atualizar_flag_entrada/${id}/`, data);
+      const response = await api.put(`/services/api/api/dashboard/orcamento/entradas/atualizar_flag_entrada/${id}/`, data);
       return response;
     } catch (error) {
       console.error("API Error - atualizarFlagEntrada:", error);
@@ -548,7 +548,7 @@ class BudgetApiService {
 
   async atualizarFlagCusto(id: number, data: { flag: boolean }) {
     try {
-      const response = await api.put(`/api/atualizar_flag/${id}/`, data);
+      const response = await api.put(`/services/api/api/dashboard/orcamento/custos/atualizar_flag/${id}/`, data);
       return response;
     } catch (error) {
       console.error("API Error - atualizarFlagCusto:", error);
@@ -746,7 +746,7 @@ class BudgetApiService {
     try {
       secureLog("[BUDGET] Fetching distribuicao gastos completa", { mes, ano });
       const response = await api.get(
-        `/api/distribuicao_gastos?ano=${ano}`,
+        `/services/api/api/dashboard/orcamento/custos/distribuicao_gastos?ano=${ano}`,
       );
       return response;
     } catch (error) {
@@ -1088,7 +1088,7 @@ class BudgetApiService {
   // ===== APIs DE CADASTRO =====
   async cadastrarGasto(data: any) {
     try {
-      const response = await api.post("/api/cadastrar_gasto/", data);
+      const response = await api.post("/services/api/api/dashboard/orcamento/custos/cadastrar_gasto/", data);
       return response;
     } catch (error) {
       console.error("API Error - cadastrarGasto:", error);
@@ -1147,7 +1147,7 @@ class BudgetApiService {
   // ===== APIs DE EXCLUSÃO =====
   async excluirGasto(id: number) {
     try {
-      const response = await api.delete(`/api/excluir_gasto/${id}/`);
+      const response = await api.delete(`/services/api/api/dashboard/orcamento/custos/excluir_gasto/${id}/`);
       return response;
     } catch (error) {
       console.error("API Error - excluirGasto:", error);
