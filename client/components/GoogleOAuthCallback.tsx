@@ -14,113 +14,99 @@ const GoogleOAuthCallback: React.FC = () => {
   useEffect(() => {
     const processOAuthCallback = async () => {
       try {
-        // Analise especial para capturar o URL com formato incorreto (callbackflowName=)
-        const fullUrl = window.location.href;
-        console.log("📌 URL completa do callback:", fullUrl);
+        setStatus('Processando código de autorização...');
+        console.log("📌 URL completa do callback:", window.location.href);
         
-        // Tentar corrigir um formato de URL malformado (sem o '?' entre callback e flowName)
-        let searchParams;
-        if (fullUrl.includes('callbackflowName=')) {
-          // Para URL do tipo: /auth/callbackflowName=GeneralOAuthFlow&success=true&access_token=...
-          const queryStart = fullUrl.indexOf('callbackflowName=');
-          const queryString = fullUrl.substring(queryStart);
-          // Adicionar um '?' no início se não existir
-          const correctedQuery = queryString.startsWith('?') ? queryString : '?' + queryString;
-          searchParams = new URLSearchParams(correctedQuery.replace('callbackflowName=', 'flowName='));
-          console.log("🔧 Query string extraída e corrigida:", correctedQuery);
-          console.log("🔧 SearchParams processados:", Array.from(searchParams.entries()));
-        } else {
-          searchParams = new URLSearchParams(location.search);
-        }
-        
+        // Extrair parâmetros da URL
+        const searchParams = new URLSearchParams(location.search);
+        const code = searchParams.get('code');
+        const state = searchParams.get('state');
         const error = searchParams.get('error');
+        const returnTo = searchParams.get('return_to');
         
-        // Verificar se recebemos tokens diretamente na URL (sucesso do backend)
-        const accessToken = searchParams.get('access_token');
-        const refreshToken = searchParams.get('refresh_token');
-        const success = searchParams.get('success');
-        const userId = searchParams.get('user_id');
-        const email = searchParams.get('email');
-        const name = searchParams.get('name');
-        const type = searchParams.get('type');
-        
-        console.log("🔄 Callback de autenticação recebido:", { 
+        console.log("🔄 Parâmetros recebidos:", { 
+          hasCode: !!code,
+          hasState: !!state,
           error: error || 'nenhum',
-          flowName: searchParams.get('flowName') || 'não especificado',
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-          success: success,
-          type: type
+          returnTo: returnTo || 'não especificado'
         });
         
         if (error) {
           throw new Error(`Erro de autenticação: ${error}`);
         }
         
-        // Se recebemos tokens diretamente na URL, processar imediatamente
-        if (success === 'true' && accessToken && refreshToken) {
-          console.log("✅ Tokens recebidos diretamente do backend, processando...");
-          console.log("📊 Dados recebidos:", { 
-            userId, email, name, type, 
-            hasAccessToken: !!accessToken, 
-            hasRefreshToken: !!refreshToken 
+        if (!code) {
+          throw new Error('Código de autorização não encontrado');
+        }
+        
+        setStatus('Validando com backend...');
+        console.log("� Fazendo requisição para o backend...");
+        
+        // Fazer POST para o novo endpoint do backend
+        const response = await fetch('https://restbackend-dc8667cf0950.herokuapp.com/auth/frontend-oauth-callback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            code: code,
+            state: state,
+            return_to: returnTo || '/dashboard'
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
+        }
+        
+        const authData = await response.json();
+        console.log("📦 Resposta do backend:", authData);
+        
+        if (authData.success) {
+          setStatus('Login bem-sucedido! Processando dados...');
+          
+          // Armazenar tokens e dados do usuário no localStorage
+          localStorageManager.setAuthToken(authData.tokens.access);
+          localStorageManager.setRefreshToken(authData.tokens.refresh);
+          localStorageManager.setUserData(authData.user);
+          
+          console.log("💾 Dados salvos no localStorage:", {
+            hasAccessToken: !!authData.tokens.access,
+            hasRefreshToken: !!authData.tokens.refresh,
+            user: authData.user
           });
-          
-          setStatus('Tokens recebidos, autenticando usuário...');
-          
-          // Decodificar o nome se estiver URL encoded
-          const decodedName = name ? decodeURIComponent(name) : '';
-          const decodedEmail = email ? decodeURIComponent(email) : '';
-          
-          // Montar dados do usuário
-          const userData = {
-            id: userId,
-            email: decodedEmail,
-            name: decodedName,
-            full_name: decodedName,
-            auth_type: type || 'google_login'
-          };
-          
-          console.log("👤 Dados do usuário processados:", userData);
-          
-          // Armazenar tokens e dados do usuário
-          localStorageManager.setAuthToken(accessToken);
-          localStorageManager.setRefreshToken(refreshToken);
-          localStorageManager.setUserData(userData);
-          
-          console.log("💾 Tokens e dados salvos no localStorage");
           
           // Disparar eventos de autenticação
           window.dispatchEvent(new CustomEvent('auth:login:success', { 
-            detail: { user: userData }
+            detail: { user: authData.user }
           }));
           
           try {
             const { eventEmitter } = await import('../lib/eventEmitter');
-            eventEmitter.emit('auth:login:success', { user: userData });
+            eventEmitter.emit('auth:login:success', { user: authData.user });
             console.log("✅ Eventos de autenticação disparados");
           } catch (ee) {
             console.warn("⚠️ Não foi possível emitir pelo eventEmitter:", ee);
           }
           
-          setStatus('Login bem-sucedido! Redirecionando...');
+          setStatus('Redirecionando para o dashboard...');
           
           toast({
             title: "Login realizado com sucesso",
-            description: "Redirecionando para o dashboard...",
+            description: `Bem-vindo, ${authData.user.full_name || authData.user.email}!`,
           });
           
-          // Redirecionar para o dashboard imediatamente
-          console.log("🔀 Redirecionando para dashboard...");
-          setTimeout(() => {
-            window.location.replace('/dashboard');
-          }, 1000);
+          // Redirecionar para a página especificada ou dashboard
+          const redirectTo = authData.return_to || '/dashboard';
+          console.log("🔀 Redirecionando para:", redirectTo);
           
-          return;
+          setTimeout(() => {
+            window.location.replace(redirectTo);
+          }, 1500);
+          
+        } else {
+          throw new Error(authData.error || 'Falha na autenticação');
         }
-        
-        // Se não temos success=true, é provavelmente um erro ou callback incompleto
-        throw new Error('Callback OAuth incompleto ou inválido');
         
       } catch (error) {
         // Falha na autenticação
@@ -144,14 +130,14 @@ const GoogleOAuthCallback: React.FC = () => {
     };
     
     processOAuthCallback();
-  }, [navigate, toast, t]);
+  }, [navigate, toast, t, location.search]);
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
       <div className="flex flex-col items-center justify-center space-y-4 text-center">
         <h1 className="text-2xl font-bold tracking-tight">{status}</h1>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="text-muted-foreground">Processando autenticação...</p>
+        <p className="text-muted-foreground">Aguarde enquanto processamos sua autenticação...</p>
         
         {/* Informações de depuração - remover em produção */}
         {import.meta.env.DEV && (
@@ -159,6 +145,7 @@ const GoogleOAuthCallback: React.FC = () => {
             <h3 className="text-sm font-medium mb-2">Informações de depuração (apenas desenvolvimento)</h3>
             <div className="text-xs space-y-1">
               <p><span className="font-medium">URL:</span> {window.location.href}</p>
+              <p><span className="font-medium">Status:</span> {status}</p>
             </div>
           </div>
         )}
