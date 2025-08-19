@@ -25,12 +25,12 @@ function testApiConfiguration() {
   }
   
   // Simula construção de URL da API
-  const testEndpoint = '/dashboard/orcamento/entradas/data';
+  const testEndpoint = '/api/dashboard/orcamento/entradas/data';
   const fullUrl = backendUrl + testEndpoint;
   console.log('🌐 URL completa de teste:', fullUrl);
   
   // Verifica se a URL final está correta
-  const shouldBe = 'https://www.organizesee.com.br/services/api/dashboard/orcamento/entradas/data';
+  const shouldBe = 'https://www.organizesee.com.br/services/api/api/dashboard/orcamento/entradas/data';
   const isCorrectFull = fullUrl === shouldBe || backendUrl === 'http://127.0.0.1:8000';
   
   console.log('🎯 URL final correta:', isCorrectFull);
