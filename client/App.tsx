@@ -26,6 +26,7 @@ import Demo from "./pages/HomePublicPages/Demo";
 import PublicMarket from "./pages/HomePublicPages/PublicMarket";
 import MarketPage from "./pages/MarketPage";
 import LoginRequired from "./pages/HomePublicPages/LoginRequired";
+import Whitepaper from "./pages/HomePublicPages/Documents/Whitepaper";
 import Login from "./pages/HomePublicPages/Login";
 import Signup from "./pages/HomePublicPages/Signup";
 import ForgotPassword from "./pages/HomePublicPages/ForgotPassword";
@@ -38,9 +39,7 @@ import NotFound from "./pages/ErrosTratamento/NotFound";
 import AuthenticationError from "./pages/ErrosTratamento/AuthenticationError";
 import LoginError from "./pages/ErrosTratamento/LoginError";
 
-// OAuth Components
-import GoogleOAuthCallback from "./components/GoogleOAuthCallback";
-import OAuthErrorHandler from "./components/OAuthErrorHandler";
+// OAuth Components removidos
 
 // Auth Pages (remain in original location)
 import TwoFactorEmailSetup from "./pages/PagesAuth/TwoFactorEmailSetup";
@@ -56,8 +55,8 @@ const Metas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/metas
 
 // Lazy loaded system pages - Investments
 const Investment = React.lazy(() => import("./pages/sistema/dashboard/investimentos/Investment"));
-// Usando a versão corrigida para produção
-const Investimentos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/index-prod"));
+// Usando a versão atualizada com exibição correta de ativos e setores
+const Investimentos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/index"));
 const Comparativos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/comparativos"));
 const Cadastro = React.lazy(() => import("./pages/sistema/dashboard/investimentos/cadastro"));
 const Ranking = React.lazy(() => import("./pages/sistema/dashboard/investimentos/ranking"));
@@ -96,6 +95,9 @@ const PaymentOptions = React.lazy(() => import("./pages/sistema/dashboard/paymen
 
 const queryClient = new QueryClient();
 
+// Lazy-load AuthCallback component
+const AuthCallback = React.lazy(() => import('./components/AuthCallback'));
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -111,6 +113,7 @@ function App() {
                 <Route path="/home" element={<Home />} />
                 <Route path="/demo" element={<Demo />} />
                 <Route path="/market" element={<MarketPage />} />
+                <Route path="/whitepaper" element={<Whitepaper />} />
                 <Route path="/login-required" element={<LoginRequired />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
@@ -127,12 +130,18 @@ function App() {
                   path="/reset-password"
                   element={<ResetPassword />}
                 />
+                
+                {/* OAuth Callback Routes */}
+                <Route 
+                  path="/auth/callback" 
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AuthCallback />
+                    </Suspense>
+                  }
+                />
 
-                {/* OAuth Callbacks */}
-                <Route path="/auth/callback" element={<GoogleOAuthCallback />} />
-                <Route path="/auth/callbackflowName=GeneralOAuthFlow" element={<GoogleOAuthCallback />} />
-                <Route path="/auth/callbackflowName=GeneralOAuthFlow/*" element={<GoogleOAuthCallback />} />
-                <Route path="/auth/error" element={<OAuthErrorHandler />} />
+                {/* OAuth Callbacks removidos */}
 
                 {/* Auth Routes */}
                 <Route path="/2fa/email" element={<TwoFactorEmailSetup />} />

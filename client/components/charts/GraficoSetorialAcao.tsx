@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, TrendingUp, BarChart3, Building2 } from 'lucide-react';
+import { Loader2, TrendingUp, BarChart3, Building2, PieChart as PieChartIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { investmentsApi } from '@/services/api/investments';
 import type { SetorResponse, SetorData } from '@/services/api/investments';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface GraficoSetorialAcaoProps {
   tipoSelecionado?: string;
@@ -13,21 +14,34 @@ interface GraficoSetorialAcaoProps {
 
 // Cores modernas para cada setor
 const CORES_SETORES = [
-  { bg: 'bg-gradient-to-r from-blue-500 to-blue-600', text: 'text-blue-600', light: 'bg-blue-50', border: 'border-blue-200' },
-  { bg: 'bg-gradient-to-r from-emerald-500 to-emerald-600', text: 'text-emerald-600', light: 'bg-emerald-50', border: 'border-emerald-200' },
-  { bg: 'bg-gradient-to-r from-purple-500 to-purple-600', text: 'text-purple-600', light: 'bg-purple-50', border: 'border-purple-200' },
-  { bg: 'bg-gradient-to-r from-orange-500 to-orange-600', text: 'text-orange-600', light: 'bg-orange-50', border: 'border-orange-200' },
-  { bg: 'bg-gradient-to-r from-pink-500 to-pink-600', text: 'text-pink-600', light: 'bg-pink-50', border: 'border-pink-200' },
-  { bg: 'bg-gradient-to-r from-indigo-500 to-indigo-600', text: 'text-indigo-600', light: 'bg-indigo-50', border: 'border-indigo-200' },
-  { bg: 'bg-gradient-to-r from-cyan-500 to-cyan-600', text: 'text-cyan-600', light: 'bg-cyan-50', border: 'border-cyan-200' },
-  { bg: 'bg-gradient-to-r from-red-500 to-red-600', text: 'text-red-600', light: 'bg-red-50', border: 'border-red-200' },
+  { bg: 'bg-gradient-to-r from-blue-500 to-blue-600', text: 'text-blue-600', light: 'bg-blue-50', border: 'border-blue-200', color: '#3B82F6' },
+  { bg: 'bg-gradient-to-r from-emerald-500 to-emerald-600', text: 'text-emerald-600', light: 'bg-emerald-50', border: 'border-emerald-200', color: '#10B981' },
+  { bg: 'bg-gradient-to-r from-purple-500 to-purple-600', text: 'text-purple-600', light: 'bg-purple-50', border: 'border-purple-200', color: '#8B5CF6' },
+  { bg: 'bg-gradient-to-r from-orange-500 to-orange-600', text: 'text-orange-600', light: 'bg-orange-50', border: 'border-orange-200', color: '#F59E0B' },
+  { bg: 'bg-gradient-to-r from-pink-500 to-pink-600', text: 'text-pink-600', light: 'bg-pink-50', border: 'border-pink-200', color: '#EC4899' },
+  { bg: 'bg-gradient-to-r from-indigo-500 to-indigo-600', text: 'text-indigo-600', light: 'bg-indigo-50', border: 'border-indigo-200', color: '#6366F1' },
+  { bg: 'bg-gradient-to-r from-cyan-500 to-cyan-600', text: 'text-cyan-600', light: 'bg-cyan-50', border: 'border-cyan-200', color: '#06B6D4' },
+  { bg: 'bg-gradient-to-r from-red-500 to-red-600', text: 'text-red-600', light: 'bg-red-50', border: 'border-red-200', color: '#EF4444' },
 ];
+
+// Função para traduzir os tipos de investimentos da API
+const traduzirTipoInvestimento = (tipo: string): string => {
+  switch (tipo.toUpperCase()) {
+    case 'ACAO':
+      return 'Ação';
+    case 'FII':
+      return 'Fundos Imobiliários';
+    default:
+      return tipo;
+  }
+};
 
 const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSelecionado = 'Acoes' }) => {
   const { formatCurrency } = useTranslation();
   const [data, setData] = useState<SetorResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [detalhesMinimizados, setDetalhesMinimizados] = useState(true);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -38,7 +52,12 @@ const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSeleciona
         
         // Verificar se é o novo formato
         if ('data' in response && response.success) {
-          setData(response as SetorResponse);
+          // Processar os dados e traduzir o tipo de análise
+          const dadosProcessados = {...response};
+          if (dadosProcessados.data && dadosProcessados.data.tipo_analise) {
+            dadosProcessados.data.tipo_analise = traduzirTipoInvestimento(dadosProcessados.data.tipo_analise);
+          }
+          setData(dadosProcessados as SetorResponse);
         } else {
           // Formato antigo - converter para mock
           console.log("Formato antigo da API de setores detectado");
@@ -112,8 +131,107 @@ const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSeleciona
         </div>
       </div>
 
-      {/* Cards de Setores */}
-      <div className="space-y-3">
+      {/* Gráfico em Pizza de Alocação Setorial */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-semibold text-foreground">Distribuição por Setor</h3>
+          <div className="flex items-center text-xs text-muted-foreground bg-slate-50 dark:bg-slate-700 px-2 py-1 rounded-full">
+            <PieChartIcon className="h-3.5 w-3.5 mr-1" />
+            <span>{data.data.resumo.quantidade_setores} setores</span>
+          </div>
+        </div>
+        
+        <div style={{ height: '380px' }} className="relative">
+          {/* Informação centralizada no donut */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-10 pointer-events-none">
+            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="text-xl font-bold">{formatCurrency(data.data.valor_total)}</p>
+          </div>
+          
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data.data.setores.map((setor, index) => ({
+                  name: setor.setor,
+                  value: setor.percentual_alocacao,
+                  color: CORES_SETORES[index % CORES_SETORES.length].color,
+                  amount: setor.valor_total
+                }))}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${(percent * 100).toFixed(1)}%`}
+                outerRadius={140}
+                innerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                paddingAngle={1}
+                strokeWidth={1}
+              >
+                {data.data.setores.map((_, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={CORES_SETORES[index % CORES_SETORES.length].color}
+                    stroke="#fff"
+                  />
+                ))}
+              </Pie>
+              <Tooltip 
+                formatter={(value, name, props) => [
+                  `${Number(value).toFixed(1)}% - ${formatCurrency(props.payload.amount)}`,
+                  props.payload.name
+                ]}
+                contentStyle={{ 
+                  borderRadius: '8px', 
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  padding: '10px 14px',
+                  border: 'none',
+                  fontWeight: 500
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-2 mt-4">
+          {data.data.setores.map((setor, index) => {
+            const cores = CORES_SETORES[index % CORES_SETORES.length];
+            return (
+              <div key={`legend-${setor.setor}`} className="flex items-center space-x-1 px-2 py-1 rounded-full bg-slate-50 dark:bg-slate-700 text-xs">
+                <div className={`w-2.5 h-2.5 rounded-full`} style={{ backgroundColor: cores.color }}></div>
+                <span>{setor.setor}: {setor.percentual_alocacao.toFixed(1)}%</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Cabeçalho da seção de detalhes com toggle */}
+      <div className="flex items-center justify-between px-1 bg-slate-50 dark:bg-slate-800 rounded-lg p-3 border">
+        <div className="flex items-center space-x-2">
+          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          <h3 className="font-medium text-foreground">Detalhes por Setor</h3>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setDetalhesMinimizados(!detalhesMinimizados)} 
+          className="h-7 px-2"
+        >
+          {detalhesMinimizados ? (
+            <span className="flex items-center text-xs">
+              <ChevronDown className="h-3 w-3 mr-1" /> Expandir
+            </span>
+          ) : (
+            <span className="flex items-center text-xs">
+              <ChevronUp className="h-3 w-3 mr-1" /> Minimizar
+            </span>
+          )}
+        </Button>
+      </div>
+
+      {/* Cards de Setores - com opção de minimizar */}
+      <div className={`space-y-3 transition-all duration-500 ${detalhesMinimizados ? 'max-h-0 overflow-hidden opacity-0 mb-0' : 'max-h-[5000px] opacity-100 mb-4'}`}>
         {data.data.setores
           .sort((a, b) => b.percentual_alocacao - a.percentual_alocacao)
           .map((setor, index) => {

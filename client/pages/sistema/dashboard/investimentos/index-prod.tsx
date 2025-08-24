@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, PieChart, TrendingUp, Loader2 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
@@ -45,6 +46,10 @@ export default function Investimentos() {
   const [loading, setLoading] = useState(true);
   const [investimentos, setInvestimentos] = useState<InvestmentAsset[]>([]);
   const [rentabilidadeTotal, setRentabilidadeTotal] = useState<number>(0);
+  const [dadosSetoriais, setDadosSetoriais] = useState<{totalAtivos: number; quantidadeSetores: number}>({
+    totalAtivos: 0,
+    quantidadeSetores: 0
+  });
 
   // Obter mês e ano do localStorage para os gráficos de dividendos
   const mes = localStorage.getItem("mes") || String(new Date().getMonth() + 1).padStart(2, "0");
@@ -61,8 +66,35 @@ export default function Investimentos() {
         if ('alocacao_por_tipo' in data) {
           setAlocacaoData(data as AlocacaoTipoResponse);
         }
+
+        // Obter dados setoriais para diversificação
+        try {
+          const setoresData = await investmentsApi.getSetores(tipoSelecionado);
+          
+          if (setoresData && 'data' in setoresData && setoresData.success) {
+            // Formato novo da API
+            setDadosSetoriais({
+              totalAtivos: setoresData.data.total_ativos || 0,
+              quantidadeSetores: setoresData.data.resumo.quantidade_setores || 0
+            });
+          } else if (setoresData && 'setores' in setoresData) {
+            // Formato antigo (mock para desenvolvimento)
+            const setores = setoresData.setores || [];
+            // Contagem explícita de todos os ativos em todos os setores
+            const totalAtivos = setores.reduce((sum, setor) => {
+              // Garantir que acoes existe e é um array
+              return sum + (Array.isArray(setor.acoes) ? setor.acoes.length : 0);
+            }, 0);
+            setDadosSetoriais({
+              totalAtivos: totalAtivos,
+              quantidadeSetores: setores.length
+            });
+          }
+        } catch (setoresError) {
+          console.error("Erro ao carregar dados de setores:", setoresError);
+        }
         
-        // Buscar ativos pessoais para calcular rentabilidade
+        // Buscar ativos pessoais para calcular rentabilidade e diversificação
         const ativosData = await investmentService.buscarAtivosPessoais();
         setInvestimentos(ativosData);
         
@@ -75,6 +107,26 @@ export default function Investimentos() {
           
           // Salvar no localStorage para uso futuro se necessário
           localStorage.setItem("rentabilidadeTotal", rentabilidade.toFixed(2));
+          
+          // Calcular diversificação baseada nos ativos pessoais (combinando ACAO e FII)
+          const ativosAcoesFII = ativosData.filter(ativo => 
+            ativo.tipo === "ACAO" || ativo.tipo === "FII" || 
+            ativo.tipo === "Acoes" || ativo.tipo === "Fundos Imobiliários");
+              
+          // Total de ativos únicos considerando ACAO e FII
+          const totalAtivos = ativosAcoesFII.length;
+          
+          // Total de "setores" (nesse caso usamos tickers como proxy)
+          const setoresUnicos = new Set<string>();
+          ativosAcoesFII.forEach(ativo => {
+            setoresUnicos.add(ativo.ticker.substring(0, 4)); // Usar prefixo como aproximação de setor
+          });
+          
+          // Atualizar dados setoriais com base nos ativos pessoais
+          setDadosSetoriais({
+            totalAtivos: totalAtivos,
+            quantidadeSetores: setoresUnicos.size
+          });
         }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
@@ -84,7 +136,7 @@ export default function Investimentos() {
     };
 
     carregarDados();
-  }, []);
+  }, [tipoSelecionado]);
 
   // Verificações de dados
   const temInvestimentos = !loading && investimentos && investimentos.length > 0;
@@ -148,7 +200,10 @@ export default function Investimentos() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('diversification')}</CardTitle>
-            <PieChart className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center space-x-1 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">
+              <PieChart className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Tipos</span>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -226,7 +281,64 @@ export default function Investimentos() {
             </p>
           </CardHeader>
           <CardContent>
-            <GraficoAlocacaoTipo />
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="flex flex-col items-center space-y-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Carregando alocação...</p>
+                </div>
+              </div>
+            ) : !alocacaoData ? (
+              <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                <div className="text-center">
+                  <PieChart className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    Nenhum investimento cadastrado
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Cadastre seus investimentos para ver a distribuição por tipo
+                  </p>
+                  <Button asChild>
+                    <a href="/dashboard/investimentos/cadastro">
+                      Cadastrar Investimento
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {alocacaoData.alocacao_por_tipo.map((item, index) => (
+                    <div
+                      key={item.tipo}
+                      className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 border border-slate-100 dark:border-slate-700"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{item.tipo}</h4>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          index === 0 ? 'bg-blue-100 text-blue-700' :
+                          index === 1 ? 'bg-emerald-100 text-emerald-700' :
+                          'bg-purple-100 text-purple-700'
+                        }`}>
+                          {item.percentual_alocacao.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="text-lg font-semibold">
+                        {formatCurrency(item.valor_atual)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {item.quantidade_ativos} ativos
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Total da carteira:</strong> {formatCurrency(alocacaoData.total_carteira)}
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -245,7 +357,6 @@ export default function Investimentos() {
                 <SelectContent>
                   <SelectItem value="Acoes">{t('stocks')}</SelectItem>
                   <SelectItem value="Fundos Imobiliários">{t('reits')}</SelectItem>
-                  <SelectItem value="Renda Fixa">{t('fixed_income')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

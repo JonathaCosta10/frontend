@@ -13,7 +13,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Plus,
   AlertTriangle,
   CreditCard,
   Calendar,
@@ -24,10 +23,13 @@ import {
   MoreHorizontal,
   Scale,
   Target,
+  Plus,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { budgetApi } from "@/services/api/budget";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface Divida {
@@ -72,13 +74,14 @@ interface FormData {
 // Cores para o gráfico de pizza - tons de vermelho para dívidas
 const COLORS = [
   "#dc2626", // red-600
-  "#ef4444", // red-500
-  "#f87171", // red-400
-  "#fca5a5", // red-300
-  "#fecaca", // red-200
-  "#fee2e2", // red-100
-  "#991b1b", // red-800
-  "#7f1d1d", // red-900
+  "#0891b2", // cyan-600
+  "#7c3aed", // violet-600
+  "#16a34a", // green-600
+  "#f97316", // orange-500
+  "#06b6d4", // cyan-500
+  "#8b5cf6", // violet-500
+  "#6366f1", // indigo-500
+  "#ec4899", // pink-500
 ];
 
 export default function Dividas() {
@@ -88,6 +91,8 @@ export default function Dividas() {
   const [totaisPorCategoria, setTotaisPorCategoria] = useState<TotalPorCategoria[]>([]);
   const [resumoDividas, setResumoDividas] = useState<ResumoDividas | null>(null);
   const [currentCategoria, setCurrentCategoria] = useState("CartaoDeCredito");
+  const [formVisible, setFormVisible] = useState(true); // Estado para controlar visibilidade do formulário
+  const formRef = React.useRef<HTMLDivElement>(null); // Referência para o formulário
   const [formData, setFormData] = useState<FormData>({
     descricao: "",
     valor_mensal: "",
@@ -95,6 +100,31 @@ export default function Dividas() {
     taxa_juros: "",
     quantidade_parcelas: "",
   });
+  
+  // Hook para detectar cliques fora do formulário
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (formRef.current && !formRef.current.contains(event.target as Node)) {
+        // Se o usuário clicou fora do formulário e havia dados preenchidos, mostrar confirmação
+        if (formData.descricao || formData.valor_mensal) {
+          const confirmClose = window.confirm("Deseja descartar os dados do formulário?");
+          if (confirmClose) {
+            limparFormulario();
+          }
+        } else {
+          // Se o formulário está vazio, apenas esconde
+          setFormVisible(false);
+        }
+      }
+    }
+    
+    // Adiciona o listener quando o componente monta
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      // Remove o listener quando o componente desmonta
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [formData]);
   const [loading, setLoading] = useState(false);
 
   // Função para preparar dados do gráfico
@@ -148,15 +178,24 @@ export default function Dividas() {
     }
   };
 
+  // Adiciona hook do toast
+  const { toast } = useToast();
+
   // Função para cadastrar uma dívida
   const cadastrarDivida = async () => {
     if (!isAuthenticated) {
-      alert(t("authentication_required_debt"));
+      toast({
+        title: t("authentication_required_debt"),
+        variant: "destructive",
+      });
       return;
     }
 
     if (!formData.descricao || !formData.valor_mensal) {
-      alert(t("fill_description_monthly_value"));
+      toast({
+        title: t("fill_description_monthly_value"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -172,8 +211,18 @@ export default function Dividas() {
     };
 
     try {
+      // Enviar dados para a API
       await budgetApi.cadastrarDivida(data);
-      alert(t("debt_registered_successfully"));
+      
+      // Mostrar toast de sucesso na barra lateral
+      toast({
+        title: "Sucesso!",
+        description: `${getCategoriaLabel(currentCategoria)} cadastrado com sucesso.`,
+        variant: "default",
+        duration: 3000,
+      });
+      
+      // Resetar o formulário
       setFormData({
         descricao: "",
         valor_mensal: "",
@@ -181,10 +230,35 @@ export default function Dividas() {
         taxa_juros: "",
         quantidade_parcelas: "",
       });
+      
+      // Atualizar dados localmente sem recarregar toda a página
       atualizarDividas();
+      
+      // Adicionar novo item diretamente à lista local para atualização imediata
+      const novaDivida: Divida = {
+        id: Date.now(), // ID temporário até a próxima atualização
+        descricao: data.descricao,
+        valor_mensal: data.valor_mensal,
+        valor_hoje: data.valor_hoje || 0,
+        divida_total: data.valor_mensal * (data.quantidade_parcelas || 1),
+        quantidade_parcelas: data.quantidade_parcelas,
+        taxa_juros: data.taxa_juros || 0,
+        juros_mensais: (data.valor_mensal * (data.taxa_juros / 100)) || 0,
+        categoria: data.categoria,
+        flag: true,
+        mes: data.mes,
+        ano: data.ano
+      };
+      
+      setDividas(prevDividas => [...prevDividas, novaDivida]);
+      
     } catch (error) {
       console.error("Erro ao cadastrar dívida:", error);
-      alert(t("debt_registration_error"));
+      toast({
+        title: "Erro no cadastro",
+        description: "Não foi possível cadastrar o item. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -194,10 +268,15 @@ export default function Dividas() {
       try {
         await budgetApi.excluirDivida(id);
         atualizarDividas();
-        alert(t("debt_deleted_successfully"));
+        toast({
+          title: t("debt_deleted_successfully"),
+        });
       } catch (error) {
         console.error("Erro ao excluir dívida:", error);
-        alert(t("debt_deletion_error"));
+        toast({
+          title: t("debt_deletion_error"),
+          variant: "destructive",
+        });
       }
     }
   };
@@ -211,6 +290,20 @@ export default function Dividas() {
       taxa_juros: "",
       quantidade_parcelas: "",
     });
+  };
+  
+  // Função para repetir o último valor
+  const repetirUltimoValor = () => {
+    if (dividas.length > 0) {
+      const ultimaDivida = dividas[0]; // Considerando que as dívidas estão ordenadas com a mais recente primeiro
+      setFormData({
+        descricao: ultimaDivida.descricao,
+        valor_mensal: ultimaDivida.valor_mensal.toString(),
+        valor_hoje: ultimaDivida.valor_hoje ? ultimaDivida.valor_hoje.toString() : "",
+        taxa_juros: ultimaDivida.taxa_juros ? ultimaDivida.taxa_juros.toString() : "",
+        quantidade_parcelas: ultimaDivida.quantidade_parcelas ? ultimaDivida.quantidade_parcelas.toString() : "",
+      });
+    }
   };
 
   // Função para mostrar o formulário de uma categoria específica
@@ -263,7 +356,8 @@ export default function Dividas() {
   const activeDividas = totaisPorCategoria.length;
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       {/* Cards de Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
@@ -460,12 +554,12 @@ export default function Dividas() {
         </Card>
 
         {/* Seção de Cadastro */}
-        <Card>
+        <Card className={formVisible ? "" : "opacity-70"} ref={formRef}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               {getCategoriaIcon(currentCategoria)}
               <span>
-                Cadastrar - {getCategoriaLabel(currentCategoria)}
+                {getCategoriaLabel(currentCategoria)}
               </span>
             </CardTitle>
           </CardHeader>
@@ -499,7 +593,7 @@ export default function Dividas() {
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label htmlFor="descricao" className="text-xs">{t("description")} *</Label>
+                  <Label htmlFor="descricao" className="text-xs">{t("description")}</Label>
                   <Input
                     id="descricao"
                     value={formData.descricao}
@@ -512,7 +606,7 @@ export default function Dividas() {
                 </div>
 
                 <div>
-                  <Label htmlFor="valor_mensal" className="text-xs">{t("monthly_value")} *</Label>
+                  <Label htmlFor="valor_mensal" className="text-xs">{t("monthly_value")} (R$)</Label>
                   <Input
                     id="valor_mensal"
                     type="number"
@@ -529,7 +623,7 @@ export default function Dividas() {
               {currentCategoria === "CartaoDeCredito" && (
                 <div>
                   <Label htmlFor="quantidade_parcelas" className="text-xs">
-                    {t("remaining_installments_placeholder")} *
+                    Parcelas
                   </Label>
                   <Input
                     id="quantidade_parcelas"
@@ -551,7 +645,7 @@ export default function Dividas() {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label htmlFor="valor_hoje" className="text-xs">
-                      {t("total_value_paying_today")}
+                      {t("total_value_paying_today")} (R$)
                     </Label>
                     <Input
                       id="valor_hoje"
@@ -566,8 +660,8 @@ export default function Dividas() {
                   </div>
 
                   <div>
-                    <Label htmlFor="taxa_juros" className="text-xs">
-                      {t("annual_interest_rate")}
+                    <Label htmlFor="taxa_juros" className="text-xs tooltip-trigger">
+                      Taxa de juros real (CET)
                     </Label>
                     <Input
                       id="taxa_juros"
@@ -578,6 +672,7 @@ export default function Dividas() {
                       }
                       placeholder="12.5"
                       className="h-8"
+                      title="Custo Efetivo Total - Taxa que representa o custo real da operação"
                     />
                   </div>
                 </div>
@@ -586,7 +681,7 @@ export default function Dividas() {
               {currentCategoria !== "CartaoDeCredito" && (
                 <div>
                   <Label htmlFor="quantidade_parcelas_extra" className="text-xs">
-                    {t("remaining_installments_placeholder")}
+                    Parcelas
                   </Label>
                   <Input
                     id="quantidade_parcelas_extra"
@@ -623,10 +718,20 @@ export default function Dividas() {
               >
                 {t("clear")}
               </Button>
+              <Button 
+                variant="outline" 
+                onClick={repetirUltimoValor}
+                size="sm"
+                className="text-xs px-2 py-1"
+              >
+                Repetir
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
+    <Toaster />
+    </>
   );
 }

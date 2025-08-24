@@ -383,7 +383,7 @@ export default function CadastroInvestimentos() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="valor_unitario">Valor Unitário (R$) *</Label>
+                  <Label htmlFor="valor_unitario">Preço Médio (R$) *</Label>
                   <Input
                     id="valor_unitario"
                     type="text"
@@ -399,15 +399,25 @@ export default function CadastroInvestimentos() {
 
               <div className="grid gap-2">
                 <Label htmlFor="data_compra">Data da Compra *</Label>
-                <Input
-                  id="data_compra"
-                  type="date"
-                  value={formData.data_compra}
-                  onChange={(e) => setFormData(prev => ({ ...prev, data_compra: e.target.value }))}
-                  max={new Date().toISOString().split('T')[0]}
-                  min="1900-01-01"
-                  className="h-10"
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="data_compra"
+                    type="date"
+                    value={formData.data_compra}
+                    onChange={(e) => setFormData(prev => ({ ...prev, data_compra: e.target.value }))}
+                    max={new Date().toISOString().split('T')[0]}
+                    min="1900-01-01"
+                    className="h-10"
+                  />
+                  <Button 
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setFormData(prev => ({ ...prev, data_compra: new Date().toISOString().split('T')[0] }))}
+                    className="h-10"
+                  >
+                    Hoje
+                  </Button>
+                </div>
               </div>
             </div>
 

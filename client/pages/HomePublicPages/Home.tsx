@@ -18,6 +18,9 @@ import {
   Menu,
   X,
   Play,
+  CheckCircle,
+  LockKeyhole,
+  FileText,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
@@ -85,6 +88,31 @@ export default function Home() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
+              <nav className="mr-4">
+                <ul className="flex space-x-6">
+                  <li>
+                    <Link to="/about" className="text-muted-foreground hover:text-foreground">
+                      Sobre
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/whitepaper" className="text-muted-foreground hover:text-foreground">
+                      Whitepaper
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground">
+                      Política de Privacidade
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/terms" className="text-muted-foreground hover:text-foreground">
+                      Termos
+                    </Link>
+                  </li>
+                </ul>
+              </nav>
+            
               <Button
                 variant="ghost"
                 size="icon"
@@ -202,6 +230,28 @@ export default function Home() {
                         Mercado
                       </Button>
                     </Link>
+                    <Link to="/whitepaper" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Whitepaper
+                      </Button>
+                    </Link>
+                    <Link to="/privacy-policy" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <LockKeyhole className="h-4 w-4 mr-2" />
+                        Política de Privacidade
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -247,6 +297,74 @@ export default function Home() {
                 <div className="text-muted-foreground">{stat.label}</div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* App Description (Required for OAuth) */}
+        <section className="py-16 bg-gradient-to-r from-primary/5 to-background">
+          <div className="max-w-4xl mx-auto px-4">
+            <h2 className="text-3xl font-bold mb-6 text-center">O que o Organizesee faz</h2>
+            <p className="text-lg text-center text-muted-foreground mb-10">
+              Uma plataforma financeira completa para ajudar você a gerenciar suas finanças e investimentos com ferramentas profissionais
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+                <div className="flex items-start space-x-4 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Controle Financeiro</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Organize receitas e despesas, crie orçamentos detalhados e acompanhe metas financeiras com gráficos e relatórios intuitivos.
+                    </p>
+                  </div>
+                </div>
+                <ul className="space-y-2 pl-10">
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Visão geral de todas suas contas</span>
+                  </li>
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Orçamentos personalizados</span>
+                  </li>
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Acompanhamento de metas financeiras</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+                <div className="flex items-start space-x-4 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Gestão de Investimentos</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Acompanhe seu portfólio de investimentos, analise o desempenho de ativos e receba insights para otimizar seus rendimentos.
+                    </p>
+                  </div>
+                </div>
+                <ul className="space-y-2 pl-10">
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Dashboard de investimentos</span>
+                  </li>
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Análise de carteira e diversificação</span>
+                  </li>
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Informações de mercado em tempo real</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -348,6 +466,61 @@ export default function Home() {
       </main>
 
       {/* Footer */}
+      {/* Data Usage & Privacy Section (Required for OAuth) */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6 text-center">Como usamos seus dados</h2>
+            
+            <div className="bg-card rounded-xl p-6 shadow-sm mb-8">
+              <h3 className="text-xl font-semibold mb-4">Transparência e Proteção de Dados</h3>
+              <p className="text-muted-foreground mb-4">
+                O Organizesee solicita permissões de acesso apenas para fornecer uma experiência personalizada e segura:
+              </p>
+              
+              <div className="space-y-4 mt-6">
+                <div className="flex items-start space-x-3">
+                  <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Autenticação segura</p>
+                    <p className="text-sm text-muted-foreground">
+                      Usamos seu e-mail apenas para autenticação e comunicações essenciais sobre sua conta.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Dados criptografados</p>
+                    <p className="text-sm text-muted-foreground">
+                      Todas as suas informações financeiras são criptografadas e nunca compartilhadas com terceiros.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Controle total</p>
+                    <p className="text-sm text-muted-foreground">
+                      Você pode revogar permissões ou excluir seus dados a qualquer momento através das configurações da conta.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-border">
+                <Link to="/privacy-policy" className="text-primary hover:underline font-medium flex items-center">
+                  <span>Leia nossa Política de Privacidade completa</span>
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <footer className="border-t bg-card mt-20">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
@@ -355,9 +528,17 @@ export default function Home() {
               <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-6 h-6" />
               <span className="font-semibold">Organizesee</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © 2024 Organizesee. Todos os direitos reservados.
-            </p>
+            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-6">
+              <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">
+                Política de Privacidade
+              </Link>
+              <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">
+                Termos de Uso
+              </Link>
+              <p className="text-sm text-muted-foreground">
+                © 2024 Organizesee. Todos os direitos reservados.
+              </p>
+            </div>
           </div>
         </div>
       </footer>

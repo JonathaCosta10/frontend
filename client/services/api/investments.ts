@@ -127,13 +127,48 @@ class InvestmentApiService {
           "[INVESTMENTS] Using mock data for alocacao tipo (development)",
         );
         await simulateApiDelay(300);
-        return {
-          porcentagem_alocacao: {
-            Acoes: 45.8,
-            "Fundos Imobiliários": 32.1,
-            "Renda Fixa": 22.1,
-          },
+        
+        // Retornando um formato compatível com a nova API
+        const mockData: AlocacaoTipoResponse = {
+          total_carteira: 40381.8,
+          alocacao_por_tipo: [
+            {
+              tipo: "Acoes",
+              valor_atual: 18495.0,
+              percentual_alocacao: 45.8,
+              quantidade_ativos: 6
+            },
+            {
+              tipo: "Fundos Imobiliários",
+              valor_atual: 12962.5,
+              percentual_alocacao: 32.1,
+              quantidade_ativos: 8
+            },
+            {
+              tipo: "Renda Fixa",
+              valor_atual: 8924.3,
+              percentual_alocacao: 22.1,
+              quantidade_ativos: 3
+            }
+          ],
+          resumo: {
+            tipos_diferentes: 3,
+            maior_alocacao: {
+              tipo: "Acoes",
+              valor_atual: 18495.0,
+              percentual_alocacao: 45.8,
+              quantidade_ativos: 6
+            },
+            menor_alocacao: {
+              tipo: "Renda Fixa",
+              valor_atual: 8924.3,
+              percentual_alocacao: 22.1,
+              quantidade_ativos: 3
+            }
+          }
         };
+        
+        return mockData;
       }
 
       throw error;

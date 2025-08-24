@@ -18,7 +18,12 @@
     "prod:optimize": "node scripts/production-optimize.cjs",
     "prod:validate": "node scripts/production-validate.cjs",
     "prod:prepare": "npm run prod:cleanup && npm run prod:optimize && npm run prod:validate && npm run build",
-    "test:refresh": "node scripts/test-refresh-token.js"
+    "test:refresh": "node scripts/test-refresh-token.js",
+    "env": "powershell -ExecutionPolicy Bypass -File scripts/set-environment.ps1",
+    "env:dev": "powershell -ExecutionPolicy Bypass -File scripts/set-environment.ps1 development",
+    "env:prod": "powershell -ExecutionPolicy Bypass -File scripts/set-environment.ps1 production",
+    "dev:local": "npm run env:dev && npm run dev",
+    "build:prod": "npm run env:prod && npm run build"
   },
   "dependencies": {
     "axios": "^1.11.0",

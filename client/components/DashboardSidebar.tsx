@@ -54,27 +54,27 @@ export default function DashboardSidebar({ onCollapseChange, onMobileClose }: Da
 
   const mainItems: SidebarItem[] = [
     {
-      labelKey: "daily_info",
+      labelKey: "daily_summary",
       path: "/dashboard/info-diaria",
       icon: <BarChart3 className="h-4 w-4" />,
     },
     {
-      labelKey: "budget",
+      labelKey: "budget_management",
       path: "/dashboard/orcamento",
       icon: <Calculator className="h-4 w-4" />,
     },
     {
-      labelKey: "investments",
+      labelKey: "variable_income",
       path: "/dashboard/investimentos",
-      icon: <BarChart3 className="h-4 w-4" />,
-    },
-    {
-      labelKey: "market",
-      path: "/dashboard/mercado",
       icon: <TrendingUp className="h-4 w-4" />,
     },
     {
-      labelKey: "crypto",
+      labelKey: "market_analysis",
+      path: "/dashboard/mercado",
+      icon: <BarChart3 className="h-4 w-4" />,
+    },
+    {
+      labelKey: "crypto_assets",
       path: "/dashboard/cripto",
       icon: <Bitcoin className="h-4 w-4" />,
     },

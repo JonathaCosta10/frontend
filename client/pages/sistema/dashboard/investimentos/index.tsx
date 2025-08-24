@@ -7,10 +7,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, PieChart, TrendingUp, Loader2 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
-import GraficoAlocacaoTipo from "@/components/charts/GraficoAlocacaoTipo";
+import PieChartWithLegend from "@/components/charts/PieChartWithLegend";
 import GraficoSetorialAcao from "@/components/charts/GraficoSetorialAcao";
 import GraficoDividendosFII from "@/components/charts/GraficoDividendosFII";
 import InvestmentDividendPremiumGuard from "@/components/InvestmentDividendPremiumGuard";
@@ -43,6 +44,10 @@ export default function Investimentos() {
   const [loading, setLoading] = useState(true);
   const [investimentos, setInvestimentos] = useState<InvestmentAsset[]>([]);
   const [rentabilidadeTotal, setRentabilidadeTotal] = useState<number>(0);
+  const [dadosSetoriais, setDadosSetoriais] = useState<{totalAtivos: number; quantidadeSetores: number}>({
+    totalAtivos: 0,
+    quantidadeSetores: 0
+  });
 
   // Obter mês e ano do localStorage para os gráficos de dividendos
   const mes = localStorage.getItem("mes") || String(new Date().getMonth() + 1).padStart(2, "0");
@@ -67,7 +72,43 @@ export default function Investimentos() {
           // Não interrompemos completamente o fluxo, apenas registramos o erro
         }
         
-        // Buscar ativos pessoais para calcular rentabilidade
+        // Obter dados setoriais para diversificação
+        try {
+          const setoresData = await investmentsApi.getSetores(tipoSelecionado);
+          
+          if (setoresData && 'data' in setoresData && setoresData.success) {
+            // Formato novo da API
+            console.log("Formato API novo detectado:", setoresData.data);
+            setDadosSetoriais({
+              totalAtivos: setoresData.data.total_ativos || 0,
+              quantidadeSetores: setoresData.data.resumo.quantidade_setores || 0
+            });
+          } else if (setoresData && 'setores' in setoresData) {
+            // Formato antigo (mock para desenvolvimento)
+            console.log("Formato API antigo detectado:", setoresData);
+            const setores = setoresData.setores || [];
+            // Contagem explícita de todos os ativos em todos os setores
+            const totalAtivos = setores.reduce((sum, setor) => {
+              // Garantir que acoes existe e é um array
+              return sum + (Array.isArray(setor.acoes) ? setor.acoes.length : 0);
+            }, 0);
+            setDadosSetoriais({
+              totalAtivos: totalAtivos,
+              quantidadeSetores: setores.length
+            });
+          } else {
+            // Fallback seguro para evitar exibição de dados incorretos
+            console.log("Formato de dados não reconhecido:", setoresData);
+            setDadosSetoriais({
+              totalAtivos: 0,
+              quantidadeSetores: 0
+            });
+          }
+        } catch (setoresError) {
+          console.error("Erro ao carregar dados de setores:", setoresError);
+        }
+        
+        // Buscar ativos pessoais para calcular rentabilidade e diversificação
         try {
           const ativosData = await investmentService.buscarAtivosPessoais();
           
@@ -83,6 +124,39 @@ export default function Investimentos() {
               
               // Salvar no localStorage para uso futuro se necessário
               localStorage.setItem("rentabilidadeTotal", rentabilidade.toFixed(2));
+              
+              // Calcular diversificação baseada nos ativos pessoais (combinando ACAO e FII)
+              const setoresPorTipo = new Map<string, Set<string>>();
+              const ativosAcoesFII = ativosData.filter(ativo => 
+                ativo.tipo === "ACAO" || ativo.tipo === "FII" || 
+                ativo.tipo === "Acoes" || ativo.tipo === "Fundos Imobiliários");
+                
+              // Vamos usar o ticker como identificador de setor (simplificado)
+              // Em um cenário real, precisaríamos de um mapeamento de tickers para setores
+              ativosAcoesFII.forEach(ativo => {
+                const tipo = ativo.tipo || "Desconhecido";
+                if (!setoresPorTipo.has(tipo)) {
+                  setoresPorTipo.set(tipo, new Set());
+                }
+                // Considerar cada ticker como um "setor" diferente para este exemplo
+                // Em um caso real, usaríamos um campo específico de setor
+                setoresPorTipo.get(tipo)?.add(ativo.ticker);
+              });
+              
+              // Total de ativos únicos considerando ACAO e FII
+              const totalAtivos = ativosAcoesFII.length;
+              
+              // Total de "setores" (nesse caso usamos tickers como proxy)
+              const setoresUnicos = new Set<string>();
+              ativosAcoesFII.forEach(ativo => {
+                setoresUnicos.add(ativo.ticker.substring(0, 4)); // Usar prefixo como aproximação de setor
+              });
+              
+              // Atualizar dados setoriais com base nos ativos pessoais
+              setDadosSetoriais({
+                totalAtivos: totalAtivos,
+                quantidadeSetores: setoresUnicos.size
+              });
             }
           }
         } catch (ativosError) {
@@ -97,7 +171,7 @@ export default function Investimentos() {
     };
 
     carregarDados();
-  }, []);
+  }, [tipoSelecionado]);
 
   // Verificar se há investimentos cadastrados
   const temInvestimentos = !loading && investimentos && investimentos.length > 0;
@@ -144,51 +218,123 @@ export default function Investimentos() {
       </div>
 
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('total_portfolio')}</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Carregando...</span>
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {alocacaoData ? formatCurrency(alocacaoData.total_carteira) : formatCurrency(0)}
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="md:col-span-1 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('diversification')}</CardTitle>
-            <PieChart className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center space-x-1 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">
+              <PieChart className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Por Tipo</span>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Carregando...</span>
+              <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center space-y-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Carregando dados...</p>
+                </div>
+              </div>
+            ) : !alocacaoData || alocacaoData.alocacao_por_tipo.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full py-6">
+                <PieChart className="h-12 w-12 text-muted-foreground mb-3" />
+                <div className="text-xl font-bold text-center">Nenhum investimento</div>
+                <p className="text-sm text-muted-foreground mt-1 text-center">
+                  Adicione investimentos para ver sua diversificação
+                </p>
               </div>
             ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {alocacaoData ? `${alocacaoData.resumo.tipos_diferentes} tipos` : "0 tipos"}
+              <div className="space-y-4">
+                {/* Carteira total em destaque */}
+                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-muted-foreground">Carteira Total</span>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <span className="text-2xl font-bold">{formatCurrency(alocacaoData.total_carteira)}</span>
+                    <span className="text-sm text-muted-foreground">{alocacaoData.resumo.tipos_diferentes} tipos</span>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {alocacaoData?.resumo.maior_alocacao ? 
-                    `${alocacaoData.resumo.maior_alocacao.tipo}: ${alocacaoData.resumo.maior_alocacao.percentual_alocacao.toFixed(1)}%` : 
-                    "Nenhum investimento"
-                  }
-                </p>
-              </>
+                
+                {/* Lista com Barras de Progresso - Layout Aprimorado */}
+                <div className="space-y-3">
+                  {alocacaoData.alocacao_por_tipo.map((item, index) => {
+                    const tipoTraduzido = item.tipo === "ACAO" ? "Ação" : 
+                                          item.tipo === "FII" ? "Fundos Imobiliários" : 
+                                          item.tipo;
+                    
+                    const bgColor = index === 0 ? "bg-blue-500" : 
+                                  index === 1 ? "bg-emerald-500" : 
+                                  "bg-purple-500";
+                    
+                    const bgLight = index === 0 ? "bg-blue-50" : 
+                                  index === 1 ? "bg-emerald-50" : 
+                                  "bg-purple-50";
+                                  
+                    const textColor = index === 0 ? "text-blue-700" : 
+                                     index === 1 ? "text-emerald-700" : 
+                                     "text-purple-700";
+                    
+                    const borderColor = index === 0 ? "border-blue-200" : 
+                                      index === 1 ? "border-emerald-200" : 
+                                      "border-purple-200";
+                    
+                    return (
+                      <div key={item.tipo} className={`p-3 rounded-lg ${bgLight} border ${borderColor} transition-all duration-200 hover:shadow-md`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 rounded-full ${bgColor} mr-2.5`}></div>
+                            <span className={`font-medium text-base ${textColor}`}>{tipoTraduzido}</span>
+                          </div>
+                          <div className={`font-bold text-lg ${textColor}`}>
+                            {item.percentual_alocacao.toFixed(1)}%
+                          </div>
+                        </div>
+                        
+                        {/* Barra de progresso */}
+                        <div className="w-full bg-white dark:bg-slate-700 rounded-full h-2 mb-2">
+                          <div 
+                            className={`${bgColor} h-2 rounded-full`} 
+                            style={{ width: `${item.percentual_alocacao}%` }}
+                          ></div>
+                        </div>
+                        
+                        {/* Grid de detalhes */}
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Ativos</p>
+                            <p className={`font-semibold ${textColor}`}>
+                              {item.quantidade_ativos} {item.quantidade_ativos === 1 ? "ativo" : "ativos"}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">Valor</p>
+                            <p className={`font-semibold ${textColor}`}>
+                              {formatCurrency(item.valor_atual)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Insights de diversificação */}
+                {alocacaoData.resumo.tipos_diferentes > 1 && (
+                  <div className="text-xs text-muted-foreground p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-1.5">
+                      <span>💡</span>
+                      <span>
+                        {alocacaoData.alocacao_por_tipo[0].percentual_alocacao > 70 ? (
+                          <span>Considere diversificar mais para reduzir riscos</span>
+                        ) : (
+                          <span>Boa distribuição entre diferentes tipos de ativos</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -234,23 +380,7 @@ export default function Investimentos() {
       </div>
 
       {/* Gráficos principais */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Alocação por Tipo */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <PieChart className="h-5 w-5" />
-              <span>{t('allocation_by_type')}</span>
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {t('portfolio_distribution_category')}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <GraficoAlocacaoTipo />
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 gap-6">
         {/* Alocação Setorial */}
         <Card>
           <CardHeader>
@@ -266,7 +396,6 @@ export default function Investimentos() {
                 <SelectContent>
                   <SelectItem value="Acoes">{t('stocks')}</SelectItem>
                   <SelectItem value="Fundos Imobiliários">{t('reits')}</SelectItem>
-                  <SelectItem value="Renda Fixa">{t('fixed_income')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
