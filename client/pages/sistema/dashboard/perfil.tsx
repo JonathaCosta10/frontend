@@ -317,13 +317,21 @@ const PerfilPage: React.FC = () => {
     // Handler para mudança do CEP com busca automática
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/\D/g, '');
-    const formattedCep = formatCep(rawValue);
+    
+    // Garante que não temos mais de 8 dígitos
+    const truncatedRawValue = rawValue.slice(0, 8);
+    
+    // Formata com hífen automático quando digitar 5 ou mais números
+    const formattedCep = formatCep(truncatedRawValue);
+    
+    // Atualiza o campo com o valor formatado
+    e.target.value = formattedCep;
     
     // Marcamos que o CEP foi editado pelo menos uma vez
     setCepChanged(true);
     
     // Limpa erros anteriores e status apenas quando o usuário está digitando
-    if (rawValue.length < 8) {
+    if (truncatedRawValue.length < 8) {
       setCepError(null);
     }
     setAddressFound(false);
@@ -332,8 +340,8 @@ const PerfilPage: React.FC = () => {
     setPersonalData(prev => ({ ...prev, cep: formattedCep }));
     
     // Busca automática quando CEP tem 8 dígitos
-    if (rawValue.length === 8) {
-      console.log(`🔍 Buscando CEP: ${rawValue}`);
+    if (truncatedRawValue.length === 8) {
+      console.log(`🔍 Buscando CEP: ${truncatedRawValue}`);
       
       // Indica que está carregando
       setCepLoading(true);
@@ -344,8 +352,8 @@ const PerfilPage: React.FC = () => {
       });
       
       try {
-        console.log(`👉 Iniciando busca do CEP: ${rawValue}`);
-        const address = await searchCep(rawValue);
+        console.log(`👉 Iniciando busca do CEP: ${truncatedRawValue}`);
+        const address = await searchCep(truncatedRawValue);
         
         // Verificamos se a busca foi bem sucedida
         if (address && address.cidade && address.estado) {

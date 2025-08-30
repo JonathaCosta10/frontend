@@ -29,12 +29,28 @@ export const useViaCep = () => {
     // Remove todos os caracteres não numéricos
     const cleanCep = cep.replace(/\D/g, "");
     
-    // Aplica máscara se tiver 8 dígitos
-    if (cleanCep.length === 8) {
-      return cleanCep.replace(/(\d{5})(\d{3})/, "$1-$2");
+    // Garante que não temos mais de 8 dígitos
+    const truncatedCep = cleanCep.slice(0, 8);
+    
+    // Aplica máscara se tiver 5 ou mais dígitos
+    if (truncatedCep.length >= 5) {
+      // Os primeiros 5 dígitos
+      const firstPart = truncatedCep.substring(0, 5);
+      
+      // Os dígitos restantes (até 3)
+      const secondPart = truncatedCep.substring(5);
+      
+      // Se tivermos dígitos na segunda parte, adicionamos com hífen
+      if (secondPart) {
+        return `${firstPart}-${secondPart}`;
+      }
+      
+      // Se tivermos apenas os 5 primeiros dígitos, retornamos sem hífen
+      return firstPart;
     }
     
-    return cleanCep;
+    // Retorna sem formatação se tiver menos de 5 dígitos
+    return truncatedCep;
   };
 
   const searchCep = async (cep: string): Promise<AddressData | null> => {
