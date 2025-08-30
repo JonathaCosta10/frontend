@@ -26,6 +26,7 @@
     "build:prod": "npm run env:prod && npm run build"
   },
   "dependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
     "axios": "^1.11.0",
     "chart.js": "^4.5.0",
     "dayjs": "^1.11.13",

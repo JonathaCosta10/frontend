@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
+import react from '@vitejs/plugin-react'
 import path from 'path'
 
 // https://vitejs.dev/config/
@@ -9,7 +9,6 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./client"),
     },
-    extensions: ['.ts', '.tsx', '.js', '.jsx'],
   },
   build: {
     // Otimizações para produção
@@ -39,37 +38,7 @@ export default defineConfig({
   // Otimizações de desenvolvimento (apenas local)
   server: {
     port: 3000,
-    host: true,
-    // Configurar CORS e proxy para backend
-    cors: {
-      origin: ["http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:8000"],
-      credentials: true
-    },
-    // Proxy para requisições de API (opcional)
-    proxy: {
-      '/api': {
-        target: 'https://restbackend-dc8667cf0950.herokuapp.com',
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-        configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
-            console.log('proxy error', err);
-          });
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
-            // Adicionar o cabeçalho X-API-Key em todas as requisições
-            const apiKey = "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8qjZ&?c[+Sj_CLhMO[Z(iM_)ZnW]j2M]+j+";
-            proxyReq.setHeader('X-API-Key', apiKey);
-            
-            console.log('Sending Request to the Target:', req.method, req.url);
-            console.log('API Key header added');
-          });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-          });
-        },
-      }
-    }
+    host: true
   },
   
   // Preview para testes de produção
