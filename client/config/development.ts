@@ -9,9 +9,11 @@
 // Importar configuração centralizada
 import { config, UrlBuilder } from '../../environments/config';
 
-// Re-exportar detecções de ambiente usando o sistema central
-export const isDevelopment = config.mode === 'development';
-export const isProduction = config.mode === 'production';
+// Re-exportar detecções de ambiente usando o sistema central e detecção de URL
+export const isDevelopment = config.mode === 'development' && 
+  !(typeof window !== 'undefined' && window.location.hostname.includes('organizesee.com.br'));
+export const isProduction = config.mode === 'production' || 
+  (typeof window !== 'undefined' && window.location.hostname.includes('organizesee.com.br'));
 
 // Configurações de backend usando o sistema central
 export const BACKEND_URL = config.backendUrl;
@@ -80,10 +82,10 @@ export const debugConfig = {
   debugMode: config.debugMode,
 
   // Error logging sempre ativo
-  errorLogging: config.errorLogging,
+  errorLogging: config.errorLogging || true, // Sempre ativo para diagnóstico
 
-  // Mock data baseado no ambiente
-  useMockData: config.mockData,
+  // Mock data permitido para fallback mesmo em produção temporariamente
+  useMockData: true, // Forçado para permitir fallback
 
   // Source maps baseado no ambiente
   enableSourceMaps: config.sourceMaps,

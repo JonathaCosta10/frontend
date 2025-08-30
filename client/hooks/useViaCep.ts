@@ -49,15 +49,20 @@ export const useViaCep = () => {
     setError(null);
 
     try {
+      console.log(`Fazendo requisição para ViaCEP: https://viacep.com.br/ws/${cleanCep}/json/`);
+      
       const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
       
       if (!response.ok) {
+        console.error(`Resposta não-ok da API ViaCEP: ${response.status} ${response.statusText}`);
         throw new Error("Erro na requisição para ViaCEP");
       }
 
       const data: ViaCepData = await response.json();
+      console.log("Resposta da API ViaCEP:", data);
 
       if (data.erro) {
+        console.warn("API ViaCEP retornou erro=true para o CEP:", cleanCep);
         setError("CEP não encontrado");
         return null;
       }

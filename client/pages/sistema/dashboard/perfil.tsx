@@ -12,6 +12,7 @@ import { useTranslation } from "../../../contexts/TranslationContext";
 import { localStorageManager } from "../../../lib/localStorage";
 import { api } from "../../../lib/api";
 import { useViaCep } from "../../../hooks/useViaCep";
+import { useProfileVerification } from "../../../hooks/useProfileVerification";
 import SubscriptionGuard from "../../../components/SubscriptionGuard";
 import { 
   User, 
@@ -28,7 +29,9 @@ import {
   X,
   Trophy,
   Award,
-  Star
+  Star,
+  CheckCircle,
+  MapPin
 } from "lucide-react";
 
 interface PersonalData {
@@ -43,6 +46,7 @@ interface PersonalData {
   cidade?: string;
   estado?: string;
   cep?: string;
+  bairro?: string;
   dataNascimento?: string;
   genero?: string;
   rendaMensal?: string;
@@ -58,6 +62,7 @@ interface PersonalDataAPI {
   endereco?: string;
   numero?: string;
   cep?: string;
+  bairro?: string;
   cidade?: string;
   estado?: string;
   data_nascimento?: string;
@@ -92,10 +97,15 @@ const PerfilPage: React.FC = () => {
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const { isPaidUser, profile } = useProfileVerification();
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   // Hook do ViaCEP
-  const { searchCep, formatCep, isLoading: cepLoading, error: cepError } = useViaCep();
+  const { searchCep, formatCep } = useViaCep();
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
+  const [addressFound, setAddressFound] = useState(false);
+  const [cepChanged, setCepChanged] = useState(false);
   const [personalData, setPersonalData] = useState<PersonalData>({
     nomeCompleto: "",
     cpf: "",
@@ -104,6 +114,7 @@ const PerfilPage: React.FC = () => {
     profissao: "",
     endereco: "",
     numero: "",
+    bairro: "",
     cidade: "",
     estado: "",
     cep: "",
@@ -196,14 +207,31 @@ const PerfilPage: React.FC = () => {
       });
     } finally {
       setIsLoading(false);
+      // Marcar que os dados foram carregados para evitar requisições repetidas
+      setInitialDataLoaded(true);
     }
   };
 
+  // Estado para controlar se já fizemos a requisição inicial para evitar loops
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+
   useEffect(() => {
+    // Se já carregamos os dados uma vez e eles existem, não precisamos carregar novamente
+    if (initialDataLoaded && personalData.email) {
+      console.log("Dados já carregados anteriormente, evitando nova requisição.");
+      return;
+    }
+
+    // Apenas carregar dados se o usuário estiver autenticado
     if (isAuthenticated && user) {
+      const userIsPremium = isPaidUser();
+      console.log("Carregando dados pessoais do perfil...", {
+        isPremium: userIsPremium,
+        profileType: profile?.subscriptionType
+      });
       loadPersonalData();
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, initialDataLoaded]);
 
   const handleSave = async () => {
     try {
@@ -268,6 +296,12 @@ const PerfilPage: React.FC = () => {
       });
       
       setIsEditing(false);
+      
+      // Recarregar dados do servidor para garantir consistência
+      // Primeiro, resetamos a flag de carregamento inicial
+      setInitialDataLoaded(false);
+      // Em seguida, recarregamos os dados
+      loadPersonalData();
     } catch (error) {
       console.error("Erro ao salvar dados:", error);
       toast({
@@ -285,18 +319,79 @@ const PerfilPage: React.FC = () => {
     const rawValue = e.target.value.replace(/\D/g, '');
     const formattedCep = formatCep(rawValue);
     
+    // Marcamos que o CEP foi editado pelo menos uma vez
+    setCepChanged(true);
+    
+    // Limpa erros anteriores e status apenas quando o usuário está digitando
+    if (rawValue.length < 8) {
+      setCepError(null);
+    }
+    setAddressFound(false);
+    
+    // Atualiza o CEP no estado
     setPersonalData(prev => ({ ...prev, cep: formattedCep }));
     
     // Busca automática quando CEP tem 8 dígitos
     if (rawValue.length === 8) {
-      const address = await searchCep(rawValue);
-      if (address) {
-        setPersonalData(prev => ({
-          ...prev,
-          endereco: address.endereco,
-          cidade: address.cidade,
-          estado: address.estado
-        }));
+      console.log(`🔍 Buscando CEP: ${rawValue}`);
+      
+      // Indica que está carregando
+      setCepLoading(true);
+      
+      toast({
+        title: "Buscando CEP",
+        description: "Consultando endereço...",
+      });
+      
+      try {
+        console.log(`👉 Iniciando busca do CEP: ${rawValue}`);
+        const address = await searchCep(rawValue);
+        
+        // Verificamos se a busca foi bem sucedida
+        if (address && address.cidade && address.estado) {
+          console.log("✅ Endereço encontrado:", address);
+          
+          toast({
+            title: "CEP encontrado",
+            description: `${address.endereco ? address.endereco : ''} ${address.bairro ? '- ' + address.bairro : ''}, ${address.cidade}/${address.estado}`,
+          });
+          
+          setAddressFound(true);
+          
+          setPersonalData(prev => ({
+            ...prev,
+            endereco: address.endereco || prev.endereco,
+            cidade: address.cidade || prev.cidade,
+            estado: address.estado || prev.estado,
+            bairro: address.bairro || prev.bairro || ""
+          }));
+        } else {
+          console.log("⚠️ CEP não encontrado");
+          setCepError("CEP não encontrado. Verifique o número informado.");
+          
+          toast({
+            title: "CEP não encontrado",
+            description: "Verifique o CEP informado e tente novamente",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("❌ Erro ao buscar CEP:", error);
+        setCepError("Erro ao consultar o CEP. Tente novamente mais tarde.");
+        
+        toast({
+          title: "Erro",
+          description: "Não foi possível buscar o CEP. Tente novamente mais tarde.",
+          variant: "destructive",
+        });
+      } finally {
+        setCepLoading(false);
+      }
+    } else if (rawValue.length > 0 && rawValue.length < 8) {
+      // Apenas mostrar erro de CEP incompleto se o usuário já digitou algo e parou de digitar
+      // Para evitar mostrar erros enquanto o usuário ainda está digitando
+      if (rawValue.length >= 5) {  // Mostrar erro só depois de digitado mais da metade do CEP
+        setCepError("CEP incompleto. Digite os 8 dígitos.");
       }
     }
   };
@@ -397,6 +492,7 @@ const PerfilPage: React.FC = () => {
       endereco: data.endereco,
       numero: data.numero,
       cep: data.cep?.replace(/\D/g, ''), // Remove máscara do CEP: 00000-000 → 00000000
+      bairro: data.bairro,
       cidade: data.cidade,
       estado: data.estado,
       data_nascimento: apiDate || undefined,
@@ -459,6 +555,7 @@ const PerfilPage: React.FC = () => {
       profissao: data.profissao || "",
       endereco: data.endereco || "",
       numero: data.numero || "",
+      bairro: data.bairro || "",
       cidade: data.cidade || "",
       estado: data.estado || "",
       cep: formattedCep,
@@ -706,13 +803,33 @@ const PerfilPage: React.FC = () => {
                   <User className="h-6 w-6 text-blue-600" />
                   <span className="text-gray-900">Dados Pessoais</span>
                 </CardTitle>
-                <Button
-                  variant={isEditing ? "outline" : "default"}
-                  size="sm"
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="flex items-center space-x-2"
-                >
-                  {isEditing ? (
+                <div className="flex items-center space-x-2">
+                  {!isEditing && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setInitialDataLoaded(false);
+                        loadPersonalData();
+                        toast({
+                          title: "Atualização",
+                          description: "Recarregando dados do perfil...",
+                        });
+                      }}
+                      disabled={isLoading}
+                      className="flex items-center space-x-1"
+                    >
+                      <TrendingUp className="h-4 w-4" />
+                      <span>Atualizar</span>
+                    </Button>
+                  )}
+                  <Button
+                    variant={isEditing ? "outline" : "default"}
+                    size="sm"
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="flex items-center space-x-2"
+                  >
+                    {isEditing ? (
                     <>
                       <X className="h-4 w-4" />
                       <span>Cancelar</span>
@@ -724,6 +841,7 @@ const PerfilPage: React.FC = () => {
                     </>
                   )}
                 </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
@@ -834,27 +952,54 @@ const PerfilPage: React.FC = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="cep">CEP</Label>
-                      <Input
-                        id="cep"
-                        value={personalData.cep}
-                        onChange={handleCepChange}
-                        placeholder="00000-000"
-                        maxLength={9}
-                        disabled={cepLoading}
-                        className="h-11"
-                      />
-                      {cepError && (
+                      <div className="relative">
+                        <Input
+                          id="cep"
+                          value={personalData.cep}
+                          onChange={handleCepChange}
+                          placeholder="00000-000"
+                          maxLength={9}
+                          disabled={cepLoading}
+                          className={`h-11 ${cepLoading ? 'pr-10' : ''} ${cepError ? 'border-red-500' : ''}`}
+                        />
+                        {cepLoading && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+                          </div>
+                        )}
+                      </div>
+                      {cepChanged && cepError && (
                         <p className="text-sm text-red-500 mt-1">{cepError}</p>
                       )}
+                      <p className="text-xs text-muted-foreground">Digite o CEP para buscar o endereço automaticamente</p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="endereco">Endereço</Label>
+                      <Label htmlFor="endereco" className="flex items-center">
+                        <MapPin className="h-4 w-4 mr-1 inline" />
+                        <span>Endereço</span>
+                        {addressFound && (
+                          <span className="ml-2 inline-flex items-center text-green-600 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" /> 
+                            Encontrado via CEP
+                          </span>
+                        )}
+                      </Label>
                       <Input
                         id="endereco"
                         value={personalData.endereco}
                         onChange={(e) => handleInputChange("endereco", e.target.value)}
                         placeholder="Digite seu endereço"
-                        className="h-11"
+                        className={`h-11 ${addressFound ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bairro">Bairro</Label>
+                      <Input
+                        id="bairro"
+                        value={personalData.bairro}
+                        onChange={(e) => handleInputChange("bairro", e.target.value)}
+                        placeholder="Digite seu bairro"
+                        className={`h-11 ${addressFound && personalData.bairro ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
                       />
                     </div>
                     <div className="space-y-2">
@@ -874,7 +1019,7 @@ const PerfilPage: React.FC = () => {
                         value={personalData.cidade}
                         onChange={(e) => handleInputChange("cidade", e.target.value)}
                         placeholder="Sua cidade"
-                        className="h-11"
+                        className={`h-11 ${addressFound && personalData.cidade ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
                       />
                     </div>
                     <div className="space-y-2">
@@ -885,7 +1030,13 @@ const PerfilPage: React.FC = () => {
                         onChange={handleEstadoChange}
                         placeholder="SP"
                         maxLength={2}
-                        className={`h-11 ${!validateEstado(personalData.estado) && personalData.estado ? 'border-red-500' : ''}`}
+                        className={`h-11 ${
+                          !validateEstado(personalData.estado) && personalData.estado 
+                            ? 'border-red-500' 
+                            : addressFound && personalData.estado
+                              ? 'border-green-500 focus-visible:ring-green-500'
+                              : ''
+                        }`}
                       />
                       {!validateEstado(personalData.estado) && personalData.estado && (
                         <p className="text-sm text-red-500">Estado deve ter 2 caracteres (ex: SP, RJ)</p>
@@ -959,6 +1110,10 @@ const PerfilPage: React.FC = () => {
                     <p className="font-semibold text-gray-900">{personalData.endereco || "Não informado"}</p>
                   </div>
                   <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
+                    <Label className="text-sm font-medium text-muted-foreground">Bairro</Label>
+                    <p className="font-semibold text-gray-900">{personalData.bairro || "Não informado"}</p>
+                  </div>
+                  <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                     <Label className="text-sm font-medium text-muted-foreground">Número</Label>
                     <p className="font-semibold text-gray-900">{personalData.numero || "Não informado"}</p>
                   </div>
@@ -994,15 +1149,21 @@ const PerfilPage: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                     <span className="text-sm font-medium">Tipo de Usuário</span>
-                    <Badge className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white">
-                      <Crown className="h-3 w-3 mr-1" />
-                      Usuário Premium
-                    </Badge>
+                    {isPaidUser() ? (
+                      <Badge className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white">
+                        <Crown className="h-3 w-3 mr-1" />
+                        Usuário Premium
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="border-gray-400 bg-gray-50">
+                        Usuário Gratuito
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                     <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">
-                      ✓ Ativo
+                    <Badge variant="outline" className={isPaidUser() ? "text-green-600 border-green-600 bg-green-50" : "text-blue-600 border-blue-600 bg-blue-50"}>
+                      ✓ {isPaidUser() ? "Premium Ativo" : "Ativo"}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-white rounded-lg border">

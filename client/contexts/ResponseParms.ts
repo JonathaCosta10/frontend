@@ -231,8 +231,22 @@ export class ResponseParms {
       console.log("✅ Dados do usuário armazenados");
       
       // Salvar informação premium separadamente para fácil acesso
-      localStorageManager.set("isPaidUser", data.user.isPaidUser || false);
-      console.log(`✅ Status premium armazenado: ${data.user.isPaidUser ? "Premium" : "Gratuito"}`);
+      const isPaidUserBoolean = Boolean(data.user.isPaidUser);
+      localStorageManager.set("isPaidUser", isPaidUserBoolean);
+      console.log(`✅ Status premium armazenado: ${isPaidUserBoolean ? "Premium" : "Gratuito"}`);
+      console.log("🔍 VERIFICAÇÃO LOGIN - isPaidUser:", {
+        valorOriginal: data.user.isPaidUser,
+        tipoOriginal: typeof data.user.isPaidUser,
+        valorConvertido: isPaidUserBoolean,
+        tipoConvertido: typeof isPaidUserBoolean
+      });
+      
+      // Disparar evento para notificar mudança no status premium
+      console.log("🔔 Disparando evento de atualização de status premium...");
+      eventEmitter.emit(EVENTS.PREMIUM_STATUS_CHANGED, {
+        isPaidUser: data.user.isPaidUser,
+        source: 'login'
+      });
     }
 
     // Log de sucesso
@@ -279,13 +293,35 @@ export class ResponseParms {
       const previousPremiumStatus = localStorageManager.get("isPaidUser");
       const previousUserData = localStorageManager.getUserData();
       
+      console.log("🔍 REFRESH TOKEN - Dados recebidos:", {
+        userId: data.user.id,
+        isPaidUser: data.user.isPaidUser,
+        username: data.user.username,
+        previousStatus: previousPremiumStatus
+      });
+      
       localStorageManager.setUserData(data.user);
-      localStorageManager.set("isPaidUser", data.user.isPaidUser || false);
+      // Garantir que isPaidUser seja sempre boolean
+      const isPaidUserBoolean = Boolean(data.user.isPaidUser);
+      localStorageManager.set("isPaidUser", isPaidUserBoolean);
+      
+      console.log("🔍 VERIFICAÇÃO CRÍTICA - Salvando isPaidUser:", {
+        valorOriginal: data.user.isPaidUser,
+        tipoOriginal: typeof data.user.isPaidUser,
+        valorConvertido: isPaidUserBoolean,
+        tipoConvertido: typeof isPaidUserBoolean
+      });
+      
+      // Verificar se foi armazenado corretamente
+      const storedIsPaidUser = localStorageManager.get("isPaidUser");
+      const storedUserData = localStorageManager.getUserData();
       
       console.log("✅ Dados do usuário atualizados no refresh:", {
         user: data.user.full_name || data.user.username,
         isPaidUser: data.user.isPaidUser,
         previousStatus: previousPremiumStatus,
+        storedIsPaidUser: storedIsPaidUser,
+        storedUserIsPaid: storedUserData?.isPaidUser,
         statusChanged: previousPremiumStatus !== data.user.isPaidUser
       });
 
@@ -293,6 +329,14 @@ export class ResponseParms {
       if (previousPremiumStatus !== data.user.isPaidUser) {
         console.log("🔄 STATUS PREMIUM MUDOU! Forçando refresh da página...");
         console.log(`Status anterior: ${previousPremiumStatus} → Novo status: ${data.user.isPaidUser}`);
+        
+        // Disparar evento imediatamente para componentes
+        console.log("🔔 Disparando evento de mudança de status premium...");
+        eventEmitter.emit(EVENTS.PREMIUM_STATUS_CHANGED, {
+          isPaidUser: data.user.isPaidUser,
+          previousStatus: previousPremiumStatus,
+          source: 'refresh_token'
+        });
         
         // Criar notificação simples
         const statusText = data.user.isPaidUser ? "PREMIUM ATIVADO!" : "PREMIUM DESATIVADO";

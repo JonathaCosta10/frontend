@@ -87,6 +87,9 @@ export class LocalStorageManager {
         return;
       }
 
+      // Capturar valor anterior para comparação
+      const previousValue = this.get(key);
+
       const serializedValue = JSON.stringify(value);
 
       if (this.SECURE_KEYS.includes(key)) {
@@ -109,6 +112,22 @@ export class LocalStorageManager {
           throw new Error(`Falha ao armazenar ${key}`);
         }
       }
+
+      // Emitir evento personalizado para mudanças em chaves críticas
+      if (key === 'isPaidUser' && previousValue !== value) {
+        console.log(`🔔 localStorage: isPaidUser mudou de ${previousValue} para ${value}`);
+        console.log(`🔍 Detalhes da mudança:`, {
+          key,
+          previousValue,
+          newValue: value,
+          typeOfPrevious: typeof previousValue,
+          typeOfNew: typeof value,
+          timestamp: new Date().toISOString()
+        });
+        window.dispatchEvent(new CustomEvent('isPaidUser:changed', { 
+          detail: { previousValue, newValue: value, key } 
+        }));
+      }
     } catch (error) {
       console.error(`Erro ao salvar ${key} no localStorage:`, error);
       throw error; // Re-lançar erro para que calling code possa tratar
@@ -121,7 +140,12 @@ export class LocalStorageManager {
   get(key: string): any | null {
     try {
       const item = localStorage.getItem(key);
-      if (!item) return null;
+      if (!item) {
+        if (key === 'isPaidUser') {
+          console.log("🔍 isPaidUser não encontrado no localStorage");
+        }
+        return null;
+      }
 
       let serializedValue: string;
 
@@ -134,9 +158,25 @@ export class LocalStorageManager {
 
       // Verificar se o valor é JSON válido
       try {
-        return JSON.parse(serializedValue);
+        const parsedValue = JSON.parse(serializedValue);
+        
+        // Log específico para isPaidUser
+        if (key === 'isPaidUser') {
+          console.log("🔍 isPaidUser recuperado do localStorage:", {
+            rawItem: item,
+            serializedValue,
+            parsedValue,
+            type: typeof parsedValue,
+            booleanValue: Boolean(parsedValue)
+          });
+        }
+        
+        return parsedValue;
       } catch {
         // Se não for JSON válido, retornar como string
+        if (key === 'isPaidUser') {
+          console.log("🔍 isPaidUser não é JSON válido, retornando como string:", serializedValue);
+        }
         return serializedValue;
       }
     } catch (error) {

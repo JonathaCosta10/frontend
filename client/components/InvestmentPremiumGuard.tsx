@@ -15,11 +15,17 @@ export default function InvestmentPremiumGuard({ children, featureType }: Invest
   const { isPaidUser } = useProfileVerification();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const isPremium = isPaidUser();
+  
+  // Verificação dupla para garantir consistência
+  const isPremiumFromHook = isPaidUser();
+  const isPremiumFromStorage = JSON.parse(localStorage.getItem('isPaidUser') || 'false');
+  const isPremium = isPremiumFromHook || isPremiumFromStorage;
   
   // Log para debug
   console.log(`🔒 InvestmentPremiumGuard (${featureType}):`, { 
-    isPaidUser: isPremium,
+    fromHook: isPremiumFromHook,
+    fromStorage: isPremiumFromStorage,
+    final: isPremium,
     featureType
   });
 

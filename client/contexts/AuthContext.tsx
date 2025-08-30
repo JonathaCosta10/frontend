@@ -318,6 +318,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (token && userData && isTokenValid(token)) {
           // Token válido, configurar usuário
+          console.log("✅ Token válido encontrado, configurando usuário...");
+          console.log("📊 Status premium do usuário:", {
+            isPaidUser: userData.isPaidUser,
+            fromStorage: localStorageManager.get("isPaidUser")
+          });
+          
           setUser(userData);
           setIsAuthenticated(true);
           console.log(
@@ -417,12 +423,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Capturar status premium antes do refresh
       const premiumStatusBefore = localStorageManager.get("isPaidUser");
+      console.log("📊 Status premium ANTES do refresh:", premiumStatusBefore);
 
       // Usar Rules para refresh token
       const refreshData = await refreshTokenApi(
         refreshTokenValue,
         "refreshToken",
       );
+
+      console.log("🔍 Dados recebidos do refreshTokenApi:", refreshData);
 
       if (refreshData && refreshData.access) {
         // Verificar se o novo token é válido
@@ -437,6 +446,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Verificar se status premium mudou após o refresh
           const premiumStatusAfter = localStorageManager.get("isPaidUser");
           
+          console.log("📊 Status premium DEPOIS do refresh:", premiumStatusAfter);
           console.log("✅ Token refresh via Rules bem-sucedido");
           
           // Se o status premium mudou, a página já será recarregada pelo ResponseParms
@@ -772,15 +782,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const isPremiumUser = (): boolean => {
-    // Verificar primeiro no localStorage (dados mais recentes)
+    // Sempre verificar localStorage primeiro (dados mais atualizados do backend)
     const isPaidUserFromStorage = localStorageManager.get("isPaidUser");
+    
+    console.log("🔍 isPremiumUser chamado - Verificação completa:", {
+      timestamp: new Date().toISOString(),
+      isPaidUserFromStorage,
+      typeOfStorageValue: typeof isPaidUserFromStorage,
+      storageValueToString: String(isPaidUserFromStorage)
+    });
+    
+    // Se não existe no storage, verificar nos dados do usuário
     if (isPaidUserFromStorage !== null) {
+      console.log("🔍 Premium status do localStorage:", isPaidUserFromStorage);
       return isPaidUserFromStorage;
     }
     
-    // Fallback para dados do usuário
+    // Fallback para dados do usuário em memória
     const userData = localStorageManager.getUserData();
-    return userData?.isPaidUser || user?.subscription_type === "premium" || false;
+    const premiumStatus = userData?.isPaidUser || user?.subscription_type === "premium" || false;
+    
+    console.log("🔍 Premium status fallback:", {
+      userDataIsPaid: userData?.isPaidUser,
+      userSubscriptionType: user?.subscription_type,
+      result: premiumStatus
+    });
+    
+    return premiumStatus;
   };
 
   const refreshPremiumStatus = (): void => {
@@ -793,9 +821,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const handlePremiumStatusChange = (data: any) => {
       console.log("🔔 AuthContext recebeu mudança de status premium:", data);
       
-      // Atualizar o usuário com os novos dados
-      if (data.userData) {
-        setUser(data.userData);
+      // Atualizar dados do usuário se necessário
+      const updatedUserData = localStorageManager.getUserData();
+      if (updatedUserData && updatedUserData.id === user?.id) {
+        console.log("🔄 Atualizando dados do usuário após mudança premium");
+        setUser(updatedUserData);
       }
       
       // Forçar re-render de todos os componentes dependentes

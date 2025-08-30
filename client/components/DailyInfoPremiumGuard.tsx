@@ -18,16 +18,22 @@ export default function DailyInfoPremiumGuard({
   const { isPaidUser } = useProfileVerification();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const isPremium = isPaidUser();
   
-  // Log para debug
-  console.log(`🔒 DailyInfoPremiumGuard (${feature}):`, { 
-    isPaidUser: isPremium,
-    feature
-  });
+  // Usar React.useMemo para evitar recálculos desnecessários e centralizar verificação premium
+  const isPremium = React.useMemo(() => isPaidUser(), [isPaidUser]);
+  
+  // Log para debug (otimizado para prevenir loops)
+  React.useEffect(() => {
+    console.log(`🔒 DailyInfoPremiumGuard (${feature}):`, { 
+      isPaidUser: isPremium,
+      feature
+    });
+  }, [feature, isPremium]);
 
   // Redirecionamento automático para página de pagamento se não for premium
   const redirectToPayment = () => {
+    // Salvar a página atual para voltar depois
+    sessionStorage.setItem('returnUrlAfterPayment', window.location.pathname);
     navigate('/pagamento');
   };
 

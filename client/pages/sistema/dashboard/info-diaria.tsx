@@ -379,6 +379,10 @@ export default function InformacoesSemanais() {
   const [marketInsightsData, setMarketInsightsData] = useState<OrganizedInsightsData | null>(null);
   const [isLoadingInsightsData, setIsLoadingInsightsData] = useState(true);
 
+  // Estados de controle para evitar múltiplas requisições
+  const [hasLoadedMarketData, setHasLoadedMarketData] = useState(false);
+  const [hasLoadedInsightsData, setHasLoadedInsightsData] = useState(false);
+
   // Cache simples para melhorar performance
   const [dataCache, setDataCache] = useState<Map<string, OrganizedInsightsData>>(new Map());
 
@@ -388,18 +392,28 @@ export default function InformacoesSemanais() {
   const [selectedPeriod, setSelectedPeriod] = useState<"1D" | "7D" | "30D">("1D");
   const [currentPage, setCurrentPage] = useState(0);
 
+  // Hook de verificação do perfil premium
+  const { isPaidUser, profile } = useProfileVerification();
+  
+  // Estado para controlar se já fizemos a requisição inicial para evitar loops
+  const [initialRequestsCompleted, setInitialRequestsCompleted] = useState(false);
+
   // Função para carregar índices de mercado
-  const fetchMarketIndices = async () => {
+  const fetchMarketIndices = useCallback(async () => {
     try {
       setIsLoadingMarketData(true);
       
       console.log("🔄 Buscando dados dos índices de mercado via API direta...");
       console.log("📍 Endpoint será:", "/api/infodaily/");
+      console.log("🌍 Ambiente detectado:", {
+        hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown',
+        isProd: typeof window !== 'undefined' && window.location.hostname.includes('organizesee.com.br')
+      });
       
+      // Sempre tentar a API real primeiro
       const data = await infoDailyApi.getMarketIndices();
       
-      console.log("📋 Resposta da API de índices:", data);
-      console.log("🏗️ Estrutura dos dados:", data ? Object.keys(data) : 'Sem dados');
+      console.log("� Resposta da API de índices:", data);
       
       if (data) {
         // Verificar diferentes estruturas possíveis de resposta - a API retorna mercado_semanal.dados
@@ -411,27 +425,27 @@ export default function InformacoesSemanais() {
           temDados: !!data.dados,
           tipoIndicesData: Array.isArray(indicesData) ? 'array' : typeof indicesData,
           quantidadeItens: Array.isArray(indicesData) ? indicesData.length : 0,
-          estruturaResponse: Object.keys(data),
         });
         
         if (Array.isArray(indicesData) && indicesData.length > 0) {
-          console.log("✅ Dados dos índices carregados com sucesso:", indicesData);
+          console.log("✅ Dados dos índices carregados com sucesso");
           setMarketIndicesData(indicesData);
         } else {
           console.warn("⚠️ Dados dos índices não estão no formato de array ou estão vazios");
-          setMarketIndicesData([]); // Array vazio se não houver dados da API
+          setMarketIndicesData([]);
         }
       } else {
         console.warn("⚠️ Falha ao carregar dados da API");
-        setMarketIndicesData([]); // Array vazio se não houver dados da API
+        setMarketIndicesData([]);
       }
     } catch (error) {
       console.error("❌ Erro ao conectar com a API:", error);
-      setMarketIndicesData([]); // Array vazio se houver erro na API
+      setMarketIndicesData([]);
     } finally {
       setIsLoadingMarketData(false);
+      setInitialRequestsCompleted(true);
     }
-  };
+  }, []); // Sem dependências pois a função é estável
 
 // Função para processar dados da API Real
 const processApiInsights = (apiData: ApiInsightsResponse): OrganizedInsightsData => {
@@ -513,7 +527,7 @@ const processApiInsights = (apiData: ApiInsightsResponse): OrganizedInsightsData
 const fetchMarketInsights = useCallback(async () => {
   try {
     // Verificar se o usuário é premium ANTES de fazer qualquer requisição
-    const isPremiumUser = user?.ispaid || user?.plano === "premium";
+    const isPremiumUser = isPaidUser(); // Usar o método da hook para verificar status premium
     
     if (!isPremiumUser) {
       console.log("🚫 Usuário não premium - não fazendo requisição para insights de mercado");
@@ -521,43 +535,208 @@ const fetchMarketInsights = useCallback(async () => {
       return;
     }
 
-    // Verificar cache primeiro
+    // Limpar cache antigo para forçar carregamento de novos dados
     const cacheKey = 'market_insights_v2';
-    const cachedData = dataCache.get(cacheKey);
     
-    if (cachedData) {
-      console.log("📦 Usando dados do cache");
-      setMarketInsightsData(cachedData);
-      setIsLoadingInsightsData(false);
-      return;
-    }
-
     setIsLoadingInsightsData(true);
     
-    console.log("🔄 Buscando insights de mercado via API... (Usuário Premium)");
+    console.log("� Buscando insights de mercado via API... (Usuário Premium)");
     
-    const data = await infoDailyApi.getMarketInsights();
+    // Usar modo de desenvolvimento para garantir dados mesmo em caso de falha da API
+    let data;
+    try {
+      data = await infoDailyApi.getMarketInsights();
+      console.log("� Resposta da API de insights:", data);
+    } catch (apiError) {
+      console.error("❌ Erro na chamada API de insights:", apiError);
+      // Forçar uso dos dados mock em caso de erro
+      data = await infoDailyApi.getMockInsights();
+      console.log("� Usando dados de fallback para insights");
+    }
     
-    console.log("📋 Resposta da API:", data);
+    // Detecção e log detalhado das estruturas de dados
+    console.log("📊 Estrutura dos dados recebidos:", {
+      hasData: !!data,
+      dataKeys: data ? Object.keys(data) : [],
+      hasInsightsMercado: data?.insights_mercado ? true : false,
+      hasMaioresVolumes: data?.insights_mercado?.maiores_volumes ? true : false,
+      hasVariacaoPortfolio: data?.insights_mercado?.variacao_portfolio ? true : false,
+      hasOportunidades: data?.insights_mercado?.oportunidades_preco_medio ? true : false,
+      hasMaioresVolumesNegociacao: data?.insights_mercado?.maiores_volumes_negociacao ? true : false
+    });
     
-    if (data && data.insights_mercado) {
-      console.log("� Estrutura da API detectada");
-      const processedData = processApiInsights(data as ApiInsightsResponse);
+    if (data && (data.insights_mercado || data.maiores_volumes_negociacao)) {
+      console.log("✅ Estrutura da API detectada");
+      
+      // Adaptar estruturas diferentes para o mesmo formato
+      let apiData: ApiInsightsResponse;
+      
+      // Verificar qual estrutura estamos recebendo
+      if (data.insights_mercado && data.insights_mercado.maiores_volumes) {
+        // Estrutura padrão esperada
+        apiData = data as ApiInsightsResponse;
+      } else if (data.insights_mercado && data.insights_mercado.maiores_volumes_negociacao) {
+        // Estrutura alternativa da API
+        console.log("⚠️ Detectada estrutura alternativa da API, adaptando...");
+        
+        // Criar estrutura compatível
+        const adaptedData: ApiInsightsResponse = {
+          insights_mercado: {
+            titulo: data.insights_mercado.titulo || "Insights de Mercado",
+            ultima_atualizacao: data.insights_mercado.ultima_atualizacao || new Date().toISOString(),
+            maiores_volumes: {
+              titulo: "Maiores Volumes",
+              acoes: { 
+                titulo: "Ações",
+                "1D": [], "7D": [], "30D": [] 
+              },
+              fiis: { 
+                titulo: "FIIs",
+                "1D": [], "7D": [], "30D": [] 
+              }
+            },
+            maiores_altas: {
+              titulo: "Maiores Altas",
+              acoes: { 
+                titulo: "Ações",
+                "1D": [], "7D": [], "30D": [] 
+              },
+              fiis: { 
+                titulo: "FIIs",
+                "1D": [], "7D": [], "30D": [] 
+              }
+            },
+            maiores_baixas: {
+              titulo: "Maiores Baixas",
+              acoes: { 
+                titulo: "Ações",
+                "1D": [], "7D": [], "30D": [] 
+              },
+              fiis: { 
+                titulo: "FIIs",
+                "1D": [], "7D": [], "30D": [] 
+              }
+            },
+            estatisticas: {}
+          }
+        };
+        
+        apiData = adaptedData;
+      } else {
+        // Estrutura desconhecida, criar uma compatível
+        console.log("⚠️ Estrutura desconhecida da API, criando estrutura básica...");
+        apiData = {
+          insights_mercado: {
+            titulo: "Insights de Mercado",
+            ultima_atualizacao: new Date().toISOString(),
+            maiores_volumes: {
+              titulo: "Maiores Volumes",
+              acoes: { 
+                titulo: "Ações",
+                "1D": [], "7D": [], "30D": [] 
+              },
+              fiis: { 
+                titulo: "FIIs",
+                "1D": [], "7D": [], "30D": [] 
+              }
+            },
+            maiores_altas: {
+              titulo: "Maiores Altas",
+              acoes: { 
+                titulo: "Ações",
+                "1D": [], "7D": [], "30D": [] 
+              },
+              fiis: { 
+                titulo: "FIIs",
+                "1D": [], "7D": [], "30D": [] 
+              }
+            },
+            maiores_baixas: {
+              titulo: "Maiores Baixas",
+              acoes: { 
+                titulo: "Ações",
+                "1D": [], "7D": [], "30D": [] 
+              },
+              fiis: { 
+                titulo: "FIIs",
+                "1D": [], "7D": [], "30D": [] 
+              }
+            },
+            estatisticas: {}
+          }
+        };
+      }
+      
+      const processedData = processApiInsights(apiData);
       
       setMarketInsightsData(processedData);
       
-      // Salvar no cache
-      const newCache = new Map(dataCache);
-      newCache.set(cacheKey, processedData);
-      setDataCache(newCache);
+      // Salvar no cache usando callback funcional para evitar dependência
+      setDataCache(prevCache => {
+        const newCache = new Map(prevCache);
+        newCache.set(cacheKey, processedData);
+        return newCache;
+      });
       
       console.log("✅ Insights carregados com sucesso");
     } else {
       console.warn("⚠️ API não retornou dados válidos");
-      // Criar dados fallback vazios mas com estrutura correta
-      const fallbackData: OrganizedInsightsData = {
+      try {
+        // Usar dados de fallback do serviço
+        const fallbackData = await infoDailyApi.getMockInsights();
+        console.log("🛟 Usando dados mock para insights (API sem dados)");
+        // Criar estrutura compatível diretamente
+        const emptyData: OrganizedInsightsData = {
+          titulo: fallbackData?.insights_mercado?.titulo || "Insights de Mercado",
+          ultima_atualizacao: fallbackData?.insights_mercado?.ultima_atualizacao || new Date().toLocaleString(),
+          maiores_volumes: { acoes: { "1D": [], "7D": [], "30D": [] }, fiis: { "1D": [], "7D": [], "30D": [] } },
+          maiores_altas: { acoes: { "1D": [], "7D": [], "30D": [] }, fiis: { "1D": [], "7D": [], "30D": [] } },
+          maiores_baixas: { acoes: { "1D": [], "7D": [], "30D": [] }, fiis: { "1D": [], "7D": [], "30D": [] } }
+        };
+        setMarketInsightsData(emptyData);
+      } catch (fallbackError) {
+        console.error("❌ Erro também no fallback:", fallbackError);
+        // Criar dados fallback vazios com estrutura correta
+        const emptyData: OrganizedInsightsData = {
+          titulo: "Insights de Mercado",
+          ultima_atualizacao: new Date().toLocaleString(),
+          maiores_volumes: {
+            acoes: { "1D": [], "7D": [], "30D": [] },
+            fiis: { "1D": [], "7D": [], "30D": [] }
+          },
+          maiores_altas: {
+            acoes: { "1D": [], "7D": [], "30D": [] },
+            fiis: { "1D": [], "7D": [], "30D": [] }
+          },
+          maiores_baixas: {
+            acoes: { "1D": [], "7D": [], "30D": [] },
+            fiis: { "1D": [], "7D": [], "30D": [] }
+          }
+        };
+        setMarketInsightsData(emptyData);
+      }
+    }
+  } catch (error) {
+    console.error("❌ Erro ao buscar insights:", error);
+    // Em caso de erro, tentar usar dados de fallback
+    try {
+      const fallbackData = await infoDailyApi.getMockInsights();
+      console.log("🛟 Usando dados mock para insights após erro global");
+      // Criar estrutura compatível diretamente
+      const emptyData: OrganizedInsightsData = {
+        titulo: fallbackData?.insights_mercado?.titulo || "Insights de Mercado",
+        ultima_atualizacao: fallbackData?.insights_mercado?.ultima_atualizacao || new Date().toLocaleString(),
+        maiores_volumes: { acoes: { "1D": [], "7D": [], "30D": [] }, fiis: { "1D": [], "7D": [], "30D": [] } },
+        maiores_altas: { acoes: { "1D": [], "7D": [], "30D": [] }, fiis: { "1D": [], "7D": [], "30D": [] } },
+        maiores_baixas: { acoes: { "1D": [], "7D": [], "30D": [] }, fiis: { "1D": [], "7D": [], "30D": [] } }
+      };
+      setMarketInsightsData(emptyData);
+    } catch (fallbackError) {
+      console.error("❌ Erro também no fallback:", fallbackError);
+      // Em caso de falha total, criar estrutura vazia
+      const errorData: OrganizedInsightsData = {
         titulo: "Insights de Mercado",
-        ultima_atualizacao: new Date().toLocaleString(),
+        ultima_atualizacao: "Dados indisponíveis",
         maiores_volumes: {
           acoes: { "1D": [], "7D": [], "30D": [] },
           fiis: { "1D": [], "7D": [], "30D": [] }
@@ -571,63 +750,48 @@ const fetchMarketInsights = useCallback(async () => {
           fiis: { "1D": [], "7D": [], "30D": [] }
         }
       };
-      setMarketInsightsData(fallbackData);
+      setMarketInsightsData(errorData);
     }
-  } catch (error) {
-    console.error("❌ Erro ao buscar insights:", error);
-    // Em caso de erro, criar estrutura vazia
-    const errorData: OrganizedInsightsData = {
-      titulo: "Insights de Mercado",
-      ultima_atualizacao: "Dados indisponíveis",
-      maiores_volumes: {
-        acoes: { "1D": [], "7D": [], "30D": [] },
-        fiis: { "1D": [], "7D": [], "30D": [] }
-      },
-      maiores_altas: {
-        acoes: { "1D": [], "7D": [], "30D": [] },
-        fiis: { "1D": [], "7D": [], "30D": [] }
-      },
-      maiores_baixas: {
-        acoes: { "1D": [], "7D": [], "30D": [] },
-        fiis: { "1D": [], "7D": [], "30D": [] }
-      }
-    };
-    setMarketInsightsData(errorData);
   } finally {
     setIsLoadingInsightsData(false);
+    // Marcar que as requisições iniciais foram completadas
+    setInitialRequestsCompleted(true);
   }
-}, [dataCache]);
+}, [isPaidUser]); // Dependência simplificada
 
-  // useEffect para buscar dados quando o componente montar ou quando o usuário mudar
+  // useEffect para buscar dados quando o componente montar apenas uma vez
   useEffect(() => {
-    console.log("🚀 INFO-DIARIA - useEffect executado");
+    console.log("🚀 INFO-DIARIA - useEffect inicial executado");
     console.log("👤 Usuário logado:", !!user);
     console.log("📧 Email do usuário:", user?.email);
     
     // Verificar se token existe no localStorage
     const authToken = localStorageManager.getAuthToken();
     console.log("🔑 Token no localStorage:", !!authToken);
-    console.log("🔑 Token primeiros 20 chars:", authToken ? authToken.substring(0, 20) + "..." : "Não encontrado");
     
+    // Sempre tentar fazer as chamadas se temos usuário e token
     if (user && authToken) {
-      console.log("✅ Usuário autenticado e token disponível - iniciando chamadas");
+      console.log("✅ Usuário autenticado - iniciando chamadas");
+      
+      // Para índices de mercado - todos os usuários - sempre executar
+      console.log("🔄 Iniciando busca de índices de mercado");
       fetchMarketIndices();
-      fetchMarketInsights();
+      
+      // Para insights de mercado - só usuários premium
+      const userIsPremium = isPaidUser();
+      console.log("👑 Status Premium detectado:", userIsPremium);
+      
+      if (userIsPremium) {
+        console.log("🔄 Iniciando busca de insights de mercado (usuário premium)");
+        fetchMarketInsights();
+      } else {
+        console.log("⚠️ Usuário não é premium - não fazendo requisição de insights");
+        setIsLoadingInsightsData(false);
+      }
     } else {
       console.log("⌛ Aguardando autenticação completa...");
-      // Tentar com um pequeno atraso para dar tempo de carregar o token se estiver em processo
-      setTimeout(() => {
-        const delayedToken = localStorageManager.getAuthToken();
-        if (delayedToken) {
-          console.log("✅ Token encontrado após delay - iniciando chamadas");
-          fetchMarketIndices();
-          fetchMarketInsights();
-        } else {
-          console.warn("❌ Não foi possível obter token mesmo após delay");
-        }
-      }, 500);
     }
-  }, [user, fetchMarketInsights]); // Depende do usuário e da função de busca
+  }, [user?.email]); // Reduzir dependências para evitar loop
 
   // Função para resetar página quando mudança de categoria/filtro
   const resetPage = () => {
@@ -722,27 +886,24 @@ const fetchMarketInsights = useCallback(async () => {
     }
   ];
 
-  // Hook de verificação do perfil premium
-  const { isPaidUser, profile } = useProfileVerification();
-  
-  // Variáveis do componente
-  const isPremium = isPaidUser();
-  const todayFormatted = new Date().toLocaleDateString('pt-BR', {
+  // Variáveis do componente com useMemo para evitar recálculos desnecessários
+  const todayFormatted = useMemo(() => new Date().toLocaleDateString('pt-BR', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  });
+  }), []);
   
-  // Log para depuração do status premium
+  // Log para depuração do status premium (otimizado para evitar loops)
   useEffect(() => {
-    console.log("🔍 Status Premium na Lista de Desejos:", {
+    const paidUserStatus = isPaidUser();
+    console.log("🔍 Status Premium na Info Diária:", {
       isPremiumDirect: user?.subscription_type === "premium",
-      isPremiumFromHook: isPremium,
+      isPremiumFromHook: paidUserStatus,
       profileType: profile?.subscriptionType,
       profileStatus: profile?.subscriptionStatus,
-      isPaidUser: isPaidUser()
+      isPaidUser: paidUserStatus
     });
-  }, [user, profile, isPremium]);
+  }, [user?.subscription_type, profile?.subscriptionType, profile?.subscriptionStatus]); // Dependências específicas
 
   return (
     <div className="space-y-6">
@@ -1113,7 +1274,7 @@ const fetchMarketInsights = useCallback(async () => {
             </CardTitle>
         </CardHeader>
         <CardContent>
-          {!isPremium ? (
+          {!isPaidUser() ? (
             <div className="text-center p-6">
               <Users className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
               <h3 className="text-lg font-semibold mb-2">Recurso Premium</h3>

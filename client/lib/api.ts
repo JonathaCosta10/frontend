@@ -6,24 +6,45 @@ const API_KEY = import.meta.env.VITE_API_KEY || "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8q
 
 // Tratamento para consistência de URLs
 const normalizeUrl = (url: string): string => {
+  // Log para depuração de URLs em produção (ativo temporariamente)
+  console.log("🔄 Normalizando URL:", { 
+    url, 
+    backendUrl: BACKEND_URL, 
+    isProd: typeof window !== 'undefined' && window.location.hostname.includes('organizesee.com.br'),
+    hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown'
+  });
+
   // Se a URL já começa com o BACKEND_URL, não adicionar prefixo
   if (url.startsWith(BACKEND_URL) || url.startsWith('http')) {
     return url;
   }
   
-  // Se a URL já começa com /services/api e o BACKEND_URL é /services/api,
-  // não duplicar o prefixo
-  if (url.startsWith('/services/api') && BACKEND_URL === '/services/api') {
-    return url;
+  // Tratamento específico para produção - URLs /api devem usar /services/api no organizesee.com.br
+  if (url.startsWith('/api/') && typeof window !== 'undefined' && window.location.hostname.includes('organizesee.com.br')) {
+    const prodUrl = `https://backend.organizesee.com.br/services/api${url.substring(4)}`;
+    console.log("📍 URL corrigida para produção:", prodUrl);
+    return prodUrl;
   }
   
-  // Normalizar URLs que começam com /api/ para usar /services/api/
-  if (url.startsWith('/api/') && BACKEND_URL === '/services/api') {
-    return `/services/api${url.substring(4)}`;
+  // Para desenvolvimento local - URLs /api/ para usar endpoints completos
+  if (url.startsWith('/api/') && BACKEND_URL.includes('127.0.0.1')) {
+    const devUrl = `${BACKEND_URL}${url}`;
+    console.log("📍 URL para desenvolvimento:", devUrl);
+    return devUrl;
+  }
+  
+  // Normalizar URLs que começam com /api/ para usar /services/api/ em ambiente não local
+  if (url.startsWith('/api/') && !BACKEND_URL.includes('127.0.0.1') && !BACKEND_URL.includes('localhost')) {
+    const servicePath = `/services/api${url.substring(4)}`;
+    const fullUrl = `${BACKEND_URL}${servicePath}`;
+    console.log("📍 URL normalizada com services:", fullUrl);
+    return fullUrl;
   }
   
   // Caso padrão: concatenar BACKEND_URL com a URL
-  return `${BACKEND_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  const standardUrl = `${BACKEND_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  console.log("📍 URL padrão:", standardUrl);
+  return standardUrl;
 };
 
 interface ExtendedRequestInit extends RequestInit {
@@ -160,7 +181,7 @@ export class ApiService {
     const config: RequestInit = {
       ...fetchOptions,
       headers,
-      signal: AbortSignal.timeout(30000), // 30 segundos timeout
+      signal: AbortSignal.timeout(15000), // 15 segundos timeout - reduzido para melhor performance
     };
 
     try {
@@ -296,7 +317,27 @@ export class ApiService {
         throw new Error("Resposta de refresh inválida");
       }
 
-      localStorageManager.setAuthToken(response.access);
+      // Processar resposta completa através do ResponseParms
+      const { responseParms } = await import('../contexts/ResponseParms');
+      console.log("🔄 Processando refresh token através do ResponseParms");
+      console.log("🔍 Dados recebidos do refresh:", response);
+      
+      // Simular estrutura de resposta da API para processamento
+      const apiResponse = {
+        success: true,
+        data: response,
+        status: 200,
+        message: "Refresh token bem-sucedido"
+      };
+      
+      responseParms.processResponse({
+        response: apiResponse,
+        chave: "refreshToken",
+        method: "POST",
+        endpoint: "/api/auth/token/refresh/",
+        withAuth: true
+      });
+      
       console.log("Refresh do token bem-sucedido");
       return true;
     } catch (error) {
