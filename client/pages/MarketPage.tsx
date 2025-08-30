@@ -44,6 +44,15 @@ interface GlobalStats {
   market_cap_change_percentage_24h: number;
 }
 
+// Interface para resposta da API
+interface CryptoApiResponse {
+  status: string;
+  data: {
+    cryptocurrencies?: CoinGeckoCrypto[];
+    global_stats?: GlobalStats;
+  } | CoinGeckoCrypto[];
+}
+
 function MarketPage() {
   const { t } = useTranslation();
   const [cryptoAssets, setCryptoAssets] = useState<CoinGeckoCrypto[]>([]);
@@ -51,6 +60,7 @@ function MarketPage() {
   const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("market_cap_rank");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -75,10 +85,14 @@ function MarketPage() {
       console.log("🎯 Buscando dados do backend...");
       
       // Verificar status da API do backend
-      const status = await cryptoApi.checkApiStatus();
-      setApiStatus(status);
-      
-      console.log("📊 Status da API:", status);
+      try {
+        const status = await cryptoApi.checkApiStatus();
+        setApiStatus(status);
+        console.log("📊 Status da API:", status);
+      } catch (statusError) {
+        console.error("❌ Erro ao verificar status da API:", statusError);
+        // Continua mesmo com erro de status
+      }
       
       // Construir URL usando variáveis de ambiente
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.organizesee.com.br';
@@ -104,21 +118,35 @@ function MarketPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as CryptoApiResponse;
       
       console.log("📄 Resposta da API:", data);
       
-      if (data.status === 'success' && data.data && Array.isArray(data.data.cryptocurrencies)) {
-        console.log(`✅ ${data.data.cryptocurrencies.length} criptomoedas carregadas com sucesso`);
-        setCryptoAssets(data.data.cryptocurrencies);
-        setFilteredAssets(data.data.cryptocurrencies);
-        setGlobalStats(data.data.global_stats);
-        setLoading(false);
-      } else if (data.status === 'success' && data.data && Array.isArray(data.data)) {
-        // Caso a API retorne os dados diretamente no campo data
-        console.log(`✅ ${data.data.length} criptomoedas carregadas com sucesso`);
-        setCryptoAssets(data.data);
-        setFilteredAssets(data.data);
+      if (data.status === 'success' && data.data) {
+        // Verifica se os dados têm a estrutura aninhada com cryptocurrencies
+        if (typeof data.data === 'object' && !Array.isArray(data.data) && data.data.cryptocurrencies) {
+          const cryptos = data.data.cryptocurrencies;
+          console.log(`✅ ${cryptos.length} criptomoedas carregadas com sucesso`);
+          setCryptoAssets(cryptos);
+          setFilteredAssets(cryptos);
+          
+          if (data.data.global_stats) {
+            setGlobalStats(data.data.global_stats);
+          }
+        } 
+        // Verifica se data.data é um array (formato alternativo)
+        else if (Array.isArray(data.data)) {
+          const cryptos = data.data as CoinGeckoCrypto[];
+          console.log(`✅ ${cryptos.length} criptomoedas carregadas com sucesso`);
+          setCryptoAssets(cryptos);
+          setFilteredAssets(cryptos);
+        } 
+        // Nenhum formato reconhecido
+        else {
+          throw new Error("Formato de dados não reconhecido: " + JSON.stringify(data));
+        }
+        
+        // Se chegou aqui, a carga foi bem sucedida
         setLoading(false);
       } else {
         throw new Error("Dados inválidos recebidos da API: " + JSON.stringify(data));
@@ -315,8 +343,6 @@ function MarketPage() {
     );
   }
 
-  const [retrying, setRetrying] = useState(false);
-  
   const handleRetry = async () => {
     setRetrying(true);
     setError(null); // Clear previous error
@@ -436,12 +462,14 @@ function MarketPage() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
-        {/* Error Handler Component */}
-        <CryptoErrorHandler 
-          error={error}
-          onRetry={handleRetry}
-          isPending={retrying}
-        />
+        {/* Error Handler Component - only shown when there's an error */}
+        {error && (
+          <CryptoErrorHandler 
+            error={error}
+            onRetry={handleRetry}
+            isPending={retrying}
+          />
+        )}
         
         {/* Status da API */}
         {apiStatus && apiStatus.status !== 'operational' && (
