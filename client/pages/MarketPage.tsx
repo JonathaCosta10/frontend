@@ -24,6 +24,7 @@ import {
   X,
   ArrowUpDown,
 } from "lucide-react";
+import CryptoErrorHandler from "../components/CryptoErrorHandler";
 import { Skeleton } from "../components/ui/skeleton";
 import {
   Select,
@@ -79,13 +80,25 @@ function MarketPage() {
       
       console.log("📊 Status da API:", status);
       
-      // Buscar dados da API backend
-      const response = await fetch("http://127.0.0.1:8000/market/crypto/", {
+      // Construir URL usando variáveis de ambiente
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.organizesee.com.br';
+      const apiUrl = `${apiBaseUrl}/services/api/market/crypto/`;
+      
+      console.log("🔗 Conectando à API:", apiUrl);
+      
+      // Buscar dados da API backend com timeout para evitar espera infinita
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+      
+      const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -93,25 +106,72 @@ function MarketPage() {
 
       const data = await response.json();
       
-      if (data.status === 'success' && data.data) {
+      console.log("📄 Resposta da API:", data);
+      
+      if (data.status === 'success' && data.data && Array.isArray(data.data.cryptocurrencies)) {
         console.log(`✅ ${data.data.cryptocurrencies.length} criptomoedas carregadas com sucesso`);
         setCryptoAssets(data.data.cryptocurrencies);
         setFilteredAssets(data.data.cryptocurrencies);
         setGlobalStats(data.data.global_stats);
         setLoading(false);
+      } else if (data.status === 'success' && data.data && Array.isArray(data.data)) {
+        // Caso a API retorne os dados diretamente no campo data
+        console.log(`✅ ${data.data.length} criptomoedas carregadas com sucesso`);
+        setCryptoAssets(data.data);
+        setFilteredAssets(data.data);
+        setLoading(false);
       } else {
-        throw new Error("Dados inválidos recebidos da API");
+        throw new Error("Dados inválidos recebidos da API: " + JSON.stringify(data));
       }
     } catch (err) {
       console.error("❌ Erro ao buscar dados:", err);
-      setError("Não foi possível carregar dados de criptomoedas.");
+      // Mensagem de erro mais detalhada para ajudar no debug
+      setError(`Não foi possível carregar dados de criptomoedas. ${err.name === 'AbortError' ? 'A requisição excedeu o tempo limite.' : err.message}`);
       setLoading(false);
+      
+      // Tentar usar API alternativa ou dados mockados após falha
+      try {
+        console.log("🔄 Tentando usar API alternativa...");
+        const mockData = await cryptoApi.getMarkets();
+        if (mockData && mockData.length > 0) {
+          console.log("✅ Dados alternativos carregados com sucesso");
+          setCryptoAssets(mockData);
+          setFilteredAssets(mockData);
+          setError(null); // Limpa o erro se os dados alternativos funcionarem
+          setLoading(false);
+        }
+      } catch (fallbackErr) {
+        console.error("❌ Erro ao buscar dados alternativos:", fallbackErr);
+      }
     }
   }
 
-  // Carregar dados na inicialização
+  // Carregar dados na inicialização com mecanismo de retry
   useEffect(() => {
-    fetchCryptoData();
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const loadData = async () => {
+      try {
+        await fetchCryptoData();
+      } catch (err) {
+        if (retryCount < maxRetries) {
+          console.log(`🔄 Tentativa ${retryCount + 1} de ${maxRetries} falhou. Tentando novamente em 3 segundos...`);
+          retryCount++;
+          setTimeout(loadData, 3000);
+        }
+      }
+    };
+    
+    loadData();
+    
+    // Atualizar dados a cada 5 minutos (300000ms)
+    const interval = setInterval(() => {
+      console.log("🔄 Atualizando dados...");
+      fetchCryptoData();
+    }, 300000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Filtrar e ordenar dados
@@ -222,13 +282,54 @@ function MarketPage() {
               <div className="text-sm text-muted-foreground">
                 {t('loading_crypto_market')}
               </div>
+              <div className="text-xs text-muted-foreground">
+                Conectando à API... Por favor, aguarde.
+              </div>
             </div>
           </div>
         </div>
       </div>
     );
   }
+  
+  // Se houver erro mas tiver dados carregados (fallback), mostra os dados com aviso
+  if (error && filteredAssets.length > 0) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="container mx-auto px-4 py-8">
+          {/* Mostrar alerta de aviso */}
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">Aviso:</span>
+              <span className="ml-2">Os dados apresentados podem não estar atualizados. Estamos usando uma fonte alternativa de dados.</span>
+            </div>
+          </div>
+          
+          {/* Continua com o resto do conteúdo */}
+          {/* O resto do conteúdo da página será renderizado normalmente */}
+        </div>
+      </div>
+    );
+  }
 
+  const [retrying, setRetrying] = useState(false);
+  
+  const handleRetry = async () => {
+    setRetrying(true);
+    setError(null); // Clear previous error
+    
+    try {
+      await fetchCryptoData();
+    } catch (err) {
+      console.error("Retry failed:", err);
+    } finally {
+      setRetrying(false);
+    }
+  };
+  
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header padrão como na Home */}
@@ -335,6 +436,30 @@ function MarketPage() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
+        {/* Error Handler Component */}
+        <CryptoErrorHandler 
+          error={error}
+          onRetry={handleRetry}
+          isPending={retrying}
+        />
+        
+        {/* Status da API */}
+        {apiStatus && apiStatus.status !== 'operational' && (
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-800 p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <TrendingDown className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Aviso de API</h3>
+                <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                  <p>{apiStatus.message}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Título da Página */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

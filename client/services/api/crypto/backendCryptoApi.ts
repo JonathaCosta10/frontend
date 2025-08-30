@@ -61,7 +61,11 @@ export const backendCryptoApi = {
       
       console.log('📍 URL da requisição:', url);
       
-      const fullUrl = `${API_CONFIG.baseUrl}${url}`;
+      // Construir URL usando variáveis de ambiente
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || API_CONFIG.baseUrl || 'https://www.organizesee.com.br';
+      const fullUrl = `${baseUrl}/services/api/market/crypto/`;
+      console.log('📍 URL completa da requisição:', fullUrl);
+      
       const response = await cachedFetch<BackendCryptoResponse>(fullUrl, {
         method: 'GET',
         headers: {
@@ -103,7 +107,12 @@ export const backendCryptoApi = {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-      const response = await fetch(`${API_CONFIG.baseUrl}/market/crypto/`, {
+      // Construir URL usando variáveis de ambiente - /services/api/market/crypto/
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || API_CONFIG.baseUrl || 'https://www.organizesee.com.br';
+      const apiUrl = `${baseUrl}/services/api/market/crypto/`;
+      console.log('🔗 Tentando conectar a:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'X-API-Key': import.meta.env.VITE_API_KEY,

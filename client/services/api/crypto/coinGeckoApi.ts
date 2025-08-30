@@ -5,8 +5,20 @@ import { cachedFetch } from "../../../lib/api-helpers";
 // Base URL for CoinGecko API
 export const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
 
-// Helper to create CoinGecko URLs
-const coingeckoUrl = (endpoint: string): string => `${COINGECKO_BASE_URL}/${endpoint}`;
+// Helper to create CoinGecko URLs with fallback options
+const coingeckoUrl = (endpoint: string): string => {
+  // Tentar usar a API interna primeiro se estiver em produção
+  const isProduction = import.meta.env.PROD === true || import.meta.env.MODE === 'production';
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  
+  // Em produção, tentar usar a API própria primeiro
+  if (isProduction && apiBaseUrl) {
+    return `${apiBaseUrl}/services/api/crypto/proxy/${endpoint}`;
+  }
+  
+  // Caso contrário, usar diretamente a API do CoinGecko
+  return `${COINGECKO_BASE_URL}/${endpoint}`;
+};
 
 // Interface definitions
 export interface CoinGeckoCrypto {
