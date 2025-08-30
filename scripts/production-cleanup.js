@@ -181,7 +181,7 @@ function cleanPackageJson() {
 
 // Função para criar README de produção
 function createProductionReadme() {
-  const readmeContent = `# Curry Oasis - Frontend
+  const readmeContent = `# Organizesee - Frontend
 
 ## 🚀 Aplicação de Gestão Financeira
 

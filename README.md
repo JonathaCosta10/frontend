@@ -1,4 +1,4 @@
-# Curry Oasis - Frontend
+# Organizesee - Frontend
 
 ## 🚀 Aplicação de Gestão Financeira
 

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "curry-oasis-frontend",
+  "name": "organizesee-frontend",
   "builds": [
     {
       "src": "package.json",
