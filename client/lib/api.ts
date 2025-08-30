@@ -6,31 +6,52 @@ const API_KEY = import.meta.env.VITE_API_KEY || "}$gQ7TlDEhJ88np]^n8[uFu{9f#;+8q
 
 // Tratamento para consistência de URLs
 const normalizeUrl = (url: string): string => {
-  // Log para depuração de URLs em produção (ativo temporariamente)
+  const isProd = typeof window !== 'undefined' && (
+    window.location.hostname.includes('organizesee.com.br') || 
+    window.location.hostname.includes('www.organizesee.com.br')
+  );
+  
+  // Log para depuração de URLs
   console.log("🔄 Normalizando URL:", { 
     url, 
     backendUrl: BACKEND_URL, 
-    isProd: typeof window !== 'undefined' && window.location.hostname.includes('organizesee.com.br'),
+    isProd,
     hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown'
   });
 
-  // Se a URL já começa com o BACKEND_URL, não adicionar prefixo
-  if (url.startsWith(BACKEND_URL) || url.startsWith('http')) {
+  // Se a URL já é absoluta com https, manter como está
+  if (url.startsWith('https://')) {
+    // Verificar se é uma URL para o backend sem /services/api/ em produção
+    if (isProd && 
+        url.startsWith('https://backend.organizesee.com.br/api/') && 
+        !url.includes('/services/api/')) {
+      // Converter de /api/ para /services/api/
+      const correctedUrl = url.replace('/api/', '/services/api/');
+      console.log("📍 URL absoluta corrigida para produção:", correctedUrl);
+      return correctedUrl;
+    }
     return url;
   }
   
-  // Tratamento específico para produção - URLs /api devem usar /services/api no organizesee.com.br
-  if (url.startsWith('/api/') && typeof window !== 'undefined' && window.location.hostname.includes('organizesee.com.br')) {
-    const prodUrl = `https://backend.organizesee.com.br/services/api${url.substring(4)}`;
+  // URLs relativas começando com /api/ em ambiente de produção
+  if (url.startsWith('/api/') && isProd) {
+    const prodUrl = `https://www.organizesee.com.br/services/api${url.substring(4)}`;
     console.log("📍 URL corrigida para produção:", prodUrl);
     return prodUrl;
   }
   
-  // Para desenvolvimento local - URLs /api/ para usar endpoints completos
-  if (url.startsWith('/api/') && BACKEND_URL.includes('127.0.0.1')) {
+  // Para desenvolvimento local - manter formato /api/
+  if (url.startsWith('/api/') && (BACKEND_URL.includes('127.0.0.1') || BACKEND_URL.includes('localhost'))) {
     const devUrl = `${BACKEND_URL}${url}`;
     console.log("📍 URL para desenvolvimento:", devUrl);
     return devUrl;
+  }
+  
+  // Para URLs que começam com /investimentos/ em produção
+  if (url.startsWith('/investimentos/') && isProd) {
+    const prodUrl = `https://www.organizesee.com.br/services/api${url}`;
+    console.log("📍 URL de investimentos corrigida para produção:", prodUrl);
+    return prodUrl;
   }
   
   // Normalizar URLs que começam com /api/ para usar /services/api/ em ambiente não local

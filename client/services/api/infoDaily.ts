@@ -96,7 +96,7 @@ class InfoDailyApiService {
       if (isProd) {
         try {
           console.log("🔍 Tentando URL alternativa para produção");
-          const altResponse = await api.get("https://backend.organizesee.com.br/services/api/infodaily/", true);
+          const altResponse = await api.get("https://www.organizesee.com.br/services/api/infodaily/", true);
           console.log("✅ Resposta alternativa recebida:", altResponse);
           return altResponse;
         } catch (altError) {
@@ -147,7 +147,7 @@ class InfoDailyApiService {
       if (isProd) {
         try {
           console.log("🔍 Tentando URL alternativa para produção");
-          const altResponse = await api.get("https://backend.organizesee.com.br/services/api/insights-mercado/", true);
+          const altResponse = await api.get("https://www.organizesee.com.br/services/api/insights-mercado/", true);
           console.log("✅ Resposta alternativa recebida:", altResponse);
           return altResponse;
         } catch (altError) {
