@@ -4,6 +4,7 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import OAuthService from "@/services/oauth";
+import { decodeJWT } from "@/utils/jwt";
 
 type GoogleAuthContext = "signin" | "signup";
 
@@ -59,17 +60,44 @@ export default function GoogleAuthButton({ context = "signin" }: Props) {
   useEffect(() => {
     const initGoogleAuth = async () => {
       try {
+        console.log("🔄 Inicializando autenticação Google...");
+        
         // Ensure GSI is loaded
         if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-          // Try to load script dynamically if not present
+          console.log("⚠️ Biblioteca Google não encontrada, tentando carregar...");
+          
+          // Add the Google client script to the main HTML instead of dynamically
           if (!document.querySelector('script[src="https://accounts.google.com/gsi/client"]')) {
+            console.log("📦 Adicionando script do Google ao documento");
+            
+            // Create a script element in the head (better CSP compatibility)
             const script = document.createElement('script');
             script.src = 'https://accounts.google.com/gsi/client';
             script.async = true;
             script.defer = true;
+            
+            // Add nonce if needed for CSP
+            if (document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
+              console.log("🔒 CSP detectado, adicionando atributo nonce ao script");
+              script.setAttribute('nonce', 'google-auth-nonce');
+            }
+            
             document.head.appendChild(script);
-            // Wait for script to load
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Wait for script to load with a timeout
+            console.log("⌛ Aguardando carregamento do script...");
+            await new Promise(resolve => {
+              script.onload = () => {
+                console.log("✅ Script do Google carregado com sucesso");
+                resolve(true);
+              };
+              script.onerror = () => {
+                console.error("❌ Erro ao carregar script do Google");
+                resolve(false);
+              };
+              // Timeout as fallback
+              setTimeout(resolve, 2000);
+            });
           }
         }
 
@@ -95,7 +123,21 @@ export default function GoogleAuthButton({ context = "signin" }: Props) {
                 setLoading(true);
                 try {
                   console.log("🎯 Google Auth token recebido, processando...");
-                  await OAuthService.handleGoogleSignIn(response.credential);
+                  
+                  // Decode the JWT token to get user information
+                  const decoded = decodeJWT(response.credential);
+                  console.log("🔑 Token decodificado:", decoded);
+                  
+                  if (decoded && decoded.email && decoded.sub) {
+                    // Pass the required parameters to the OAuth service
+                    await OAuthService.handleGoogleLogin({
+                      email: decoded.email,
+                      googleId: decoded.sub,
+                      accessToken: response.credential // Using the credential as the access token
+                    });
+                  } else {
+                    throw new Error("Token JWT inválido ou incompleto");
+                  }
                 } catch (err) {
                   console.error('Erro ao processar autenticação Google:', err);
                   toast({

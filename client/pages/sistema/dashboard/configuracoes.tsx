@@ -27,6 +27,10 @@ import {
   AlertTriangle,
   BookOpen,
   PlayCircle,
+  Calculator, 
+  TrendingUp, 
+  Home,
+  RotateCcw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -36,7 +40,13 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 export default function Configuracoes() {
   const { toast } = useToast();
   const { language, currency, setLanguage, setCurrency, t } = useTranslation();
-  const { resetOnboarding, hasSeenOnboarding } = useOnboarding();
+  const { 
+    resetOnboarding, 
+    hasSeenOnboarding,
+    resetTutorial,
+    hasTutorialBeenCompleted,
+    completeTutorial
+  } = useOnboarding();
   const [settings, setSettings] = useState({
     notifications: {
       email: true,
@@ -330,6 +340,7 @@ export default function Configuracoes() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Apresentação Geral do Sistema */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -347,10 +358,10 @@ export default function Configuracoes() {
               
               <Button 
                 onClick={() => {
-                  resetOnboarding();
+                  resetTutorial('general');
                   toast({
                     title: "Apresentação reiniciada",
-                    description: "A apresentação do sistema será exibida novamente.",
+                    description: "A apresentação geral do sistema será exibida novamente.",
                   });
                 }}
                 className="w-full"
@@ -361,13 +372,163 @@ export default function Configuracoes() {
               </Button>
             </div>
 
+            <Separator />
+
+            {/* Tutoriais Específicos */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Tutoriais por Seção</h3>
+              
+              {/* Resumo Diário */}
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <Home className="h-4 w-4 mr-2 text-blue-600" />
+                    <span className="font-medium">Resumo Diário</span>
+                  </div>
+                  <Badge variant={hasTutorialBeenCompleted('dailyInfo') ? "default" : "outline"}>
+                    {hasTutorialBeenCompleted('dailyInfo') ? "Visto" : "Novo"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Entenda como usar a visualização principal do seu painel financeiro
+                </p>
+                <Button 
+                  onClick={() => {
+                    resetTutorial('dailyInfo');
+                    toast({
+                      title: "Tutorial iniciado",
+                      description: "Vamos conhecer o resumo diário!",
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  <PlayCircle className="h-3 w-3 mr-1" />
+                  Ver Tutorial
+                </Button>
+              </div>
+              
+              {/* Gestão de Orçamento */}
+              <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <Calculator className="h-4 w-4 mr-2 text-green-600" />
+                    <span className="font-medium">Gestão de Orçamento</span>
+                  </div>
+                  <Badge variant={hasTutorialBeenCompleted('budget') ? "default" : "outline"}>
+                    {hasTutorialBeenCompleted('budget') ? "Visto" : "Novo"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Aprenda a cadastrar entradas, saídas e controlar seu orçamento mensal
+                </p>
+                <Button 
+                  onClick={() => {
+                    resetTutorial('budget');
+                    toast({
+                      title: "Tutorial iniciado",
+                      description: "Vamos aprender sobre o gerenciamento de orçamento!",
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  <PlayCircle className="h-3 w-3 mr-1" />
+                  Ver Tutorial
+                </Button>
+              </div>
+              
+              {/* Renda Variável */}
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <TrendingUp className="h-4 w-4 mr-2 text-purple-600" />
+                    <span className="font-medium">Renda Variável</span>
+                  </div>
+                  <Badge variant={hasTutorialBeenCompleted('variableIncome') ? "default" : "outline"}>
+                    {hasTutorialBeenCompleted('variableIncome') ? "Visto" : "Novo"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Saiba como acompanhar seus investimentos e analisar por setor
+                </p>
+                <Button 
+                  onClick={() => {
+                    resetTutorial('variableIncome');
+                    toast({
+                      title: "Tutorial iniciado",
+                      description: "Vamos explorar o acompanhamento de investimentos!",
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  <PlayCircle className="h-3 w-3 mr-1" />
+                  Ver Tutorial
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Ações Globais de Tutorial */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium">Ações Globais</h3>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  onClick={() => {
+                    // Resetar todos os tutoriais
+                    ['general', 'dailyInfo', 'budget', 'variableIncome'].forEach(tutorial => {
+                      resetTutorial(tutorial as any);
+                    });
+                    toast({
+                      title: "Todos os tutoriais resetados",
+                      description: "Você pode visualizar novamente todos os tutoriais.",
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Resetar Todos
+                </Button>
+                
+                <Button 
+                  onClick={() => {
+                    // Marcar todos como concluídos
+                    ['general', 'dailyInfo', 'budget', 'variableIncome'].forEach(tutorial => {
+                      completeTutorial(tutorial as any);
+                    });
+                    toast({
+                      title: "Todos os tutoriais marcados como vistos",
+                      description: "Os tutoriais não serão mais exibidos automaticamente.",
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Marcar Todos como Vistos
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
             <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
               <h4 className="font-medium text-sm text-blue-800 dark:text-blue-200 mb-1">
-                💡 Sobre a Apresentação
+                💡 Sobre os Tutoriais
               </h4>
               <p className="text-xs text-blue-700 dark:text-blue-300">
-                A apresentação guia você pelas principais funcionalidades do sistema, 
+                Os tutoriais guiam você pelas principais funcionalidades do sistema, 
                 mostrando como usar cada seção para organizar suas finanças de forma eficiente.
+                Você pode revisar qualquer tutorial a qualquer momento.
               </p>
             </div>
           </CardContent>

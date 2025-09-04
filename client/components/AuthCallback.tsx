@@ -51,8 +51,14 @@ const AuthCallback: React.FC = () => {
         setStatus('Validando com backend...');
         console.log("🔄 Fazendo requisição para o backend...");
         
+        // Use a dedicated callback URL if available, otherwise construct from the backend URL
+        const callbackUrl = import.meta.env.VITE_OAUTH_CALLBACK_URL || 
+                          `${import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000'}/auth/frontend-oauth-callback`;
+                          
+        console.log(`🔄 Enviando código de autorização para: ${callbackUrl}`);
+        
         // Fazer POST para o endpoint do backend
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'}/auth/frontend-oauth-callback`, {
+        const response = await fetch(callbackUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -62,7 +68,9 @@ const AuthCallback: React.FC = () => {
             code,
             state,
             return_to: returnTo
-          })
+          }),
+          // Ensure credentials are sent for local development CORS
+          credentials: 'include'
         });
         
         if (!response.ok) {

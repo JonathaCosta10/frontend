@@ -39,6 +39,12 @@ export default function BudgetOverview() {
       try {
         const data = await budgetApi.getDistribuicaoGastosCompleta(mesInt, anoInt);
         setBudgetData(data);
+        
+        // Armazenar hist_data no localStorage para uso futuro
+        if (data.hist_data) {
+          localStorage.setItem('budget_hist_data', JSON.stringify(data.hist_data));
+          localStorage.setItem('budget_meses_disponeis', JSON.stringify(data.meses_disponeis));
+        }
       } catch (error) {
         console.error("Erro ao carregar dados do orçamento:", error);
       } finally {

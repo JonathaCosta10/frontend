@@ -14,11 +14,22 @@ import {
   Star,
   Settings,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  PieChart,
+  Home,
+  LineChart,
+  BarChart,
+  Clock,
+  Target,
+  Menu,
+  Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/TranslationContext';
 import { useAuth } from '../contexts/AuthContext';
+
+// Tipos de tutoriais disponíveis
+export type OnboardingType = 'general' | 'dailyInfo' | 'budget' | 'variableIncome';
 
 interface OnboardingStep {
   id: string;
@@ -35,16 +46,18 @@ interface OnboardingProps {
   isVisible: boolean;
   onComplete: () => void;
   onSkip: () => void;
+  type?: OnboardingType;
 }
 
-export default function Onboarding({ isVisible, onComplete, onSkip }: OnboardingProps) {
+export default function Onboarding({ isVisible, onComplete, onSkip, type = 'general' }: OnboardingProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  const onboardingSteps: OnboardingStep[] = [
+  // Tutorial Geral (Visão Geral + Barra Lateral)
+  const generalSteps: OnboardingStep[] = [
     {
       id: 'welcome',
       title: 'Bem-vindo ao Organizesee! 🎉',
@@ -55,69 +68,215 @@ export default function Onboarding({ isVisible, onComplete, onSkip }: Onboarding
       action: 'info'
     },
     {
-      id: 'profile',
+      id: 'system-overview',
+      title: 'Visão Geral do Sistema',
+      description: 'O Organizesee foi desenvolvido para dar total controle sobre suas finanças pessoais em uma plataforma integrada e intuitiva.',
+      icon: <PieChart className="h-8 w-8 text-indigo-600" />,
+      targetPath: '/dashboard',
+      position: 'center',
+      action: 'info'
+    },
+    {
+      id: 'dailyinfo-intro',
+      title: 'Resumo Diário',
+      description: 'Esta é sua página principal onde você encontra um panorama completo da sua saúde financeira em tempo real.',
+      icon: <Home className="h-8 w-8 text-blue-600" />,
+      targetPath: '/dashboard',
+      position: 'center',
+      action: 'info'
+    },
+    {
+      id: 'budget-intro',
+      title: 'Gestão de Orçamento',
+      description: 'É essencial cadastrar seus valores de entrada, gastos e dívidas para receber relatórios precisos. Defina metas para um planejamento eficiente.',
+      icon: <Calculator className="h-8 w-8 text-green-600" />,
+      targetPath: '/dashboard',
+      position: 'center',
+      action: 'info'
+    },
+    {
+      id: 'investments-intro',
+      title: 'Renda Variável',
+      description: 'Cadastre e acompanhe seus investimentos por setor e % de alocação. Tenha uma visão clara sobre o que está comprando e em qual setor.',
+      icon: <TrendingUp className="h-8 w-8 text-purple-600" />,
+      targetPath: '/dashboard',
+      position: 'center',
+      action: 'info'
+    },
+    {
+      id: 'sidebar-navigation',
+      title: 'Navegação pela Barra Lateral',
+      description: 'Explore as diversas funções disponíveis para garantir que sua vida financeira completa esteja sob seu controle.',
+      icon: <Menu className="h-8 w-8 text-slate-700" />,
+      targetPath: '/dashboard',
+      position: 'left',
+      action: 'highlight'
+    },
+    {
+      id: 'profile-setup',
       title: 'Complete seu Perfil',
-      description: 'Primeiro, vamos completar seus dados básicos para personalizar sua experiência.',
+      description: 'Agora vamos completar seus dados básicos para personalizar sua experiência no sistema.',
       icon: <User className="h-8 w-8 text-blue-500" />,
       targetPath: '/dashboard/perfil',
       position: 'center',
       action: 'navigate'
     },
     {
-      id: 'budget',
-      title: 'Orçamento Doméstico',
-      description: 'Controle seus gastos mensais, categorize despesas e mantenha suas finanças organizadas.',
-      icon: <Calculator className="h-8 w-8 text-green-500" />,
-      targetPath: '/dashboard/orcamento',
-      position: 'left',
-      action: 'highlight'
-    },
-    {
-      id: 'investments',
-      title: 'Investimentos',
-      description: 'Acompanhe seus investimentos e monitore o crescimento do seu patrimônio.',
-      icon: <TrendingUp className="h-8 w-8 text-purple-500" />,
-      targetPath: '/dashboard/investimentos',
-      position: 'left',
-      action: 'highlight'
-    },
-    {
-      id: 'market',
-      title: 'Análise de Mercado',
-      description: 'Fique por dentro das principais informações do mercado financeiro.',
-      icon: <BarChart3 className="h-8 w-8 text-orange-500" />,
-      targetPath: '/dashboard/mercado',
-      position: 'left',
-      action: 'highlight'
-    },
-    {
-      id: 'crypto',
-      title: 'Criptomoedas (Premium)',
-      description: 'Monitore o mundo das criptomoedas com nossa versão premium.',
-      icon: <Bitcoin className="h-8 w-8 text-yellow-600" />,
-      targetPath: '/dashboard/cripto',
-      position: 'left',
-      action: 'highlight'
-    },
-    {
-      id: 'settings',
-      title: 'Configurações',
-      description: 'Personalize sua experiência, idioma e preferências do sistema.',
-      icon: <Settings className="h-8 w-8 text-gray-500" />,
-      targetPath: '/dashboard/configuracoes',
-      position: 'left',
-      action: 'highlight'
-    },
-    {
       id: 'complete',
-      title: 'Tudo Pronto! ✨',
-      description: 'Agora você está pronto para começar a usar o Organizesee. Comece completando seu perfil!',
+      title: 'Comece sua Jornada! ✨',
+      description: 'Comece completando seus dados para aproveitar ao máximo todas as funcionalidades do sistema.',
       icon: <CheckCircle className="h-8 w-8 text-green-600" />,
       targetPath: '/dashboard/perfil',
       position: 'center',
       action: 'navigate'
     }
   ];
+
+  // Tutorial InfoDiária (Dashboard Principal)
+  const dailyInfoSteps: OnboardingStep[] = [
+    {
+      id: 'dailyinfo-welcome',
+      title: 'Resumo Diário',
+      description: 'Essa é sua página principal onde você encontra um panorama completo da sua saúde financeira em tempo real.',
+      icon: <Home className="h-8 w-8 text-blue-600" />,
+      targetPath: '/dashboard',
+      position: 'center',
+      action: 'info'
+    },
+    {
+      id: 'dailyinfo-indicators',
+      title: 'Indicadores Financeiros',
+      description: 'Acompanhe sua receita, gastos e saldo atual diretamente no painel principal. Tome decisões baseadas em dados atualizados.',
+      icon: <LineChart className="h-8 w-8 text-emerald-600" />,
+      targetPath: '/dashboard',
+      position: 'center',
+      action: 'highlight'
+    },
+    {
+      id: 'dailyinfo-goals',
+      title: 'Acompanhamento de Metas',
+      description: 'Visualize o progresso das suas metas financeiras e mantenha o foco nos seus objetivos de curto e longo prazo.',
+      icon: <Target className="h-8 w-8 text-purple-600" />,
+      targetPath: '/dashboard',
+      position: 'right',
+      action: 'highlight'
+    },
+    {
+      id: 'dailyinfo-next-steps',
+      title: 'Próximos Passos',
+      description: 'Para ter um resumo diário completo, cadastre seus dados no módulo de Gestão de Orçamento e acompanhe seus investimentos.',
+      icon: <ArrowRight className="h-8 w-8 text-indigo-600" />,
+      targetPath: '/dashboard',
+      position: 'center',
+      action: 'info'
+    }
+  ];
+
+  // Tutorial Gestão de Orçamento
+  const budgetSteps: OnboardingStep[] = [
+    {
+      id: 'budget-welcome',
+      title: 'Gestão de Orçamento',
+      description: 'Aqui você pode cadastrar e gerenciar todos os seus ganhos e gastos para um controle financeiro eficiente.',
+      icon: <Calculator className="h-8 w-8 text-green-600" />,
+      targetPath: '/dashboard/orcamento',
+      position: 'center',
+      action: 'info'
+    },
+    {
+      id: 'budget-income',
+      title: 'Cadastre suas Receitas',
+      description: 'Informe todas suas fontes de renda: salário, freelance, aluguel, dividendos. Quanto mais detalhado, mais preciso será seu planejamento.',
+      icon: <TrendingUp className="h-8 w-8 text-emerald-600" />,
+      targetPath: '/dashboard/orcamento/receitas',
+      position: 'left',
+      action: 'highlight'
+    },
+    {
+      id: 'budget-expenses',
+      title: 'Organize seus Gastos',
+      description: 'Categorize suas despesas para identificar onde seu dinheiro está sendo gasto e encontrar oportunidades de economia.',
+      icon: <BarChart className="h-8 w-8 text-red-500" />,
+      targetPath: '/dashboard/orcamento/despesas',
+      position: 'center',
+      action: 'highlight'
+    },
+    {
+      id: 'budget-goals',
+      title: 'Defina suas Metas',
+      description: 'Estabeleça metas financeiras claras e específicas para guiar seu planejamento e economias para objetivos importantes.',
+      icon: <Target className="h-8 w-8 text-blue-600" />,
+      targetPath: '/dashboard/orcamento/metas',
+      position: 'center',
+      action: 'highlight'
+    },
+    {
+      id: 'budget-next-steps',
+      title: 'Comprometa-se com a Atualização',
+      description: 'Para resultados precisos, mantenha seus dados atualizados regularmente. Isso garantirá relatórios e análises confiáveis.',
+      icon: <Clock className="h-8 w-8 text-indigo-600" />,
+      targetPath: '/dashboard/orcamento',
+      position: 'center',
+      action: 'info'
+    }
+  ];
+
+  // Tutorial Renda Variável (Investimentos)
+  const variableIncomeSteps: OnboardingStep[] = [
+    {
+      id: 'varincome-welcome',
+      title: 'Renda Variável',
+      description: 'Acompanhe e analise seus investimentos em ações, FIIs e outros ativos de renda variável.',
+      icon: <TrendingUp className="h-8 w-8 text-purple-600" />,
+      targetPath: '/dashboard/investimentos',
+      position: 'center',
+      action: 'info'
+    },
+    {
+      id: 'varincome-portfolio',
+      title: 'Cadastre seu Portfólio',
+      description: 'Adicione todos seus ativos para ter uma visão completa da sua carteira e acompanhar seu desempenho.',
+      icon: <BarChart3 className="h-8 w-8 text-blue-600" />,
+      targetPath: '/dashboard/investimentos/carteira',
+      position: 'center',
+      action: 'highlight'
+    },
+    {
+      id: 'varincome-sectors',
+      title: 'Análise por Setores',
+      description: 'Visualize a distribuição dos seus investimentos por setor e avalie se sua carteira está bem diversificada.',
+      icon: <PieChart className="h-8 w-8 text-amber-600" />,
+      targetPath: '/dashboard/investimentos/setores',
+      position: 'center',
+      action: 'highlight'
+    },
+    {
+      id: 'varincome-strategy',
+      title: 'Estratégia e Alocação',
+      description: 'O acompanhamento por setor ajudará a tomar decisões melhores sobre como equilibrar seus investimentos conforme seus objetivos.',
+      icon: <Sparkles className="h-8 w-8 text-emerald-600" />,
+      targetPath: '/dashboard/investimentos',
+      position: 'center',
+      action: 'info'
+    }
+  ];
+
+  // Seleciona o conjunto de passos de acordo com o tipo
+  const selectTutorialSteps = (): OnboardingStep[] => {
+    switch(type) {
+      case 'dailyInfo':
+        return dailyInfoSteps;
+      case 'budget':
+        return budgetSteps;
+      case 'variableIncome':
+        return variableIncomeSteps;
+      case 'general':
+      default:
+        return generalSteps;
+    }
+  };
+
+  const onboardingSteps = selectTutorialSteps();
 
   const currentStepData = onboardingSteps[currentStep];
 

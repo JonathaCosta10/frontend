@@ -46,6 +46,10 @@ const translations = {
     add_card: "Adicionar Cartão",
     add_card_button: "Adicionar Cartão",
     add_cryptocurrency: "Adicionar Criptomoeda",
+    add_debts: "Adicionar Dívidas",
+    add_expenses: "Adicionar Despesas",
+    add_goals: "Adicionar Metas", 
+    add_income: "Adicionar Entradas",
     add_to_current: "Adicionar ao Atual",
     add_value: "Adicionar Valor",
     add_extra_security_layer:
@@ -211,6 +215,8 @@ const translations = {
     budget_nav_income: "Entradas",
     budget_nav_overview: "Visão Geral",
     budget_overview: "Visão Geral do Orçamento",
+    budget_setup_instruction: "Para visualizar seus dados financeiros, você precisa configurar as informações do seu orçamento. Comece adicionando suas entradas, custos, dívidas e metas financeiras.",
+    budget_setup_tip: "Dica: Após configurar seus dados de orçamento, você terá acesso completo às análises e relatórios financeiros.",
     business_hours: "Seg-Sex: 9h-18h",
     buy_vs_rent_comparison: "Comparação: Comprar vs Alugar",
     buying_property: "Comprando (Imóvel)",
@@ -312,6 +318,9 @@ const translations = {
     configure_automatic_behaviors: "Configure comportamentos automáticos",
     configure_expenses_complete_analysis:
       "Configure seus gastos para uma análise completa",
+    configure_your_budget: "Configure seu Orçamento",
+    configure_your_expenses: "Configure suas despesas",
+    define_financial_goals: "Defina suas metas financeiras", 
     expense_control_tip: "Controle de Gastos",
     expense_control_description:
       "Revise suas despesas e identifique onde é possível economizar",
@@ -1742,6 +1751,10 @@ const translations = {
     with_alerts: "Com Alertas",
     with_replication: "com replicação",
     without_replication: "sem replicação",
+    
+    // Missing budget translations
+    manage_your_commitments: "Gerencie seus compromissos financeiros",
+    record_monthly_income: "Registre sua renda mensal",
 
     // Y
     year: "Ano",
@@ -1916,6 +1929,8 @@ const translations = {
     daily_summary: "Daily Summary",
     budget: "Budget",
     budget_management: "Budget Management",
+    budget_setup_instruction: "To view your financial data, you need to set up your budget information. Start by adding your income, expenses, debts, and financial goals.",
+    budget_setup_tip: "Tip: After setting up your budget data, you'll have full access to financial analyses and reports.",
     investments: "Investments",
     market: "Market",
     crypto: "Crypto",
@@ -1947,6 +1962,18 @@ const translations = {
     please_wait: "Please wait",
     welcome_message: "Welcome message",
     follow_main_indicators: "Follow the main indicators of the Brazilian economy",
+    
+    // Budget Tutorial
+    add_debts: "Add Debts",
+    add_expenses: "Add Expenses",
+    add_goals: "Add Goals",
+    add_income: "Add Income",
+    configure_your_budget: "Configure Your Budget",
+    configure_your_expenses: "Configure your expenses",
+    define_financial_goals: "Define your financial goals",
+    manage_personal_finances: "Manage your personal finances",
+    manage_your_commitments: "Manage your financial commitments",
+    record_monthly_income: "Record your monthly income",
 
   },
   "es-ES": {
