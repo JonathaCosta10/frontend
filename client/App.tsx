@@ -1,6 +1,6 @@
 import "./global.css";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -12,12 +12,21 @@ import { TranslationProvider } from "./contexts/TranslationContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
 
-// Public Pages
+// Loading component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center h-32">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+  </div>
+);
+
+// Public Pages - Keep critical ones as direct imports
 import Index from "./pages/HomePublicPages/Index";
 import Home from "./pages/HomePublicPages/Home";
 import Demo from "./pages/HomePublicPages/Demo";
 import PublicMarket from "./pages/HomePublicPages/PublicMarket";
+import MarketPage from "./pages/MarketPage";
 import LoginRequired from "./pages/HomePublicPages/LoginRequired";
+import Whitepaper from "./pages/HomePublicPages/Documents/Whitepaper";
 import Login from "./pages/HomePublicPages/Login";
 import Signup from "./pages/HomePublicPages/Signup";
 import ForgotPassword from "./pages/HomePublicPages/ForgotPassword";
@@ -30,54 +39,64 @@ import NotFound from "./pages/ErrosTratamento/NotFound";
 import AuthenticationError from "./pages/ErrosTratamento/AuthenticationError";
 import LoginError from "./pages/ErrosTratamento/LoginError";
 
+// OAuth Components removidos
+
 // Auth Pages (remain in original location)
 import TwoFactorEmailSetup from "./pages/PagesAuth/TwoFactorEmailSetup";
 import Pagamento from "./pages/Pagamento";
 
-// System Pages - Dashboard Structure
-import Budget from "./pages/sistema/dashboard/orcamento/Budget";
-import BudgetOverview from "./pages/sistema/dashboard/orcamento/index";
-import Entradas from "./pages/sistema/dashboard/orcamento/entradas";
-import Custos from "./pages/sistema/dashboard/orcamento/custos";
-import Dividas from "./pages/sistema/dashboard/orcamento/dividas";
-import Metas from "./pages/sistema/dashboard/orcamento/metas";
+// Lazy loaded system pages - Budget
+const Budget = React.lazy(() => import("./pages/sistema/dashboard/orcamento/Budget"));
+const BudgetOverview = React.lazy(() => import("./pages/sistema/dashboard/orcamento/index"));
+const Entradas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/entradas"));
+const Custos = React.lazy(() => import("./pages/sistema/dashboard/orcamento/custos"));
+const Dividas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/dividas"));
+const Metas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/metas"));
 
-import Investment from "./pages/sistema/dashboard/investimentos/Investment";
-import Investimentos from "./pages/sistema/dashboard/investimentos/index";
-import Comparativos from "./pages/sistema/dashboard/investimentos/comparativos";
-import Cadastro from "./pages/sistema/dashboard/investimentos/cadastro";
-import Ranking from "./pages/sistema/dashboard/investimentos/ranking";
-import Patrimonio from "./pages/sistema/dashboard/investimentos/patrimonio";
+// Lazy loaded system pages - Investments
+const Investment = React.lazy(() => import("./pages/sistema/dashboard/investimentos/Investment"));
+// Usando a versão atualizada com exibição correta de ativos e setores
+const Investimentos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/index"));
+const Comparativos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/comparativos"));
+const Cadastro = React.lazy(() => import("./pages/sistema/dashboard/investimentos/cadastro"));
+const Ranking = React.lazy(() => import("./pages/sistema/dashboard/investimentos/ranking"));
+const Patrimonio = React.lazy(() => import("./pages/sistema/dashboard/investimentos/patrimonio"));
 
-import Market from "./pages/sistema/dashboard/mercado/Market";
-import FIIMarket from "./pages/sistema/dashboard/mercado/index";
-import IndicadoresEconomicos from "./pages/sistema/dashboard/mercado/indicadores-economicos";
-import ListaDeDesejo from "./pages/sistema/dashboard/mercado/lista-de-desejo";
-import AnaliseTicker from "./pages/sistema/dashboard/mercado/analise-ticker";
-import CalculadoraFinanceira from "./pages/sistema/dashboard/mercado/calculadora-financeira";
+// Lazy loaded system pages - Market
+const Market = React.lazy(() => import("./pages/sistema/dashboard/mercado/Market"));
+const FIIMarket = React.lazy(() => import("./pages/sistema/dashboard/mercado/index"));
+const IndicadoresEconomicos = React.lazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
+const ListaDeDesejo = React.lazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
+const AnaliseTicker = React.lazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
+const CalculadoraFinanceira = React.lazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
 
-import DashboardCripto from "./pages/sistema/dashboard/cripto/DashboardCripto";
-import CriptoDashboard from "./pages/sistema/dashboard/cripto/index";
-import MercadoCripto from "./pages/sistema/dashboard/cripto/mercado";
-import CriptoPortfolio from "./pages/sistema/dashboard/cripto/portfolio";
-import CriptoCadastro from "./pages/sistema/dashboard/cripto/cadastro";
+// Lazy loaded system pages - Crypto
+const DashboardCripto = React.lazy(() => import("./pages/sistema/dashboard/cripto/DashboardCripto"));
+const CriptoDashboard = React.lazy(() => import("./pages/sistema/dashboard/cripto/index"));
+const MercadoCripto = React.lazy(() => import("./pages/sistema/dashboard/cripto/mercado"));
+const CriptoPortfolio = React.lazy(() => import("./pages/sistema/dashboard/cripto/portfolio"));
+const CriptoCadastro = React.lazy(() => import("./pages/sistema/dashboard/cripto/cadastro"));
 
-import Training from "./pages/sistema/dashboard/treinamentos/Training";
-import FundosInvestimentos from "./pages/sistema/dashboard/treinamentos/fundos-investimentos";
-import RendaFixa from "./pages/sistema/dashboard/treinamentos/renda-fixa";
-import Acoes from "./pages/sistema/dashboard/treinamentos/acoes";
-import Macroeconomia from "./pages/sistema/dashboard/treinamentos/macroeconomia";
+// Lazy loaded system pages - Training
+const Training = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/Training"));
+const FundosInvestimentos = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/fundos-investimentos"));
+const RendaFixa = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/renda-fixa"));
+const Acoes = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/acoes"));
+const Macroeconomia = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/macroeconomia"));
 
-// Special Pages
-import InfoDiaria from "./pages/sistema/dashboard/info-diaria";
-import Perfil from "./pages/sistema/dashboard/perfil";
-import Configuracoes from "./pages/sistema/dashboard/configuracoes";
-import Suporte from "./pages/sistema/dashboard/suporte";
-import RiskAssessment from "./pages/sistema/dashboard/risk-assessment";
-import ChangePassword from "./pages/sistema/dashboard/change-password";
-import PaymentOptions from "./pages/sistema/dashboard/payment-options";
+// Lazy loaded special pages
+const InfoDiaria = React.lazy(() => import("./pages/sistema/dashboard/info-diaria"));
+const Perfil = React.lazy(() => import("./pages/sistema/dashboard/perfil"));
+const Configuracoes = React.lazy(() => import("./pages/sistema/dashboard/configuracoes"));
+const Suporte = React.lazy(() => import("./pages/sistema/dashboard/suporte"));
+const RiskAssessment = React.lazy(() => import("./pages/sistema/dashboard/risk-assessment"));
+const ChangePassword = React.lazy(() => import("./pages/sistema/dashboard/change-password"));
+const PaymentOptions = React.lazy(() => import("./pages/sistema/dashboard/payment-options"));
 
 const queryClient = new QueryClient();
+
+// Lazy-load AuthCallback component
+const AuthCallback = React.lazy(() => import('./components/AuthCallback'));
 
 function App() {
   return (
@@ -87,13 +106,14 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter>
+              <BrowserRouter>
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/demo" element={<Demo />} />
-                <Route path="/market" element={<PublicMarket />} />
+                <Route path="/market" element={<MarketPage />} />
+                <Route path="/whitepaper" element={<Whitepaper />} />
                 <Route path="/login-required" element={<LoginRequired />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
@@ -110,11 +130,34 @@ function App() {
                   path="/reset-password"
                   element={<ResetPassword />}
                 />
+                
+                {/* OAuth Callback Routes */}
+                <Route 
+                  path="/auth/callback" 
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AuthCallback />
+                    </Suspense>
+                  }
+                />
+
+                {/* OAuth Callbacks removidos */}
 
                 {/* Auth Routes */}
                 <Route path="/2fa/email" element={<TwoFactorEmailSetup />} />
-                <Route path="/2fa/email" element={<TwoFactorEmailSetup />} />
-                <Route path="/pagamento" element={<Pagamento />} />
+                <Route path="/2fa/totp" element={<TwoFactorEmailSetup />} />
+                
+                {/* Protected Payment Route */}
+                <Route 
+                  path="/pagamento" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<Pagamento />} />
+                </Route>
 
                 {/* Error Routes */}
                 <Route
@@ -133,48 +176,144 @@ function App() {
                   }
                 >
                   {/* Budget routes with nested routing */}
-                  <Route path="orcamento" element={<Budget />}>
-                    <Route index element={<BudgetOverview />} />
-                    <Route path="entradas" element={<Entradas />} />
-                    <Route path="custos" element={<Custos />} />
-                    <Route path="dividas" element={<Dividas />} />
-                    <Route path="metas" element={<Metas />} />
+                  <Route path="orcamento" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Budget />
+                    </Suspense>
+                  }>
+                    <Route index element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <BudgetOverview />
+                      </Suspense>
+                    } />
+                    <Route path="entradas" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Entradas />
+                      </Suspense>
+                    } />
+                    <Route path="custos" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Custos />
+                      </Suspense>
+                    } />
+                    <Route path="dividas" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Dividas />
+                      </Suspense>
+                    } />
+                    <Route path="metas" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Metas />
+                      </Suspense>
+                    } />
                   </Route>
 
                   {/* Investment routes with nested routing */}
-                  <Route path="investimentos" element={<Investment />}>
-                    <Route index element={<Investimentos />} />
-                    <Route path="comparativos" element={<Comparativos />} />
-                    <Route path="cadastro" element={<Cadastro />} />
-                    <Route path="ranking" element={<Ranking />} />
-                    <Route path="patrimonio" element={<Patrimonio />} />
+                  <Route path="investimentos" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Investment />
+                    </Suspense>
+                  }>
+                    <Route index element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Investimentos />
+                      </Suspense>
+                    } />
+                    <Route path="comparativos" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Comparativos />
+                      </Suspense>
+                    } />
+                    <Route path="cadastro" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Cadastro />
+                      </Suspense>
+                    } />
+                    <Route path="ranking" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Ranking />
+                      </Suspense>
+                    } />
+                    <Route path="patrimonio" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Patrimonio />
+                      </Suspense>
+                    } />
                   </Route>
 
                   {/* Crypto routes with nested routing */}
-                  <Route path="cripto" element={<DashboardCripto />}>
-                    <Route index element={<CriptoDashboard />} />
-                    <Route path="mercado" element={<MercadoCripto />} />
-                    <Route path="portfolio" element={<CriptoPortfolio />} />
-                    <Route path="cadastro" element={<CriptoCadastro />} />
+                  <Route path="cripto" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <DashboardCripto />
+                    </Suspense>
+                  }>
+                    <Route index element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <CriptoDashboard />
+                      </Suspense>
+                    } />
+                    <Route path="mercado" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <MercadoCripto />
+                      </Suspense>
+                    } />
+                    <Route path="portfolio" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <CriptoPortfolio />
+                      </Suspense>
+                    } />
+                    <Route path="cadastro" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <CriptoCadastro />
+                      </Suspense>
+                    } />
                   </Route>
 
                   {/* Market routes with nested routing */}
-                  <Route path="mercado" element={<Market />}>
-                    <Route index element={<FIIMarket />} />
+                  <Route path="mercado" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Market />
+                    </Suspense>
+                  }>
+                    <Route index element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <FIIMarket />
+                      </Suspense>
+                    } />
                     <Route
                       path="indicadores-economicos"
-                      element={<IndicadoresEconomicos />}
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <IndicadoresEconomicos />
+                        </Suspense>
+                      }
                     />
-                    <Route path="lista-de-desejo" element={<ListaDeDesejo />} />
-                    <Route path="analise-ticker" element={<AnaliseTicker />} />
+                    <Route path="lista-de-desejo" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <ListaDeDesejo />
+                      </Suspense>
+                    } />
+                    <Route path="analise-ticker" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AnaliseTicker />
+                      </Suspense>
+                    } />
                     <Route
                       path="calculadora-financeira"
-                      element={<CalculadoraFinanceira />}
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <CalculadoraFinanceira />
+                        </Suspense>
+                      }
                     />
                   </Route>
 
                   {/* Training routes with nested routing */}
-                  <Route path="treinamentos" element={<Training />}>
+                  <Route path="treinamentos" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Training />
+                    </Suspense>
+                  }>
                     <Route
                       index
                       element={
@@ -186,21 +325,65 @@ function App() {
                     />
                     <Route
                       path="fundos-investimentos"
-                      element={<FundosInvestimentos />}
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <FundosInvestimentos />
+                        </Suspense>
+                      }
                     />
-                    <Route path="renda-fixa" element={<RendaFixa />} />
-                    <Route path="acoes" element={<Acoes />} />
-                    <Route path="macroeconomia" element={<Macroeconomia />} />
+                    <Route path="renda-fixa" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <RendaFixa />
+                      </Suspense>
+                    } />
+                    <Route path="acoes" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Acoes />
+                      </Suspense>
+                    } />
+                    <Route path="macroeconomia" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Macroeconomia />
+                      </Suspense>
+                    } />
                   </Route>
 
                   {/* Special routes */}
-                  <Route path="info-diaria" element={<InfoDiaria />} />
-                  <Route path="perfil" element={<Perfil />} />
-                  <Route path="configuracoes" element={<Configuracoes />} />
-                  <Route path="suporte" element={<Suporte />} />
-                  <Route path="risk-assessment" element={<RiskAssessment />} />
-                  <Route path="change-password" element={<ChangePassword />} />
-                  <Route path="payment-options" element={<PaymentOptions />} />
+                  <Route path="info-diaria" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <InfoDiaria />
+                    </Suspense>
+                  } />
+                  <Route path="perfil" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Perfil />
+                    </Suspense>
+                  } />
+                  <Route path="configuracoes" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Configuracoes />
+                    </Suspense>
+                  } />
+                  <Route path="suporte" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Suporte />
+                    </Suspense>
+                  } />
+                  <Route path="risk-assessment" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <RiskAssessment />
+                    </Suspense>
+                  } />
+                  <Route path="change-password" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <ChangePassword />
+                    </Suspense>
+                  } />
+                  <Route path="payment-options" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <PaymentOptions />
+                    </Suspense>
+                  } />
 
                   {/* Default redirect to budget */}
                   <Route

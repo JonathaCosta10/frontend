@@ -147,7 +147,7 @@ export default function PaymentOptions() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Opções de Pagamento</h1>
@@ -264,7 +264,7 @@ export default function PaymentOptions() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
             <div>
               <p className="text-sm text-muted-foreground">Plano Atual</p>
               <p className="font-semibold">Premium Mensal</p>

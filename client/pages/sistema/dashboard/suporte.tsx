@@ -226,9 +226,12 @@ export default function Suporte() {
 
   const systemStatus = [
     { service: "API Principal", status: "operational", uptime: "99.9%" },
-    { service: "Integração B3", status: "operational", uptime: "99.7%" },
+    { service: "Integração B3", status: "maintenance", uptime: "98.5%" },
     { service: "Sistema de Login", status: "operational", uptime: "99.95%" },
-    { service: "Relatórios", status: "maintenance", uptime: "99.8%" },
+    { service: "Relatórios", status: "operational", uptime: "99.8%" },
+    { service: "Integração PIX", status: "operational", uptime: "99.7%" },
+    { service: "Extrato Bancário", status: "down", uptime: "95.2%" },
+    { service: "Cotações em Tempo Real", status: "operational", uptime: "99.6%" },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -316,7 +319,7 @@ ${formData.message}
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* Header */}
       <div className="flex items-center space-x-3">
         <LifeBuoy className="h-8 w-8 text-primary" />
@@ -365,7 +368,7 @@ ${formData.message}
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
         {/* Contact Methods */}
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -375,7 +378,7 @@ ${formData.message}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {contactChannels.map((method, index) => (
                 <div
                   key={index}

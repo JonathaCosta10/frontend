@@ -13,6 +13,24 @@ export interface AlocacaoTipo {
   "Renda Fixa": number;
 }
 
+// Nova interface para o formato da API
+export interface AlocacaoTipoItem {
+  tipo: string;
+  valor_atual: number;
+  percentual_alocacao: number;
+  quantidade_ativos: number;
+}
+
+export interface AlocacaoTipoResponse {
+  total_carteira: number;
+  alocacao_por_tipo: AlocacaoTipoItem[];
+  resumo: {
+    tipos_diferentes: number;
+    maior_alocacao: AlocacaoTipoItem;
+    menor_alocacao: AlocacaoTipoItem;
+  };
+}
+
 export interface SetorAcao {
   ticker: string;
   valor_total: number;
@@ -23,6 +41,46 @@ export interface SetorInfo {
   valor_total_setor: number;
   percentual_do_total: number;
   acoes: SetorAcao[];
+}
+
+// Novas interfaces para o formato atual da API
+export interface AtivoSetor {
+  ticker: string;
+  nome_empresarial: string;
+  quantidade: string;
+  preco_atual: number;
+  valor_atual: number;
+  valor_investido: number;
+}
+
+export interface SetorData {
+  setor: string;
+  valor_total: number;
+  percentual_alocacao: number;
+  quantidade_ativos: number;
+  ativos: AtivoSetor[];
+}
+
+export interface SetorResponse {
+  success: boolean;
+  message: string;
+  data: {
+    tipo_analise: string;
+    total_ativos: number;
+    valor_total: number;
+    setores: SetorData[];
+    resumo: {
+      quantidade_setores: number;
+      maior_concentracao: {
+        setor: string;
+        percentual: number;
+      };
+      menor_concentracao: {
+        setor: string;
+        percentual: number;
+      };
+    };
+  };
 }
 
 export interface DividendoMes {
@@ -41,11 +99,22 @@ export interface DividendoTicker {
 export interface DividendosResponse {
   dividendos_por_mes: DividendoMes[];
   dividendos_por_ticker: DividendoTicker[];
+  valores_totais_por_mes: Array<{
+    data_referencia: string;
+    valor_total: number;
+  }>;
+  resumo: Array<{
+    ticker: string;
+    dados: Array<{
+      data_referencia: string;
+      valor_hoje: number;
+    }>;
+  }>;
 }
 
 class InvestmentApiService {
   // API para alocação por tipo
-  async getAlocacaoTipo(): Promise<{ porcentagem_alocacao: AlocacaoTipo }> {
+  async getAlocacaoTipo(): Promise<AlocacaoTipoResponse | { porcentagem_alocacao: AlocacaoTipo }> {
     try {
       secureLog("[INVESTMENTS] Fetching alocacao tipo");
       const response = await api.get("/api/alocacao_tipo");
@@ -58,13 +127,48 @@ class InvestmentApiService {
           "[INVESTMENTS] Using mock data for alocacao tipo (development)",
         );
         await simulateApiDelay(300);
-        return {
-          porcentagem_alocacao: {
-            Acoes: 45.8,
-            "Fundos Imobiliários": 32.1,
-            "Renda Fixa": 22.1,
-          },
+        
+        // Retornando um formato compatível com a nova API
+        const mockData: AlocacaoTipoResponse = {
+          total_carteira: 40381.8,
+          alocacao_por_tipo: [
+            {
+              tipo: "Acoes",
+              valor_atual: 18495.0,
+              percentual_alocacao: 45.8,
+              quantidade_ativos: 6
+            },
+            {
+              tipo: "Fundos Imobiliários",
+              valor_atual: 12962.5,
+              percentual_alocacao: 32.1,
+              quantidade_ativos: 8
+            },
+            {
+              tipo: "Renda Fixa",
+              valor_atual: 8924.3,
+              percentual_alocacao: 22.1,
+              quantidade_ativos: 3
+            }
+          ],
+          resumo: {
+            tipos_diferentes: 3,
+            maior_alocacao: {
+              tipo: "Acoes",
+              valor_atual: 18495.0,
+              percentual_alocacao: 45.8,
+              quantidade_ativos: 6
+            },
+            menor_alocacao: {
+              tipo: "Renda Fixa",
+              valor_atual: 8924.3,
+              percentual_alocacao: 22.1,
+              quantidade_ativos: 3
+            }
+          }
         };
+        
+        return mockData;
       }
 
       throw error;
@@ -72,7 +176,7 @@ class InvestmentApiService {
   }
 
   // API para setores
-  async getSetores(tipo: string = "Acoes"): Promise<{ setores: SetorInfo[] }> {
+  async getSetores(tipo: string = "Acoes"): Promise<SetorResponse | { setores: SetorInfo[] }> {
     try {
       secureLog("[INVESTMENTS] Fetching setores", { tipo });
       const response = await api.get(`/api/setores?tipo=${tipo}`);
@@ -264,6 +368,38 @@ class InvestmentApiService {
             { data_referencia: "2024-09", valor_dividendo: 60.15 },
             { data_referencia: "2024-10", valor_dividendo: 57.9 },
             { data_referencia: "2024-11", valor_dividendo: 61.85 },
+          ],
+        },
+      ],
+      valores_totais_por_mes: [
+        { data_referencia: "2024-06", valor_total: 485.75 },
+        { data_referencia: "2024-07", valor_total: 512.3 },
+        { data_referencia: "2024-08", valor_total: 498.9 },
+        { data_referencia: "2024-09", valor_total: 535.4 },
+        { data_referencia: "2024-10", valor_total: 523.15 },
+        { data_referencia: "2024-11", valor_total: 548.8 },
+      ],
+      resumo: [
+        {
+          ticker: "HGLG11",
+          dados: [
+            { data_referencia: "2024-06", valor_hoje: 125.3 },
+            { data_referencia: "2024-07", valor_hoje: 128.75 },
+            { data_referencia: "2024-08", valor_hoje: 132.1 },
+            { data_referencia: "2024-09", valor_hoje: 135.45 },
+            { data_referencia: "2024-10", valor_hoje: 138.8 },
+            { data_referencia: "2024-11", valor_hoje: 142.15 },
+          ],
+        },
+        {
+          ticker: "XPLG11",
+          dados: [
+            { data_referencia: "2024-06", valor_hoje: 95.2 },
+            { data_referencia: "2024-07", valor_hoje: 98.15 },
+            { data_referencia: "2024-08", valor_hoje: 94.8 },
+            { data_referencia: "2024-09", valor_hoje: 102.3 },
+            { data_referencia: "2024-10", valor_hoje: 99.75 },
+            { data_referencia: "2024-11", valor_hoje: 105.4 },
           ],
         },
       ],

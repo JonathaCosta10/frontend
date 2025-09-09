@@ -1,7 +1,7 @@
-import { baseApi } from '../../../base';
+import { apiService as baseApi } from '../../../../base';
 
 export const fetchEntradasChart = async (period: string = '12m') => {
-  return baseApi.get(`/dashboard/orcamento/entradas/charts?period=${period}`);
+  return baseApi.get(`/api/dashboard/orcamento/entradas/charts?period=${period}`);
 };
 
 export default {

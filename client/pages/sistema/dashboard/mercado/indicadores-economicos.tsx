@@ -18,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart,
   LineChart,
@@ -37,14 +36,44 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/contexts/TranslationContext";
-import { EconomicIndicatorsApiService } from "@/services/api/entities/economicIndicatorsApi";
-import {
-  EconomicIndicator,
-  IndicatorGroup,
-  MarketSentiment,
-  IndicatorFilter,
-  IndicatorCategory,
-} from "@/src/entities/EconomicIndicators";
+import MarketPremiumGuard from "@/components/MarketPremiumGuard";
+
+// Tipos temporários até a implementação da API real
+interface EconomicIndicator {
+  id: string;
+  name: string;
+  code: string;
+  category: IndicatorCategory;
+  value: number;
+  unit: string;
+  change: number;
+  changePercent: number;
+  lastUpdate: string;
+  frequency: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
+}
+
+interface IndicatorGroup {
+  category: IndicatorCategory;
+  title: string;
+  description: string;
+  indicators: EconomicIndicator[];
+}
+
+interface IndicatorFilter {
+  sortBy: "lastUpdate" | "name" | "change";
+  sortOrder: "asc" | "desc";
+  category?: IndicatorCategory;
+}
+
+type IndicatorCategory = 
+  | "interest_rates" 
+  | "inflation" 
+  | "employment" 
+  | "gdp" 
+  | "currency" 
+  | "commodities" 
+  | "stock_indices" 
+  | "bonds";
 
 export default function IndicadoresEconomicos() {
   const { toast } = useToast();
@@ -52,8 +81,6 @@ export default function IndicadoresEconomicos() {
   const [isLoading, setIsLoading] = useState(false);
   const [indicators, setIndicators] = useState<EconomicIndicator[]>([]);
   const [indicatorGroups, setIndicatorGroups] = useState<IndicatorGroup[]>([]);
-  const [marketSentiment, setMarketSentiment] =
-    useState<MarketSentiment | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<
     IndicatorCategory | "all"
@@ -72,21 +99,27 @@ export default function IndicadoresEconomicos() {
   useEffect(() => {
     loadIndicatorData();
     loadIndicatorGroups();
-    loadMarketSentiment();
+    // Removido loadMarketSentiment já que a seção foi removida
   }, [filter, selectedCategory]);
 
   const loadIndicatorData = async () => {
     setIsLoading(true);
     try {
-      const filterWithCategory = {
-        ...filter,
-        category: selectedCategory === "all" ? undefined : selectedCategory,
-      };
-      const data =
-        await EconomicIndicatorsApiService.getEconomicIndicators(
-          filterWithCategory,
-        );
-      setIndicators(data);
+      // TODO: Implementar chamada para API real de indicadores econômicos
+      // Endpoint esperado: GET /api/indicadores-economicos/
+      // Parâmetros: category, sortBy, sortOrder
+      // Exemplo de uso:
+      // const response = await fetch('/api/indicadores-economicos/', {
+      //   method: 'GET',
+      //   headers: { 'Authorization': `Bearer ${token}` },
+      //   params: { category: selectedCategory !== 'all' ? selectedCategory : undefined }
+      // });
+      // const data = await response.json();
+      // setIndicators(data.indicators || []);
+      
+      // Por enquanto, mantém vazio até a API estar pronta
+      console.log("📊 Aguardando dados reais da API de indicadores econômicos");
+      setIndicators([]);
     } catch (error) {
       toast({
         title: t("error"),
@@ -100,19 +133,55 @@ export default function IndicadoresEconomicos() {
 
   const loadIndicatorGroups = async () => {
     try {
-      const groups = await EconomicIndicatorsApiService.getIndicatorGroups();
-      setIndicatorGroups(groups);
+      // TODO: Implementar chamada para API real de grupos de indicadores
+      // Endpoint esperado: GET /api/indicadores-economicos/grupos/
+      // Retorno esperado: Array de grupos com categorias na ordem: currency, inflation, interest_rates, gdp, stock_indices
+      // Exemplo de estrutura esperada:
+      // {
+      //   category: "currency",
+      //   title: "Câmbio",
+      //   description: "Variações das principais moedas",
+      //   indicators: [...]
+      // }
+      
+      console.log("📊 Carregando grupos na ordem: Câmbio → Inflação → Taxa de Juros → PIB → Índices Acionários");
+      
+      // Dados mockados temporários na nova ordem solicitada
+      const mockGroups = [
+        {
+          category: "currency" as const,
+          title: t("currency"),
+          description: "Variações das principais moedas",
+          indicators: []
+        },
+        {
+          category: "inflation" as const,
+          title: t("inflation"),
+          description: "Índices de inflação e preços",
+          indicators: []
+        },
+        {
+          category: "interest_rates" as const,
+          title: t("interest_rates"),
+          description: "Taxas de juros básicas",
+          indicators: []
+        },
+        {
+          category: "gdp" as const,
+          title: t("gdp"),
+          description: "Produto Interno Bruto",
+          indicators: []
+        },
+        {
+          category: "stock_indices" as const,
+          title: t("stock_indices"),
+          description: "Principais índices da bolsa",
+          indicators: []
+        }
+      ];
+      setIndicatorGroups(mockGroups);
     } catch (error) {
       console.error("Error loading indicator groups:", error);
-    }
-  };
-
-  const loadMarketSentiment = async () => {
-    try {
-      const sentiment = await EconomicIndicatorsApiService.getMarketSentiment();
-      setMarketSentiment(sentiment);
-    } catch (error) {
-      console.error("Error loading market sentiment:", error);
     }
   };
 
@@ -154,28 +223,6 @@ export default function IndicadoresEconomicos() {
 
   const getVariationColor = (change: number) => {
     return change >= 0 ? "text-green-600" : "text-red-600";
-  };
-
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case "bullish":
-        return "text-green-600 bg-green-50";
-      case "bearish":
-        return "text-red-600 bg-red-50";
-      default:
-        return "text-yellow-600 bg-yellow-50";
-    }
-  };
-
-  const getSentimentLabel = (sentiment: string) => {
-    switch (sentiment) {
-      case "bullish":
-        return t("optimistic");
-      case "bearish":
-        return t("pessimistic");
-      default:
-        return t("neutral");
-    }
   };
 
   const filteredIndicators = indicators.filter(
@@ -230,8 +277,31 @@ export default function IndicadoresEconomicos() {
     });
   };
 
+  // Função para ordenar categorias na ordem desejada: Câmbio, Inflação, Taxa de Juros, PIB, Índices Acionários
+  const getOrderedIndicatorGroups = () => {
+    const desiredOrder = ["currency", "inflation", "interest_rates", "gdp", "stock_indices"];
+    
+    return indicatorGroups.sort((a, b) => {
+      const indexA = desiredOrder.indexOf(a.category);
+      const indexB = desiredOrder.indexOf(b.category);
+      
+      // Se ambos estão na lista, ordenar pela posição
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB;
+      }
+      
+      // Se apenas um está na lista, priorizar o que está
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      
+      // Se nenhum está na lista, manter ordem original
+      return 0;
+    });
+  };
+
   return (
-    <div className="space-y-6">
+    <MarketPremiumGuard marketFeature="financial-calculator">
+      <div className="space-y-3 md:space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold flex items-center space-x-2">
@@ -241,301 +311,16 @@ export default function IndicadoresEconomicos() {
         <p className="text-muted-foreground">{t("follow_main_indicators")}</p>
       </div>
 
-      {/* Market Sentiment Card */}
-      {marketSentiment && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <AlertCircle className="h-5 w-5" />
-              <span>{t("market_sentiment")}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {t("general_sentiment")}
-                  </p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <Badge
-                      className={getSentimentColor(marketSentiment.overall)}
-                    >
-                      {getSentimentLabel(marketSentiment.overall)}
-                    </Badge>
-                    <span className="text-2xl font-bold">
-                      {marketSentiment.score > 0 ? "+" : ""}
-                      {marketSentiment.score}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t("last_update")}: {formatDate(marketSentiment.lastUpdate)}
-                  </p>
-                </div>
-              </div>
+      {/* Main Content - Categories View */}
+      <div className="space-y-3 md:space-y-6">
+        {/* Categories Header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold">{t("by_category")}</h2>
+        </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>{t("interest")}</span>
-                    <span
-                      className={getVariationColor(
-                        marketSentiment.factors.interestRates,
-                      )}
-                    >
-                      {marketSentiment.factors.interestRates > 0 ? "+" : ""}
-                      {marketSentiment.factors.interestRates}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>{t("inflation")}</span>
-                    <span
-                      className={getVariationColor(
-                        marketSentiment.factors.inflation,
-                      )}
-                    >
-                      {marketSentiment.factors.inflation > 0 ? "+" : ""}
-                      {marketSentiment.factors.inflation}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>{t("employment")}</span>
-                    <span
-                      className={getVariationColor(
-                        marketSentiment.factors.employment,
-                      )}
-                    >
-                      {marketSentiment.factors.employment > 0 ? "+" : ""}
-                      {marketSentiment.factors.employment}
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>{t("gdp")}</span>
-                    <span
-                      className={getVariationColor(
-                        marketSentiment.factors.gdpGrowth,
-                      )}
-                    >
-                      {marketSentiment.factors.gdpGrowth > 0 ? "+" : ""}
-                      {marketSentiment.factors.gdpGrowth}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>{t("volatility")}</span>
-                    <span
-                      className={getVariationColor(
-                        marketSentiment.factors.marketVolatility,
-                      )}
-                    >
-                      {marketSentiment.factors.marketVolatility > 0 ? "+" : ""}
-                      {marketSentiment.factors.marketVolatility}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="overview">{t("overview")}</TabsTrigger>
-          <TabsTrigger value="categories">{t("by_category")}</TabsTrigger>
-        </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          {/* Search and Filters */}
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("search_indicators")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Select
-                value={selectedCategory}
-                onValueChange={(value) => setSelectedCategory(value as any)}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("all_categories")}</SelectItem>
-                  <SelectItem value="interest_rates">
-                    {t("interest_rates")}
-                  </SelectItem>
-                  <SelectItem value="inflation">{t("inflation")}</SelectItem>
-                  <SelectItem value="employment">{t("employment")}</SelectItem>
-                  <SelectItem value="gdp">{t("gdp")}</SelectItem>
-                  <SelectItem value="currency">{t("currency")}</SelectItem>
-                  <SelectItem value="stock_indices">
-                    {t("stock_indices")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={`${filter.sortBy}-${filter.sortOrder}`}
-                onValueChange={(value) => {
-                  const [sortBy, sortOrder] = value.split("-");
-                  setFilter({
-                    ...filter,
-                    sortBy: sortBy as any,
-                    sortOrder: sortOrder as any,
-                  });
-                }}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="lastUpdate-desc">
-                    {t("most_recent")}
-                  </SelectItem>
-                  <SelectItem value="name-asc">{t("name_a_z")}</SelectItem>
-                  <SelectItem value="change-desc">
-                    {t("highest_variation")}
-                  </SelectItem>
-                  <SelectItem value="change-asc">
-                    {t("lowest_variation")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Indicators Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("economic_indicators_table")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : filteredIndicators.length === 0 ? (
-                <div className="text-center py-8">
-                  <Activity className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    {searchTerm
-                      ? t("no_indicator_found")
-                      : t("no_indicator_available")}
-                  </p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("indicator")}</TableHead>
-                      <TableHead>{t("category")}</TableHead>
-                      <TableHead>{t("current_value")}</TableHead>
-                      <TableHead>{t("variation")}</TableHead>
-                      <TableHead>{t("frequency")}</TableHead>
-                      <TableHead>{t("last_updated")}</TableHead>
-                      <TableHead>{t("actions")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredIndicators.map((indicator) => (
-                      <TableRow key={indicator.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{indicator.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {indicator.code}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            {getCategoryIcon(indicator.category)}
-                            <Badge variant="outline">
-                              {getCategoryLabel(indicator.category)}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-semibold">
-                          {formatValue(indicator.value, indicator.unit)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            {getVariationIcon(indicator.change)}
-                            <span
-                              className={`font-semibold ${getVariationColor(indicator.change)}`}
-                            >
-                              {indicator.change > 0 ? "+" : ""}
-                              {indicator.change.toFixed(2)}
-                            </span>
-                            <span
-                              className={`text-sm ${getVariationColor(indicator.changePercent)}`}
-                            >
-                              ({indicator.changePercent > 0 ? "+" : ""}
-                              {indicator.changePercent.toFixed(2)}%)
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {indicator.frequency === "daily" && t("daily")}
-                            {indicator.frequency === "weekly" && t("weekly")}
-                            {indicator.frequency === "monthly" && t("monthly")}
-                            {indicator.frequency === "quarterly" &&
-                              t("quarterly")}
-                            {indicator.frequency === "yearly" && t("yearly")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDate(indicator.lastUpdate)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleAlert(indicator.id)}
-                              className={
-                                alertsEnabled.has(indicator.id)
-                                  ? "text-red-600 hover:text-red-700"
-                                  : "text-muted-foreground hover:text-orange-600"
-                              }
-                              title={
-                                alertsEnabled.has(indicator.id)
-                                  ? t("price_alert_enabled")
-                                  : t("price_alert_disabled")
-                              }
-                            >
-                              <Bell
-                                className={`h-4 w-4 ${alertsEnabled.has(indicator.id) ? "fill-current" : ""}`}
-                              />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <BarChart className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Categories Tab */}
-        <TabsContent value="categories" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {indicatorGroups.map((group) => (
+        {/* Categories Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+            {getOrderedIndicatorGroups().map((group) => (
               <Card
                 key={group.category}
                 className="hover:shadow-lg transition-shadow"
@@ -591,8 +376,8 @@ export default function IndicadoresEconomicos() {
               </Card>
             ))}
           </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+        </div>
+      </div>
+    </MarketPremiumGuard>
   );
 }

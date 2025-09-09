@@ -1,0 +1,462 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useOnboarding } from './useOnboarding';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../lib/api';
+import DataCache from '../utils/DataCache';
+
+// Tipo para os dados históricos
+export interface HistData {
+  replicar_entradas: boolean;
+  replicar_gastos: boolean;
+  replicar_dividas: boolean;
+  ultimo_registro_mes: number | null;
+  ultimo_registro_ano: number | null;
+}
+
+// Tipo para a resposta da API de distribuição de gastos
+interface DistribuicaoGastosResponse {
+  ano: string;
+  meses_disponeis: string[];
+  dados_mensais: Record<string, any>;
+  metas_personalizadas: any;
+  hist_data: HistData;
+}
+
+export type TutorialType = 'general' | 'dailyInfo' | 'budget' | 'variableIncome';
+
+export function useTutorialManager() {
+  const location = useLocation();
+  const pathname = location.pathname;
+  const { hasTutorialBeenCompleted, completeTutorial } = useOnboarding();
+  const { isAuthenticated, user } = useAuth();
+  
+  const [activeTutorial, setActiveTutorial] = useState<TutorialType | null>(null);
+  const [histData, setHistData] = useState<HistData | null>(null);
+  const [mesesDisponiveis, setMesesDisponiveis] = useState<string[]>([]);
+  const [showReplicateData, setShowReplicateData] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [hasCheckedBudgetData, setHasCheckedBudgetData] = useState(false);
+  const [dataFullyLoaded, setDataFullyLoaded] = useState(false);
+  const [lastSuccessfulLoad, setLastSuccessfulLoad] = useState<number>(0);
+  const [buttonStateCache, setButtonStateCache] = useState<Record<string, boolean>>({});
+  const [retryAfterTokenRefresh, setRetryAfterTokenRefresh] = useState(false);
+  const [requestInProgress, setRequestInProgress] = useState<string | null>(null); // Cache para requisições em andamento
+
+  // REGRA PRINCIPAL: Sistema está completamente vazio?
+  const isSystemCompletelyEmpty = (data: HistData, mesesDisponiveis: string[]): boolean => {
+    const noHistData = (
+      data.replicar_entradas === false &&
+      data.replicar_gastos === false &&
+      data.replicar_dividas === false &&
+      data.ultimo_registro_mes === null &&
+      data.ultimo_registro_ano === null
+    );
+    
+    const noAvailableMonths = mesesDisponiveis.length === 0;
+    
+    console.log('🎯 Verificando se sistema está completamente vazio:', {
+      noHistData,
+      noAvailableMonths,
+      isEmpty: noHistData && noAvailableMonths,
+      data,
+      mesesDisponiveis
+    });
+    
+    return noHistData && noAvailableMonths;
+  };
+
+  // REGRA: Tem dados históricos para replicar?
+  const hasDataToReplicate = (data: HistData, mesesDisponiveis: string[]): boolean => {
+    const hasHistoricalData = (
+      data.ultimo_registro_mes !== null &&
+      data.ultimo_registro_ano !== null &&
+      (data.replicar_entradas || data.replicar_gastos || data.replicar_dividas)
+    );
+    
+    console.log('🔄 Verificando se tem dados para replicar:', {
+      hasHistoricalData,
+      ultimo_registro_mes: data.ultimo_registro_mes,
+      ultimo_registro_ano: data.ultimo_registro_ano,
+      flags: {
+        replicar_entradas: data.replicar_entradas,
+        replicar_gastos: data.replicar_gastos,
+        replicar_dividas: data.replicar_dividas
+      }
+    });
+    
+    return hasHistoricalData;
+  };
+
+  // Versão simplificada da verificação de dados para replicar
+  const hasDataToReplicateSimple = () => {
+    return hasDataToReplicate(histData || {
+      replicar_entradas: false,
+      replicar_gastos: false,
+      replicar_dividas: false,
+      ultimo_registro_mes: null,
+      ultimo_registro_ano: null
+    }, mesesDisponiveis);
+  };
+
+  // FUNÇÃO PRINCIPAL: Decidir se mostra botão de replicação
+  const shouldShowReplicateButton = useCallback((selectedMes?: string, selectedAno?: string) => {
+    // CONDIÇÃO 0: Evitar verificações durante carregamento
+    if (isLoadingData) {
+      console.log('⏳ [BOTÃO REPLICAÇÃO] Aguardando carregamento...');
+      return false;
+    }
+    
+    // Cache key para evitar recálculos desnecessários
+    const cacheKey = `${selectedMes || 'current'}-${selectedAno || 'current'}-${dataFullyLoaded}-${lastSuccessfulLoad}`;
+    
+    // Se já temos resultado em cache, usar diretamente
+    if (buttonStateCache[cacheKey] !== undefined) {
+      console.log('💾 [BOTÃO REPLICAÇÃO] Usando cache:', { cacheKey, cached: buttonStateCache[cacheKey] });
+      return buttonStateCache[cacheKey];
+    }
+
+    console.log('🔍 [BOTÃO REPLICAÇÃO] Verificando condições...', {
+      dataFullyLoaded,
+      isLoadingData,
+      hasHistData: !!histData,
+      selectedMes,
+      selectedAno,
+      mesesDisponiveis,
+      timestamp: new Date().toISOString()
+    });
+
+    // CONDIÇÃO 1: Dados devem estar COMPLETAMENTE carregados
+    if (!dataFullyLoaded || !histData) {
+      console.log('❌ [BOTÃO REPLICAÇÃO] FALHOU - Dados não carregados', {
+        dataFullyLoaded,
+        hasHistData: !!histData,
+        razao: !dataFullyLoaded ? 'dataFullyLoaded=false' : 'histData=null'
+      });
+      setButtonStateCache(prev => ({ ...prev, [cacheKey]: false }));
+      return false;
+    }
+
+    // CONDIÇÃO 2: Deve ter dados históricos para replicar
+    const hasHistoricalData = hasDataToReplicate(histData, mesesDisponiveis);
+    if (!hasHistoricalData) {
+      console.log('❌ [BOTÃO REPLICAÇÃO] FALHOU - Sem dados históricos válidos');
+      setButtonStateCache(prev => ({ ...prev, [cacheKey]: false }));
+      return false;
+    }
+
+    // CONDIÇÃO 3: Se mês específico foi fornecido, verificar se esse mês NÃO tem dados
+    if (selectedMes) {
+      const monthHasNoData = !mesesDisponiveis.includes(selectedMes);
+      
+      console.log('🎯 [BOTÃO REPLICAÇÃO] Verificação mês específico:', {
+        selectedMes,
+        mesesDisponiveis,
+        monthHasNoData,
+        resultado: monthHasNoData ? 'MOSTRAR BOTÃO ✅' : 'NÃO MOSTRAR ❌'
+      });
+      
+      // Guardar resultado em cache para evitar recálculos
+      setButtonStateCache(prev => ({ ...prev, [cacheKey]: monthHasNoData }));
+      return monthHasNoData;
+    }
+
+    // CONDIÇÃO 4: Verificação padrão para mês atual
+    const currentDate = new Date();
+    const currentMonthStr = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    const shouldShow = !mesesDisponiveis.includes(currentMonthStr);
+    
+    console.log('🎯 [BOTÃO REPLICAÇÃO] Verificação mês atual:', {
+      currentMonthStr,
+      mesesDisponiveis,
+      shouldShow,
+      resultado: shouldShow ? 'MOSTRAR BOTÃO ✅' : 'NÃO MOSTRAR ❌'
+    });
+    
+    // Armazenar resultado no cache
+    setButtonStateCache(prev => ({ ...prev, [cacheKey]: shouldShow }));
+    return shouldShow;
+  }, [dataFullyLoaded, isLoadingData, buttonStateCache, histData, mesesDisponiveis, lastSuccessfulLoad, hasDataToReplicate]);
+
+  // Função para buscar dados do orçamento
+  const checkBudgetData = useCallback(async (year?: string, forceReload: boolean = false) => {
+    const currentYear = year || new Date().getFullYear().toString();
+    const requestKey = `budget-${currentYear}`;
+    
+    // Verificar se já há uma requisição em andamento para evitar duplicatas
+    if (requestInProgress === requestKey && !forceReload) {
+      console.log('⏳ Requisição já em andamento para:', requestKey);
+      return;
+    }
+    
+    if (isLoadingData && !forceReload) {
+      console.log('⏳ Já carregando dados...');
+      return;
+    }
+
+    try {
+      setRequestInProgress(requestKey);
+      setIsLoadingData(true);
+      setButtonStateCache({}); // Limpar cache antes de carregar novos dados
+      
+      console.log('🔍 Buscando dados do orçamento para ano:', currentYear);
+      
+      // Tentar obter dados da API
+      let data: DistribuicaoGastosResponse | null = null;
+      let response;
+      
+      try {
+        response = await api.get(`/api/distribuicao_gastos?ano=${currentYear}`);
+        data = response.data as DistribuicaoGastosResponse;
+        
+        // Se deu certo, salvar no cache global
+        if (data && data.hist_data) {
+          DataCache.setBudgetData(currentYear, data);
+        }
+      } catch (innerError) {
+        console.log('⚠️ [API ERROR] Erro na chamada inicial, tentando usar cache:', innerError);
+        
+        // Tentar usar o cache se disponível
+        data = DataCache.getBudgetData(currentYear) as DistribuicaoGastosResponse;
+        
+        if (!data) {
+          // Se não tiver cache, propagar o erro
+          throw innerError;
+        }
+        
+        console.log('✅ [CACHE RECOVERY] Dados recuperados do cache com sucesso');
+      }
+      
+      console.log('📊 [API SUCCESS] Dados recebidos:', {
+        status: response?.status || 'no-status',
+        data: data ? 'available' : 'undefined',
+        timestamp: new Date().toISOString()
+      });
+      
+      // CORREÇÃO CRÍTICA: Verificar se data está definido e contém dados válidos
+      if (!data) {
+        throw new Error('Dados indisponíveis mesmo após tentativa de recuperação via cache');
+      }
+      
+      // Atualizar os estados do componente com os dados recuperados
+      setHistData(data.hist_data);
+      setMesesDisponiveis(data.meses_disponeis || []);
+      
+      // Dados completamente carregados
+      setHasCheckedBudgetData(true);
+      setDataFullyLoaded(true);
+      setLastSuccessfulLoad(Date.now());
+      setRequestInProgress(null);
+      setIsLoadingData(false);
+      
+      // Aplicar as regras de negócio após obter dados
+      if (data.hist_data && Array.isArray(data.meses_disponeis)) {
+        const systemEmpty = isSystemCompletelyEmpty(data.hist_data, data.meses_disponeis || []);
+        const hasReplicableData = hasDataToReplicate(data.hist_data, data.meses_disponeis || []);
+        
+        console.log('🔄 Verificação de sistema para tutoriais:', { systemEmpty, hasReplicableData });
+        
+        // Se o sistema estiver vazio, não mostrar o botão de replicação
+        if (systemEmpty) {
+          setShowReplicateData(false);
+          
+          if (pathname === '/dashboard/orcamento' && !hasTutorialBeenCompleted('budget')) {
+            // Verificar se já completou o tutorial geral
+            if (!hasTutorialBeenCompleted('general')) {
+              setActiveTutorial('general');
+            } else {
+              setActiveTutorial('budget');
+            }
+          } else {
+            setActiveTutorial(null);
+          }
+        }
+        // Se tiver dados para replicar, mostrar o botão
+        else if (hasReplicableData) {
+          setShowReplicateData(true);
+          setActiveTutorial(null);
+        }
+      }
+      
+      return data; // Retornar os dados para quem chamou a função
+    } catch (error) {
+      console.error('❌ [API ERROR] Erro ao buscar dados do orçamento:', error);
+      
+      // Em caso de erro, limpar a requisição em andamento e indicar que o carregamento terminou
+      setRequestInProgress(null);
+      setIsLoadingData(false);
+      setDataFullyLoaded(false);
+      setHasCheckedBudgetData(true);
+      setRetryAfterTokenRefresh(true);
+      
+      return null;
+    }
+  }, [histData, isLoadingData, pathname, hasTutorialBeenCompleted, requestInProgress]);
+  
+  // FUNÇÃO: Replicar dados de um mês anterior para o mês atual
+  const handleReplicateData = useCallback(async (fromMonth?: number, fromYear?: number) => {
+    const today = new Date();
+    const targetMonth = today.getMonth() + 1; // 1-12
+    const targetYear = today.getFullYear();
+    
+    const sourceMonth = fromMonth || (histData?.ultimo_registro_mes || targetMonth);
+    const sourceYear = fromYear || (histData?.ultimo_registro_ano || targetYear);
+    
+    console.log('🔄 Replicando dados:', {
+      de: { mes: sourceMonth, ano: sourceYear },
+      para: { mes: targetMonth, ano: targetYear }
+    });
+    
+    try {
+      await api.post('/api/replicar_dados', {
+        mes_origem: sourceMonth,
+        ano_origem: sourceYear,
+        mes_destino: targetMonth,
+        ano_destino: targetYear
+      });
+      
+      console.log('✅ Dados replicados com sucesso!');
+      
+      // Atualizar a UI após a replicação
+      checkBudgetData(String(targetYear), true);
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao replicar dados:', error);
+      return false;
+    }
+  }, [histData, checkBudgetData]);
+  
+  // Efeito para carregar dados iniciais
+  useEffect(() => {
+    const loadInitialData = async () => {
+      console.log('🔄 useEffect principal:', {
+        pathname,
+        hasCheckedBudgetData,
+        isLoadingData,
+        dataFullyLoaded
+      });
+      
+      // Só carregar dados do orçamento nas páginas relacionadas
+      if (pathname.startsWith('/dashboard/orcamento') || pathname === '/dashboard') {
+        if (!hasCheckedBudgetData && !isLoadingData) {
+          console.log('🔄 Iniciando carregamento de dados do orçamento');
+          
+          // Verificar se temos ano específico na URL
+          const urlParams = new URLSearchParams(location.search);
+          const anoParam = urlParams.get('ano');
+          
+          // Carregar dados para o ano especificado ou para o ano atual
+          await checkBudgetData(anoParam || undefined);
+        }
+      }
+    };
+    
+    if (isAuthenticated && user) {
+      loadInitialData();
+    }
+  }, [isAuthenticated, user, pathname, hasCheckedBudgetData, isLoadingData, location.search, checkBudgetData]);
+  
+  // Monitorar token refresh para tentar novamente em caso de falhas por autenticação
+  useEffect(() => {
+    // Apenas tentar novamente se estiver configurado para tal
+    if (retryAfterTokenRefresh && pathname.startsWith('/dashboard/orcamento')) {
+      console.log('🔄 Tentando carregar dados novamente após refresh de token');
+      
+      // Resetar o flag e tentar carregar os dados novamente
+      setRetryAfterTokenRefresh(false);
+      
+      // Esperar um pouco antes de tentar novamente
+      const timer = setTimeout(() => {
+        checkBudgetData(undefined, true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [retryAfterTokenRefresh, pathname, checkBudgetData]);
+  
+  // Monitorar mudanças de token para fazer retry
+  useEffect(() => {
+    console.log('🎯 [TOKEN LISTENER] Registrando listeners de token refresh:', {
+      pathname,
+      retryAfterTokenRefresh,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Definir um contador de tentativas para evitar loops infinitos
+    const retryCountKey = 'errorRetryCount';
+    const currentRetries = parseInt(localStorage.getItem(retryCountKey) || '0');
+    
+    // AGGRESSIVE RETRY: Se ainda estiver na página de orçamento e tiver tokens atualizados, tentar novamente
+    if (pathname.startsWith('/dashboard/orcamento') && currentRetries < 3) {
+      localStorage.setItem(retryCountKey, String(currentRetries + 1));
+      
+      // Verificar se já tentamos várias vezes e falhou
+      if (currentRetries >= 2) {
+        console.log('⚠️ [AGGRESSIVE RETRY] Número máximo de tentativas atingido:', currentRetries);
+        localStorage.removeItem(retryCountKey);
+        return;
+      }
+      
+      // Tentar novamente com delay
+      const timer = setTimeout(() => {
+        console.log('🔄 [AGGRESSIVE RETRY] Tentativa', currentRetries + 1);
+        
+        // Forçar atualização apenas se precisar
+        if (!dataFullyLoaded) {
+          checkBudgetData(undefined, true);
+        }
+      }, 2000 * (currentRetries + 1)); // Backoff exponencial
+      
+      return () => clearTimeout(timer);
+    } else if (!pathname.startsWith('/dashboard/orcamento')) {
+      // Limpar contador de tentativas ao sair da página de orçamento
+      localStorage.removeItem(retryCountKey);
+    }
+  }, [pathname, user, dataFullyLoaded, checkBudgetData]);
+  
+  // Função para determinar qual tutorial deve estar ativo com base na URL atual
+  const getActiveTutorialForPage = useCallback(() => {
+    if (pathname === '/dashboard' && activeTutorial === 'general') {
+      return 'general';
+    } else if (pathname === '/dashboard/orcamento' && activeTutorial === 'budget') {
+      return 'budget';
+    } else if (pathname === '/dashboard/info' && activeTutorial === 'dailyInfo') {
+      return 'dailyInfo';
+    } else if (pathname === '/dashboard/rendaVariavel' && activeTutorial === 'variableIncome') {
+      return 'variableIncome';
+    }
+
+    return null;
+  }, [activeTutorial, pathname]);
+
+  const setActiveTutorialForPage = useCallback((type: TutorialType | null) => {
+    console.log('🎯 [TUTORIAL] Definindo tutorial ativo:', type);
+    setActiveTutorial(type);
+  }, []);
+
+  const finishActiveTutorial = useCallback(() => {
+    console.log('🎯 [TUTORIAL] Finalizando tutorial ativo:', activeTutorial);
+    if (activeTutorial) {
+      completeTutorial(activeTutorial);
+      setActiveTutorial(null);
+    }
+  }, [activeTutorial, completeTutorial]);
+
+  return {
+    histData,
+    mesesDisponiveis,
+    showReplicateData,
+    isLoadingData,
+    dataFullyLoaded,
+    hasCheckedBudgetData,
+    setActiveTutorial: setActiveTutorialForPage,
+    activeTutorial: getActiveTutorialForPage(),
+    finishActiveTutorial,
+    handleReplicateData,
+    checkBudgetData,
+    hasDataToReplicate: hasDataToReplicateSimple,
+    shouldShowReplicateButton,
+    retryAfterTokenRefresh
+  };
+}

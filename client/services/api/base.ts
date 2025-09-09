@@ -16,7 +16,7 @@ export interface ApiResponse<T> {
   statusText: string;
 }
 
-export interface ApiError {
+export interface IApiError {
   message: string;
   status?: number;
   code?: string;
@@ -29,7 +29,7 @@ class ApiService {
 
   constructor(config: Partial<ApiConfig> = {}) {
     this.config = {
-      baseURL: process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000',
+      baseURL: import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000',
       timeout: 10000,
       retries: 3,
       useMocks: process.env.NODE_ENV === 'development',
@@ -219,7 +219,7 @@ class ApiService {
 }
 
 // Custom error class for API errors
-class ApiError extends Error {
+export class ApiError extends Error {
   status?: number;
   code?: string;
   details?: any;
@@ -255,5 +255,5 @@ export const getApiService = (): ApiService => {
     : apiService;
 };
 
-export { ApiService, ApiError };
+export { ApiService };
 export default apiService;

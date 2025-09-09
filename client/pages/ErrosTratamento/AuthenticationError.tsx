@@ -42,7 +42,7 @@ export default function AuthenticationError() {
               {t('home')}
             </Button>
             <p className="mt-4 text-xs text-gray-500">
-              Redirecionando automaticamente em 5 segundos...
+              {t('redirecting_automatically')}
             </p>
           </CardContent>
         </Card>

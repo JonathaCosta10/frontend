@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import FinanceLogo from "@/components/FinanceLogo";
 import {
   Moon,
   Sun,
@@ -14,14 +15,20 @@ import {
   Shield,
   Zap,
   Users,
+  Menu,
+  X,
+  Play,
+  CheckCircle,
+  LockKeyhole,
+  FileText,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
-import LanguageSelector from "@/components/LanguageSelector";
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -60,10 +67,10 @@ export default function Home() {
   ];
 
   const stats = [
-    { label: t('monitored_funds'), value: "500+" },
-    { label: t('active_users'), value: "25k+" },
-    { label: t('daily_volume'), value: "R$ 2.3B" },
-    { label: t('generated_reports'), value: "100k+" },
+    { label: t('quick_response'), value: "24h" },
+    { label: t('user_satisfaction'), value: "98%" },
+    { label: t('platform_updates'), value: "Semanal" },
+    { label: t('financial_insights'), value: "Diário" },
   ];
 
   return (
@@ -75,18 +82,37 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">
-                  O
-                </span>
-              </div>
+              <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-8 h-8" />
               <h1 className="text-2xl font-bold text-primary">Organizesee</h1>
             </Link>
 
-            <div className="flex items-center space-x-4">
-              {/* Language and Currency Selector */}
-              <LanguageSelector variant="compact" showCurrency={true} size="sm" />
-
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
+              <nav className="mr-4">
+                <ul className="flex space-x-6">
+                  <li>
+                    <Link to="/about" className="text-muted-foreground hover:text-foreground">
+                      Sobre
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/whitepaper" className="text-muted-foreground hover:text-foreground">
+                      Whitepaper
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground">
+                      Política de Privacidade
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/terms" className="text-muted-foreground hover:text-foreground">
+                      Termos
+                    </Link>
+                  </li>
+                </ul>
+              </nav>
+            
               <Button
                 variant="ghost"
                 size="icon"
@@ -100,7 +126,7 @@ export default function Home() {
                 )}
               </Button>
 
-              <div className="hidden md:flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
                 <Link to="/login">
                   <Button
                     variant="ghost"
@@ -118,17 +144,126 @@ export default function Home() {
                 </Link>
               </div>
             </div>
+
+            {/* Mobile Navigation */}
+            <div className="flex md:hidden items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleDarkMode}
+                className="w-9 h-9"
+              >
+                {darkMode ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="w-9 h-9"
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-4 w-4" />
+                ) : (
+                  <Menu className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 py-4 border-t border-border">
+              <div className="flex flex-col space-y-4">
+                {/* Main Action Buttons */}
+                <div className="flex flex-col space-y-3 px-2">
+                  <Link to="/login" className="w-full">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full justify-center flex items-center space-x-2 text-lg py-6"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <LogIn className="h-5 w-5" />
+                      <span>{t("login")}</span>
+                    </Button>
+                  </Link>
+                  <Link to="/signup" className="w-full">
+                    <Button
+                      size="lg"
+                      className="w-full justify-center flex items-center space-x-2 text-lg py-6 bg-primary hover:bg-primary/90"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <User className="h-5 w-5" />
+                      <span>{t("signup")}</span>
+                    </Button>
+                  </Link>
+                </div>
+                
+                {/* Quick Actions */}
+                <div className="px-2 pt-2 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-3">Navegação:</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Link to="/demo" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Demonstração
+                      </Button>
+                    </Link>
+                    <Link to="/market" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Mercado
+                      </Button>
+                    </Link>
+                    <Link to="/whitepaper" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Whitepaper
+                      </Button>
+                    </Link>
+                    <Link to="/privacy-policy" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <LockKeyhole className="h-4 w-4 mr-2" />
+                        Política de Privacidade
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className={`container mx-auto px-4 ${isScrolled ? 'pt-20' : ''}`}>
+      <main className={`container mx-auto px-4 pb-32 md:pb-8 ${isScrolled ? 'pt-20' : ''}`}>
         {/* Hero Section */}
         <section className="py-20 text-center">
           <div className="max-w-4xl mx-auto">
-            <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20">
-              🚀 {t('leading_platform')}
-            </Badge>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               {t('organize_investments')}
             </h1>
@@ -137,13 +272,13 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/market">
-                <Button size="lg" className="flex items-center space-x-2">
+                <Button variant="outline" size="lg" className="flex items-center space-x-2">
                   <span>{t('explore_market')}</span>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/demo">
-                <Button variant="outline" size="lg">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
                   {t('watch_demo')}
                 </Button>
               </Link>
@@ -162,6 +297,74 @@ export default function Home() {
                 <div className="text-muted-foreground">{stat.label}</div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* App Description (Required for OAuth) */}
+        <section className="py-16 bg-gradient-to-r from-primary/5 to-background">
+          <div className="max-w-4xl mx-auto px-4">
+            <h2 className="text-3xl font-bold mb-6 text-center">O que o Organizesee faz</h2>
+            <p className="text-lg text-center text-muted-foreground mb-10">
+              Uma plataforma financeira completa para ajudar você a gerenciar suas finanças e investimentos com ferramentas profissionais
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+                <div className="flex items-start space-x-4 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Controle Financeiro</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Organize receitas e despesas, crie orçamentos detalhados e acompanhe metas financeiras com gráficos e relatórios intuitivos.
+                    </p>
+                  </div>
+                </div>
+                <ul className="space-y-2 pl-10">
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Visão geral de todas suas contas</span>
+                  </li>
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Orçamentos personalizados</span>
+                  </li>
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Acompanhamento de metas financeiras</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+                <div className="flex items-start space-x-4 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Gestão de Investimentos</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Acompanhe seu portfólio de investimentos, analise o desempenho de ativos e receba insights para otimizar seus rendimentos.
+                    </p>
+                  </div>
+                </div>
+                <ul className="space-y-2 pl-10">
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Dashboard de investimentos</span>
+                  </li>
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Análise de carteira e diversificação</span>
+                  </li>
+                  <li className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Informações de mercado em tempo real</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -250,7 +453,7 @@ export default function Home() {
                   <p className="text-muted-foreground mb-6">
                     {t('thousands_investors_trust')}
                   </p>
-                  <Link to="/market">
+                  <Link to="/login">
                     <Button size="lg" className="w-full">
                       {t('explore_platform')}
                     </Button>
@@ -263,23 +466,113 @@ export default function Home() {
       </main>
 
       {/* Footer */}
+      {/* Data Usage & Privacy Section (Required for OAuth) */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6 text-center">Como usamos seus dados</h2>
+            
+            <div className="bg-card rounded-xl p-6 shadow-sm mb-8">
+              <h3 className="text-xl font-semibold mb-4">Transparência e Proteção de Dados</h3>
+              <p className="text-muted-foreground mb-4">
+                O Organizesee solicita permissões de acesso apenas para fornecer uma experiência personalizada e segura:
+              </p>
+              
+              <div className="space-y-4 mt-6">
+                <div className="flex items-start space-x-3">
+                  <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Autenticação segura</p>
+                    <p className="text-sm text-muted-foreground">
+                      Usamos seu e-mail apenas para autenticação e comunicações essenciais sobre sua conta.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Dados criptografados</p>
+                    <p className="text-sm text-muted-foreground">
+                      Todas as suas informações financeiras são criptografadas e nunca compartilhadas com terceiros.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Controle total</p>
+                    <p className="text-sm text-muted-foreground">
+                      Você pode revogar permissões ou excluir seus dados a qualquer momento através das configurações da conta.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-border">
+                <Link to="/privacy-policy" className="text-primary hover:underline font-medium flex items-center">
+                  <span>Leia nossa Política de Privacidade completa</span>
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <footer className="border-t bg-card mt-20">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xs">
-                  O
-                </span>
-              </div>
+              <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-6 h-6" />
               <span className="font-semibold">Organizesee</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © 2024 Organizesee. Todos os direitos reservados.
-            </p>
+            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-6">
+              <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">
+                Política de Privacidade
+              </Link>
+              <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">
+                Termos de Uso
+              </Link>
+              <p className="text-sm text-muted-foreground">
+                © 2024 Organizesee. Todos os direitos reservados.
+              </p>
+            </div>
           </div>
         </div>
       </footer>
+
+      {/* Floating Action Buttons for Mobile */}
+      <div className="fixed bottom-6 left-4 right-4 md:hidden z-40">
+        <div className="flex flex-col space-y-3">
+          {/* Primary CTA - Signup */}
+          <Link to="/signup" className="w-full">
+            <Button
+              size="lg"
+              className="w-full justify-center flex items-center space-x-2 text-lg py-4 bg-primary hover:bg-primary/90 shadow-lg transform transition-transform hover:scale-105"
+            >
+              <User className="h-5 w-5" />
+              <span className="font-semibold">{t("signup")}</span>
+              <Badge variant="secondary" className="ml-2 bg-white text-primary text-xs px-2">
+                GRÁTIS
+              </Badge>
+            </Button>
+          </Link>
+          
+          {/* Secondary CTA - Login */}
+          <Link to="/login" className="w-full">
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full justify-center flex items-center space-x-2 text-lg py-4 bg-background hover:bg-muted shadow-lg border-2 transform transition-transform hover:scale-105"
+            >
+              <LogIn className="h-5 w-5" />
+              <span className="font-semibold">{t("login")}</span>
+            </Button>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

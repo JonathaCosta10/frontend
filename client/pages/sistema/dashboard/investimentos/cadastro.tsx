@@ -1,579 +1,572 @@
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Upload,
-  FileText,
-  Plus,
-  Download,
-  Trash2,
-  Edit,
-  DollarSign,
-  Calendar,
-  TrendingUp,
-  Building,
-  Save,
-} from "lucide-react";
-import { useTranslation } from "@/contexts/TranslationContext";
+import { Plus, Edit, Trash2, Search, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-interface Investimento {
-  id: number;
-  codigo: string;
-  tipo: string;
-  quantidade: number;
-  precoMedio: number;
-  valorTotal: number;
-  dataCompra: string;
-  corretora: string;
-}
+// Import do serviço de investimentos
+import investmentService, { InvestmentAsset, TickerSearchResult } from "@/services/investmentService";
 
-export default function Cadastro() {
-  const { t, formatCurrency } = useTranslation();
-  const [tipoOperacao, setTipoOperacao] = useState("manual");
-  const [investimentos, setInvestimentos] = useState<Investimento[]>([
-    {
-      id: 1,
-      codigo: "HGLG11",
-      tipo: "FII",
-      quantidade: 100,
-      precoMedio: 125.5,
-      valorTotal: 12550.0,
-      dataCompra: "2024-01-15",
-      corretora: "XP Investimentos",
-    },
-    {
-      id: 2,
-      codigo: "VALE3",
-      tipo: t("stock"),
-      quantidade: 50,
-      precoMedio: 68.2,
-      valorTotal: 3410.0,
-      dataCompra: "2024-02-10",
-      corretora: "Rico",
-    },
-  ]);
+// Interface conforme documentação do backend
+interface Investimento extends InvestmentAsset {}
 
-  const [formData, setFormData] = useState({
-    codigo: "",
-    tipo: "",
+// Funções helper para converter valores da API
+const toNumber = (value: string | number | undefined | null): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return isNaN(value) ? 0 : value;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
+const formatCurrency = (value: string | number | undefined | null): string => {
+  const numValue = toNumber(value);
+  if (numValue === 0 && (value === null || value === undefined)) return 'N/A';
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numValue);
+};
+
+const formatPercentage = (value: string | number | undefined | null): string => {
+  const numValue = toNumber(value);
+  if (numValue === 0 && (value === null || value === undefined)) return '0.00';
+  return numValue.toFixed(2);
+};
+
+// Calcula a rentabilidade com base no valor investido e no valor atual
+const calcularRentabilidade = (valorInvestido: number, valorAtual: number): number => {
+  if (valorInvestido <= 0) return 0;
+  return ((valorAtual - valorInvestido) / valorInvestido) * 100;
+};
+
+// Funções para formatação de entrada de valores
+const formatInputCurrency = (value: string): string => {
+  // Remove tudo que não é dígito
+  const numbers = value.replace(/[^\d]/g, '');
+  
+  // Se vazio, retorna vazio
+  if (!numbers) return '';
+  
+  // Remove zeros à esquerda
+  const withoutLeadingZeros = numbers.replace(/^0+/, '');
+  if (!withoutLeadingZeros) return '';
+  
+  // Converte para número
+  const numValue = parseFloat(withoutLeadingZeros) / 100;
+  
+  // Formata como moeda brasileira sem o símbolo R$
+  return numValue.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
+const parseCurrencyInput = (value: string): number => {
+  if (!value) return 0;
+  // Remove formatação e converte para número
+  const cleanValue = value.replace(/[.\s]/g, '').replace(',', '.');
+  return parseFloat(cleanValue) || 0;
+};
+
+const formatQuantityInput = (value: string): string => {
+  // Remove tudo que não é dígito
+  const numbers = value.replace(/[^\d]/g, '');
+  
+  // Se vazio, retorna vazio
+  if (!numbers) return '';
+  
+  // Remove zeros à esquerda, mas mantém pelo menos um dígito
+  const withoutLeadingZeros = numbers.replace(/^0+/, '');
+  return withoutLeadingZeros || '0';
+};
+
+export default function CadastroInvestimentos() {
+  const { toast } = useToast();
+  
+  // Estados principais
+  const [investimentos, setInvestimentos] = useState<Investimento[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [tickerSearchResults, setTickerSearchResults] = useState<TickerSearchResult[]>([]);
+  
+  // Estados do formulário
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingInvestimento, setEditingInvestimento] = useState<Investimento | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [formData, setFormData] = useState<{
+    ticker: string;
+    data_compra: string;
+    quantidade: string; // Mudado para string para melhor controle
+    valor_unitario: string; // Mudado para string para formatação
+  }>({
+    ticker: "",
+    data_compra: "",
     quantidade: "",
-    precoMedio: "",
-    dataCompra: "",
-    corretora: "",
+    valor_unitario: "",
   });
 
-  const [editingId, setEditingId] = useState<number | null>(null);
+  // Carregar investimentos ao montar o componente
+  useEffect(() => {
+    carregarInvestimentos();
+  }, []);
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
+  // Buscar tickers quando o usuário digita
+  useEffect(() => {
+    if (searchTerm.length >= 2) {
+      buscarTickers();
+    } else {
+      setTickerSearchResults([]);
+    }
+  }, [searchTerm]);
+
+  // Função para carregar investimentos da API
+  const carregarInvestimentos = async () => {
+    setLoading(true);
+    try {
+      console.log('Carregando investimentos...');
+      const data = await investmentService.buscarAtivosPessoais();
+      console.log('Dados recebidos:', data);
+      
+      // Verificar se data é um array válido
+      if (Array.isArray(data)) {
+        setInvestimentos(data);
+        console.log('Investimentos carregados com sucesso:', data.length, 'itens');
+      } else {
+        console.warn('Dados recebidos não são um array:', data);
+        setInvestimentos([]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar investimentos:', error);
+      toast({
+        title: "Erro ao carregar investimentos",
+        description: error instanceof Error ? error.message : "Erro interno do servidor",
+        variant: "destructive",
+      });
+      setInvestimentos([]); // Garantir que seja um array vazio em caso de erro
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para buscar tickers
+  const buscarTickers = async () => {
+    setSearchLoading(true);
+    try {
+      const results = await investmentService.buscarTickers(searchTerm);
+      setTickerSearchResults(results);
+    } catch (error) {
+      console.error("Erro ao buscar tickers:", error);
+      setTickerSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Função para selecionar um ticker dos resultados da busca
+  const selecionarTicker = (ticker: TickerSearchResult) => {
+    setFormData(prev => ({
       ...prev,
-      [field]: value,
+      ticker: ticker.ticker,
     }));
+    setSearchTerm("");
+    setTickerSearchResults([]);
   };
 
-  const adicionarInvestimento = () => {
-    if (editingId) {
-      salvarEdicao();
-      return;
+  // Função para salvar investimento (criar ou editar)
+  const salvarInvestimento = async () => {
+    try {
+      if (!formData.ticker || !formData.quantidade || !formData.valor_unitario || !formData.data_compra) {
+        toast({
+          title: "Dados incompletos",
+          description: "Por favor, preencha todos os campos obrigatórios.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLoading(true);
+
+      // Converter dados do form para o formato da API
+      const dataToSend = {
+        ticker: formData.ticker,
+        quantidade: parseInt(formData.quantidade) || 0,
+        valor_unitario: parseCurrencyInput(formData.valor_unitario),
+        data_compra: formData.data_compra,
+      };
+
+      if (editingInvestimento) {
+        // Editar investimento existente
+        await investmentService.editarAtivo(editingInvestimento.id!, dataToSend);
+        toast({
+          title: "Investimento atualizado",
+          description: "O investimento foi atualizado com sucesso.",
+          variant: "default",
+        });
+      } else {
+        // Criar novo investimento
+        await investmentService.cadastrarAtivo(dataToSend);
+        toast({
+          title: "Investimento cadastrado",
+          description: "O investimento foi cadastrado com sucesso.",
+          variant: "default",
+        });
+      }
+
+      // Recarregar lista e fechar modal
+      await carregarInvestimentos();
+      resetForm();
+      setIsDialogOpen(false);
+
+    } catch (error) {
+      toast({
+        title: editingInvestimento ? "Erro ao atualizar" : "Erro ao cadastrar",
+        description: error instanceof Error ? error.message : "Erro interno do servidor",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    if (!formData.codigo || !formData.quantidade || !formData.precoMedio) {
-      alert(t("fill_required_fields"));
-      return;
-    }
-
-    const novoInvestimento: Investimento = {
-      id: Date.now(),
-      codigo: formData.codigo.toUpperCase(),
-      tipo: formData.tipo,
-      quantidade: parseInt(formData.quantidade),
-      precoMedio: parseFloat(formData.precoMedio),
-      valorTotal:
-        parseInt(formData.quantidade) * parseFloat(formData.precoMedio),
-      dataCompra: formData.dataCompra,
-      corretora: formData.corretora,
-    };
-
-    setInvestimentos([...investimentos, novoInvestimento]);
-    limparFormulario();
   };
 
-  const limparFormulario = () => {
+  // Função para excluir investimento
+  const excluirInvestimento = async (id: number) => {
+    try {
+      setLoading(true);
+      await investmentService.excluirAtivo(id);
+      await carregarInvestimentos();
+      toast({
+        title: "Investimento excluído",
+        description: "O investimento foi removido com sucesso.",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: error instanceof Error ? error.message : "Erro interno do servidor",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para abrir modal de edição
+  const abrirEdicao = (investimento: Investimento) => {
+    setEditingInvestimento(investimento);
     setFormData({
-      codigo: "",
-      tipo: "",
+      ticker: investimento.ticker,
+      quantidade: toNumber(investimento.quantidade).toString(),
+      valor_unitario: formatInputCurrency((toNumber(investimento.preco_medio || investimento.valor_unitario) * 100).toString()),
+      data_compra: investimento.data_compra,
+    });
+    setIsDialogOpen(true);
+  };
+
+  // Função para resetar formulário
+  const resetForm = () => {
+    setFormData({
+      ticker: "",
+      data_compra: "",
       quantidade: "",
-      precoMedio: "",
-      dataCompra: "",
-      corretora: "",
+      valor_unitario: "",
     });
+    setEditingInvestimento(null);
+    setSearchTerm("");
+    setTickerSearchResults([]);
   };
-
-  const excluirInvestimento = (id: number) => {
-    if (window.confirm(t("confirm_delete_investment"))) {
-      setInvestimentos(investimentos.filter((inv) => inv.id !== id));
-    }
-  };
-
-  const editarInvestimento = (investimento: Investimento) => {
-    setFormData({
-      codigo: investimento.codigo,
-      tipo: investimento.tipo,
-      quantidade: investimento.quantidade.toString(),
-      precoMedio: investimento.precoMedio.toString(),
-      dataCompra: investimento.dataCompra || "",
-      corretora: investimento.corretora || "",
-    });
-    setEditingId(investimento.id);
-  };
-
-  const salvarEdicao = () => {
-    if (!formData.codigo || !formData.quantidade || !formData.precoMedio) {
-      alert(t("fill_required_fields"));
-      return;
-    }
-
-    const investimentoAtualizado: Investimento = {
-      id: editingId!,
-      codigo: formData.codigo.toUpperCase(),
-      tipo: formData.tipo,
-      quantidade: parseInt(formData.quantidade),
-      precoMedio: parseFloat(formData.precoMedio),
-      valorTotal:
-        parseInt(formData.quantidade) * parseFloat(formData.precoMedio),
-      dataCompra: formData.dataCompra,
-      corretora: formData.corretora,
-    };
-
-    setInvestimentos(
-      investimentos.map((inv) =>
-        inv.id === editingId ? investimentoAtualizado : inv,
-      ),
-    );
-
-    limparFormulario();
-    setEditingId(null);
-  };
-
-  const cancelarEdicao = () => {
-    limparFormulario();
-    setEditingId(null);
-  };
-
-  const valorTotalCarteira = investimentos.reduce(
-    (total, inv) => total + inv.valorTotal,
-    0,
-  );
-
-  const distribuicaoTipo = investimentos.reduce(
-    (acc, inv) => {
-      acc[inv.tipo] = (acc[inv.tipo] || 0) + inv.valorTotal;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">{t("investment_registration")}</h1>
-        <p className="text-muted-foreground">
-          {t("manage_portfolio_import_manual")}
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gestão de Investimentos</h1>
+          <p className="text-muted-foreground">
+            Gerencie sua carteira de investimentos conforme API integrada
+          </p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={resetForm} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Investimento
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingInvestimento ? 'Editar Investimento' : 'Novo Investimento'}
+              </DialogTitle>
+              <DialogDescription>
+                {editingInvestimento 
+                  ? 'Atualize as informações do investimento.' 
+                  : 'Adicione um novo investimento à sua carteira.'
+                }
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              {/* Busca de Ticker - Campo único melhorado */}
+              <div className="grid gap-2">
+                <Label htmlFor="ticker-search">Código/Ticker *</Label>
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="ticker-search"
+                    placeholder={formData.ticker || "Digite o ticker (ex: VALE3, PETR4)..."}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                  {searchLoading && (
+                    <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin" />
+                  )}
+                </div>
+                
+                {/* Ticker selecionado */}
+                {formData.ticker && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-green-800 font-medium">Ticker selecionado: {formData.ticker}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, ticker: "" }));
+                          setSearchTerm("");
+                        }}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        Alterar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Resultados da busca */}
+                {tickerSearchResults.length > 0 && (
+                  <div className="border rounded-md max-h-40 overflow-y-auto">
+                    {tickerSearchResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className="p-2 hover:bg-accent cursor-pointer border-b last:border-b-0"
+                        onClick={() => selecionarTicker(result)}
+                      >
+                        <div className="font-medium">{result.ticker}</div>
+                        <div className="text-sm text-muted-foreground">{result.descricao}</div>
+                        <Badge variant="outline" className="text-xs">{result.tipo_ativo}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Campos do formulário melhorados */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="quantidade">Quantidade *</Label>
+                  <Input
+                    id="quantidade"
+                    type="text"
+                    value={formData.quantidade}
+                    onChange={(e) => {
+                      const formatted = formatQuantityInput(e.target.value);
+                      setFormData(prev => ({ ...prev, quantidade: formatted }));
+                    }}
+                    placeholder="100"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="valor_unitario">Preço Médio (R$) *</Label>
+                  <Input
+                    id="valor_unitario"
+                    type="text"
+                    value={formData.valor_unitario}
+                    onChange={(e) => {
+                      const formatted = formatInputCurrency(e.target.value);
+                      setFormData(prev => ({ ...prev, valor_unitario: formatted }));
+                    }}
+                    placeholder="25,50"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="data_compra">Data da Compra *</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="data_compra"
+                    type="date"
+                    value={formData.data_compra}
+                    onChange={(e) => setFormData(prev => ({ ...prev, data_compra: e.target.value }))}
+                    max={new Date().toISOString().split('T')[0]}
+                    min="1900-01-01"
+                    className="h-10"
+                  />
+                  <Button 
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setFormData(prev => ({ ...prev, data_compra: new Date().toISOString().split('T')[0] }))}
+                    className="h-10"
+                  >
+                    Hoje
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={salvarInvestimento} disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {editingInvestimento ? 'Atualizar' : 'Cadastrar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("total_invested")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4 text-success" />
-              <span className="text-2xl font-bold text-success">
-                {formatCurrency(valorTotalCarteira)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("registered_assets")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              <span className="text-2xl font-bold">{investimentos.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("different_types")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <Building className="h-4 w-4 text-warning" />
-              <span className="text-2xl font-bold">
-                {Object.keys(distribuicaoTipo).length}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("last_update")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{new Date().toLocaleDateString()}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabs de Operação */}
-      <div className="flex space-x-2">
-        <Button
-          variant={tipoOperacao === "manual" ? "default" : "outline"}
-          onClick={() => setTipoOperacao("manual")}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {t("manual_registration")}
-        </Button>
-        <Button
-          variant={tipoOperacao === "importar" ? "default" : "outline"}
-          onClick={() => setTipoOperacao("importar")}
-        >
-          <Upload className="h-4 w-4 mr-2" />
-          {t("import_data")}
-        </Button>
-      </div>
-
-      {/* Cadastro Manual */}
-      {tipoOperacao === "manual" && (
+      {/* Métricas principais */}
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>{t("add_new_investment")}</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Ativos</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="codigo">{t("asset_code")} *</Label>
-                <Input
-                  id="codigo"
-                  value={formData.codigo}
-                  onChange={(e) => handleInputChange("codigo", e.target.value)}
-                  placeholder={t("asset_code_placeholder")}
-                  className="uppercase"
-                />
-              </div>
+          <CardContent>
+            <div className="text-2xl font-bold">{investimentos.length}</div>
+          </CardContent>
+        </Card>
 
-              <div>
-                <Label htmlFor="tipo">{t("type")} *</Label>
-                <Select
-                  value={formData.tipo}
-                  onValueChange={(value) => handleInputChange("tipo", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("select_type")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Ação">{t("stock")}</SelectItem>
-                    <SelectItem value="FII">{t("real_estate_fund")}</SelectItem>
-                    <SelectItem value="ETF">{t("etf")}</SelectItem>
-                    <SelectItem value="BDR">{t("bdr")}</SelectItem>
-                    <SelectItem value="Renda Fixa">
-                      {t("fixed_income")}
-                    </SelectItem>
-                    <SelectItem value="Cripto">
-                      {t("cryptocurrency")}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="quantidade">{t("quantity")} *</Label>
-                <Input
-                  id="quantidade"
-                  type="number"
-                  value={formData.quantidade}
-                  onChange={(e) =>
-                    handleInputChange("quantidade", e.target.value)
-                  }
-                  placeholder="100"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="precoMedio">{t("average_price")} *</Label>
-                <Input
-                  id="precoMedio"
-                  type="number"
-                  step="0.01"
-                  value={formData.precoMedio}
-                  onChange={(e) =>
-                    handleInputChange("precoMedio", e.target.value)
-                  }
-                  placeholder="125.50"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="dataCompra">{t("purchase_date")}</Label>
-                <Input
-                  id="dataCompra"
-                  type="date"
-                  value={formData.dataCompra}
-                  onChange={(e) =>
-                    handleInputChange("dataCompra", e.target.value)
-                  }
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="corretora">{t("broker")}</Label>
-                <Input
-                  id="corretora"
-                  value={formData.corretora}
-                  onChange={(e) =>
-                    handleInputChange("corretora", e.target.value)
-                  }
-                  placeholder={t("broker_placeholder")}
-                />
-              </div>
-            </div>
-
-            <div className="flex space-x-2">
-              <Button onClick={adicionarInvestimento}>
-                {editingId ? (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    {t("save_changes")}
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t("add_investment")}
-                  </>
-                )}
-              </Button>
-              {editingId ? (
-                <Button variant="outline" onClick={cancelarEdicao}>
-                  {t("cancel")}
-                </Button>
-              ) : (
-                <Button variant="outline" onClick={limparFormulario}>
-                  {t("clear_form")}
-                </Button>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Valor Total Investido</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(
+                investimentos.reduce((acc, inv) => acc + toNumber(inv.valor_investido), 0)
               )}
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Importar Dados */}
-      {tipoOperacao === "importar" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Upload className="h-5 w-5" />
-                <span>{t("import_file")}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <div className="border-2 border-dashed border-muted rounded-lg p-8">
-                <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground mb-4">
-                  {t("drag_csv_excel_files")}
-                </p>
-                <Button>{t("select_files")}</Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t("accepted_formats")}
-              </p>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Valor Atual</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(
+                investimentos.reduce((acc, inv) => acc + toNumber(inv.valor_atual), 0)
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Download className="h-5 w-5" />
-                <span>{t("connect_broker")}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                {[
-                  "XP Investimentos",
-                  "Rico",
-                  "Clear",
-                  "Inter",
-                  "BTG Pactual",
-                ].map((corretora) => (
-                  <div
-                    key={corretora}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <span className="font-medium">{corretora}</span>
-                    <Button variant="outline" size="sm">
-                      {t("connect")}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t("import_positions_automatically")}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Tabela de Investimentos */}
+      {/* Tabela de investimentos */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("my_investments")}</CardTitle>
+          <CardTitle>Meus Investimentos</CardTitle>
+          <CardDescription>Lista completa dos investimentos cadastrados</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("code")}</TableHead>
-                <TableHead>{t("type")}</TableHead>
-                <TableHead>{t("quantity")}</TableHead>
-                <TableHead>{t("average_price")}</TableHead>
-                <TableHead>{t("total_value")}</TableHead>
-                <TableHead>{t("date")}</TableHead>
-                <TableHead>{t("broker")}</TableHead>
-                <TableHead>{t("actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {investimentos.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">Carregando investimentos...</span>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
-                    <div>
-                      <TrendingUp className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground">
-                        {t("complete_registration_access_visualization")}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {t("use_form_add_investments")}
-                      </p>
-                    </div>
-                  </TableCell>
+                  <TableHead>Ticker</TableHead>
+                  <TableHead className="text-right">Quantidade</TableHead>
+                  <TableHead className="text-right">Valor Unitário</TableHead>
+                  <TableHead className="text-right">Valor Investido</TableHead>
+                  <TableHead className="text-right">Preço Atual</TableHead>
+                  <TableHead className="text-right">Valor Atual</TableHead>
+                  <TableHead className="text-right">Variação %</TableHead>
+                  <TableHead>Data Compra</TableHead>
+                  <TableHead className="text-center">Ações</TableHead>
                 </TableRow>
-              ) : (
-                investimentos.map((inv) => (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-medium">{inv.codigo}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{inv.tipo}</Badge>
-                    </TableCell>
-                    <TableCell>{inv.quantidade}</TableCell>
-                    <TableCell>{formatCurrency(inv.precoMedio)}</TableCell>
-                    <TableCell className="font-semibold">
-                      {formatCurrency(inv.valorTotal)}
-                    </TableCell>
-                    <TableCell>
-                      {inv.dataCompra
-                        ? new Date(inv.dataCompra).toLocaleDateString()
-                        : "-"}
-                    </TableCell>
-                    <TableCell>{inv.corretora || "-"}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => editarInvestimento(inv)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => excluirInvestimento(inv.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {investimentos.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      Nenhum investimento cadastrado. Clique em "Novo Investimento" para começar.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  investimentos.filter(inv => inv && typeof inv === 'object').map((investimento) => (
+                    <TableRow key={investimento.id || Math.random()}>
+                      <TableCell className="font-medium">{investimento.ticker || 'N/A'}</TableCell>
+                      <TableCell className="text-right">{toNumber(investimento.quantidade).toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(investimento.preco_medio || investimento.valor_unitario)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(investimento.valor_investido)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {investimento.preco_atual ? 
+                          formatCurrency(investimento.preco_atual) : 
+                          'N/A'
+                        }
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {investimento.valor_atual ? formatCurrency(investimento.valor_atual) : 'N/A'}
+                      </TableCell>
+                      <TableCell className={`text-right ${
+                        calcularRentabilidade(
+                          toNumber(investimento.valor_investido), 
+                          toNumber(investimento.valor_atual)
+                        ) >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {formatPercentage(calcularRentabilidade(
+                          toNumber(investimento.valor_investido), 
+                          toNumber(investimento.valor_atual)
+                        ))}%
+                      </TableCell>
+                      <TableCell>
+                        {investimento.data_compra ? new Date(investimento.data_compra).toLocaleDateString('pt-BR') : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => abrirEdicao(investimento)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => investimento.id && excluirInvestimento(investimento.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
-
-      {/* Distribuição por Tipo */}
-      {Object.keys(distribuicaoTipo).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("distribution_by_asset_type")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {Object.entries(distribuicaoTipo).map(([tipo, valor]) => (
-                <div key={tipo} className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">{tipo}</span>
-                    <span>
-                      {formatCurrency(valor)} (
-                      {((valor / valorTotalCarteira) * 100).toFixed(1)}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className="bg-primary h-2 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${(valor / valorTotalCarteira) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

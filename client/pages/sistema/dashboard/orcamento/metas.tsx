@@ -29,11 +29,34 @@ import {
   CheckCircle,
   AlertTriangle,
   Trash2,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useToast } from "@/hooks/use-toast";
 import { budgetApi } from "@/services/api/budget";
-import Chart from "chart.js/auto";
+import PremiumStatusTestSimulator from "@/components/PremiumStatusTestSimulator";
+// Optimized Chart.js import - only import what we need
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+// Register only the components we need
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface Meta {
   id: number;
@@ -65,6 +88,7 @@ interface SliderValues {
 export default function Metas() {
   const { isAuthenticated } = useAuth();
   const { t, formatCurrency } = useTranslation();
+  const { toast } = useToast();
   const [metas, setMetas] = useState<Meta[]>([]);
   const [resumoMetas, setResumoMetas] = useState<ResumoMetas | null>(null);
   const [isNovaMetaOpen, setIsNovaMetaOpen] = useState(false);
@@ -101,7 +125,7 @@ export default function Metas() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const chartRef = useRef<HTMLCanvasElement>(null);
-  const chartInstance = useRef<Chart | null>(null);
+  const chartInstance = useRef<ChartJS | null>(null);
 
   // Obter mês e ano do localStorage
   const mes =
@@ -299,6 +323,53 @@ export default function Metas() {
     }
   };
 
+  // Função para criar template de Reserva de Emergência
+  const criarTemplateEmergencia = async () => {
+    if (!isAuthenticated) {
+      console.error("Usuário não autenticado");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const dataLimite = new Date();
+      dataLimite.setFullYear(dataLimite.getFullYear() + 1);
+      const dataLimiteFormatted = dataLimite.toISOString().split('T')[0];
+
+      const metaEmergencia = {
+        titulo_da_meta: "Reserva de Emergência",
+        descricao: "Dinheiro para usar em emergencia, o ideal é que seja de 6 a 12x o seu custo mensal (Considerando dividas e gastos).",
+        valor_alvo: 15000,
+        valor_hoje: 0,
+        data_limite: dataLimiteFormatted,
+        categoria: "emergency_reserve",
+      };
+
+      // Enviar para API
+      await budgetApi.cadastrarMeta(metaEmergencia);
+
+      // Recarregar metas após cadastrar
+      await loadMetas();
+
+      toast({
+        title: "Template adicionado",
+        description: "Reserva de Emergência criada com sucesso.",
+      });
+
+      console.log("Template de Reserva de Emergência criado com sucesso");
+    } catch (error) {
+      console.error("Erro ao criar template de emergência:", error);
+      toast({
+        title: "Erro",
+        variant: "destructive",
+        description: "Não foi possível criar a Reserva de Emergência.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Função para excluir meta
   const excluirMeta = async (meta: Meta) => {
     if (!isAuthenticated) {
@@ -410,7 +481,7 @@ export default function Metas() {
 
       const ctx = chartRef.current.getContext("2d");
       if (ctx) {
-        chartInstance.current = new Chart(ctx, {
+        chartInstance.current = new ChartJS(ctx, {
           type: "doughnut",
           data: {
             labels: [
@@ -498,6 +569,11 @@ export default function Metas() {
 
   return (
     <div className="space-y-6">
+      {/* Simulador de Status Premium - APENAS PARA DEBUG */}
+      {process.env.NODE_ENV === 'development' && (
+        <PremiumStatusTestSimulator />
+      )}
+      
       {/* Cards de Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
@@ -759,7 +835,7 @@ export default function Metas() {
                     <SelectValue placeholder={t("select_category")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="emergency">{t("emergency")}</SelectItem>
+                    <SelectItem value="emergency_reserve">{t("emergency_reserve")}</SelectItem>
                     <SelectItem value="leisure">{t("leisure")}</SelectItem>
                     <SelectItem value="education">{t("education")}</SelectItem>
                     <SelectItem value="housing">{t("housing")}</SelectItem>
@@ -883,7 +959,7 @@ export default function Metas() {
                     <SelectValue placeholder={t("select_category")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="emergency">{t("emergency")}</SelectItem>
+                    <SelectItem value="emergency_reserve">{t("emergency_reserve")}</SelectItem>
                     <SelectItem value="leisure">{t("leisure")}</SelectItem>
                     <SelectItem value="education">{t("education")}</SelectItem>
                     <SelectItem value="housing">{t("housing")}</SelectItem>
@@ -995,7 +1071,20 @@ export default function Metas() {
 
       {/* Grid de Metas */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">{t("registered_goals")}</h2>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+          <h2 className="text-xl font-semibold">{t("registered_goals")}</h2>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={criarTemplateEmergencia}
+              disabled={loading}
+            >
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              Adicionar Reserva de Emergência
+            </Button>
+          </div>
+        </div>
         
         {loading ? (
           <div className="text-center py-8">

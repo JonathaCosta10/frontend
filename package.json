@@ -1,32 +1,41 @@
 {
-  "name": "fusion-starter",
+  "name": "organizesee-frontend",
   "private": true,
+  "version": "1.0.0",
   "type": "module",
-  "pkg": {
-    "assets": [
-      "dist/spa/*"
-    ],
-    "scripts": [
-      "dist/server/**/*.js"
-    ]
-  },
+  "description": "Plataforma completa de gestão financeira com funcionalidades premium",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:client && npm run build:server",
-    "build:client": "vite build",
-    "build:server": "vite build --config vite.config.server.ts",
-    "start": "node dist/server/node-build.mjs",
+    "start": "npm run dev",
+    "build": "vite build",
+    "build:vercel": "vite build",
+    "build:with-typecheck": "tsc && vite build",
+    "preview": "vite preview",
     "test": "vitest --run",
     "format.fix": "prettier --write .",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "prod:cleanup": "node scripts/production-cleanup.cjs",
+    "prod:optimize": "node scripts/production-optimize.cjs",
+    "prod:validate": "node scripts/production-validate.cjs",
+    "prod:prepare": "npm run prod:cleanup && npm run prod:optimize && npm run prod:validate && npm run build",
+    "test:refresh": "node scripts/test-refresh-token.js",
+    "env": "powershell -ExecutionPolicy Bypass -File scripts/set-environment.ps1",
+    "env:dev": "powershell -ExecutionPolicy Bypass -File scripts/set-environment.ps1 development",
+    "env:prod": "powershell -ExecutionPolicy Bypass -File scripts/set-environment.ps1 production",
+    "dev:local": "npm run env:dev && npm run dev",
+    "build:prod": "npm run env:prod && npm run build"
   },
   "dependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
     "axios": "^1.11.0",
     "chart.js": "^4.5.0",
     "dayjs": "^1.11.13",
     "dotenv": "^17.2.0",
     "express": "^4.18.2",
+    "i18next": "^23.10.1",
     "react-chartjs-2": "^5.3.0",
+    "react-country-flag": "^3.1.0",
+    "react-i18next": "^14.1.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -58,8 +67,6 @@
     "@radix-ui/react-toggle": "^1.1.0",
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
-    "@react-three/drei": "^10.1.2",
-    "@react-three/fiber": "^8.18.0",
     "@swc/core": "^1.11.24",
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/react-query": "^5.56.2",
@@ -68,7 +75,6 @@
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@types/three": "^0.176.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
@@ -82,6 +88,7 @@
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
+    "node-fetch": "^3.3.2",
     "postcss": "^8.5.6",
     "prettier": "^3.5.3",
     "react": "^18.3.1",
@@ -96,7 +103,7 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss": "^3.4.11",
     "tailwindcss-animate": "^1.0.7",
-    "three": "^0.176.0",
+    "terser": "^5.43.1",
     "tsx": "^4.7.0",
     "typescript": "^5.5.3",
     "vaul": "^0.9.3",

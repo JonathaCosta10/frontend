@@ -36,9 +36,9 @@ export default function MarketLayout({ children }: MarketLayoutProps) {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-4">
         <div>
           <h1 className="text-3xl font-bold">{t("financial_market")}</h1>
           <p className="text-muted-foreground">{t("market_analysis_tools")}</p>
@@ -47,7 +47,7 @@ export default function MarketLayout({ children }: MarketLayoutProps) {
         <div className="flex items-center space-x-2">
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
-            {t("real_time_data")}
+            {t("real_time_data")} (CoinGecko API)
           </span>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import SubscriptionGuard from "../../../components/SubscriptionGuard";
 import {
   Settings,
   Bell,
@@ -24,14 +25,28 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  BookOpen,
+  PlayCircle,
+  Calculator, 
+  TrendingUp, 
+  Home,
+  RotateCcw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 export default function Configuracoes() {
   const { toast } = useToast();
   const { language, currency, setLanguage, setCurrency, t } = useTranslation();
+  const { 
+    resetOnboarding, 
+    hasSeenOnboarding,
+    resetTutorial,
+    hasTutorialBeenCompleted,
+    completeTutorial
+  } = useOnboarding();
   const [settings, setSettings] = useState({
     notifications: {
       email: true,
@@ -104,7 +119,7 @@ export default function Configuracoes() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Settings className="h-8 w-8 text-primary" />
@@ -151,7 +166,7 @@ export default function Configuracoes() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
         {/* Notificações */}
         <Card>
           <CardHeader>
@@ -316,21 +331,225 @@ export default function Configuracoes() {
           </CardContent>
         </Card>
 
-        {/* Integração B3 */}
+        {/* Tutorial e Orientação */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Database className="h-5 w-5" />
-              <span>{t('b3_integration')}</span>
+              <BookOpen className="h-5 w-5" />
+              <span>Tutorial e Orientação</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>{t('authorize_b3_data_integration')}</Label>
-                <p className="text-sm text-muted-foreground">
-                  {t('allows_access_b3_data')}
+            {/* Apresentação Geral do Sistema */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Apresentação do Sistema</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {hasSeenOnboarding 
+                      ? "Você já visualizou a apresentação do sistema" 
+                      : "Você ainda não visualizou a apresentação completa"}
+                  </p>
+                </div>
+                <Badge variant={hasSeenOnboarding ? "default" : "secondary"}>
+                  {hasSeenOnboarding ? "Concluído" : "Pendente"}
+                </Badge>
+              </div>
+              
+              <Button 
+                onClick={() => {
+                  resetTutorial('general');
+                  toast({
+                    title: "Apresentação reiniciada",
+                    description: "A apresentação geral do sistema será exibida novamente.",
+                  });
+                }}
+                className="w-full"
+                variant="outline"
+              >
+                <PlayCircle className="h-4 w-4 mr-2" />
+                {hasSeenOnboarding ? "Ver Apresentação Novamente" : "Iniciar Apresentação"}
+              </Button>
+            </div>
+
+            <Separator />
+
+            {/* Tutoriais Específicos */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Tutoriais por Seção</h3>
+              
+              {/* Resumo Diário */}
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <Home className="h-4 w-4 mr-2 text-blue-600" />
+                    <span className="font-medium">Resumo Diário</span>
+                  </div>
+                  <Badge variant={hasTutorialBeenCompleted('dailyInfo') ? "default" : "outline"}>
+                    {hasTutorialBeenCompleted('dailyInfo') ? "Visto" : "Novo"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Entenda como usar a visualização principal do seu painel financeiro
                 </p>
+                <Button 
+                  onClick={() => {
+                    resetTutorial('dailyInfo');
+                    toast({
+                      title: "Tutorial iniciado",
+                      description: "Vamos conhecer o resumo diário!",
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  <PlayCircle className="h-3 w-3 mr-1" />
+                  Ver Tutorial
+                </Button>
+              </div>
+              
+              {/* Gestão de Orçamento */}
+              <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <Calculator className="h-4 w-4 mr-2 text-green-600" />
+                    <span className="font-medium">Gestão de Orçamento</span>
+                  </div>
+                  <Badge variant={hasTutorialBeenCompleted('budget') ? "default" : "outline"}>
+                    {hasTutorialBeenCompleted('budget') ? "Visto" : "Novo"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Aprenda a cadastrar entradas, saídas e controlar seu orçamento mensal
+                </p>
+                <Button 
+                  onClick={() => {
+                    resetTutorial('budget');
+                    toast({
+                      title: "Tutorial iniciado",
+                      description: "Vamos aprender sobre o gerenciamento de orçamento!",
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  <PlayCircle className="h-3 w-3 mr-1" />
+                  Ver Tutorial
+                </Button>
+              </div>
+              
+              {/* Renda Variável */}
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <TrendingUp className="h-4 w-4 mr-2 text-purple-600" />
+                    <span className="font-medium">Renda Variável</span>
+                  </div>
+                  <Badge variant={hasTutorialBeenCompleted('variableIncome') ? "default" : "outline"}>
+                    {hasTutorialBeenCompleted('variableIncome') ? "Visto" : "Novo"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Saiba como acompanhar seus investimentos e analisar por setor
+                </p>
+                <Button 
+                  onClick={() => {
+                    resetTutorial('variableIncome');
+                    toast({
+                      title: "Tutorial iniciado",
+                      description: "Vamos explorar o acompanhamento de investimentos!",
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  <PlayCircle className="h-3 w-3 mr-1" />
+                  Ver Tutorial
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Ações Globais de Tutorial */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium">Ações Globais</h3>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  onClick={() => {
+                    // Resetar todos os tutoriais
+                    ['general', 'dailyInfo', 'budget', 'variableIncome'].forEach(tutorial => {
+                      resetTutorial(tutorial as any);
+                    });
+                    toast({
+                      title: "Todos os tutoriais resetados",
+                      description: "Você pode visualizar novamente todos os tutoriais.",
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Resetar Todos
+                </Button>
+                
+                <Button 
+                  onClick={() => {
+                    // Marcar todos como concluídos
+                    ['general', 'dailyInfo', 'budget', 'variableIncome'].forEach(tutorial => {
+                      completeTutorial(tutorial as any);
+                    });
+                    toast({
+                      title: "Todos os tutoriais marcados como vistos",
+                      description: "Os tutoriais não serão mais exibidos automaticamente.",
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Marcar Todos como Vistos
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+              <h4 className="font-medium text-sm text-blue-800 dark:text-blue-200 mb-1">
+                💡 Sobre os Tutoriais
+              </h4>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                Os tutoriais guiam você pelas principais funcionalidades do sistema, 
+                mostrando como usar cada seção para organizar suas finanças de forma eficiente.
+                Você pode revisar qualquer tutorial a qualquer momento.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Integração Portal Investidor */}
+        <SubscriptionGuard>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Database className="h-5 w-5" />
+                <span>Integração Portal Investidor</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>{t('authorize_b3_data_integration')}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('allows_access_b3_data')}
+                  </p>
               </div>
               <Switch
                 checked={settings.b3Integration || false}
@@ -365,6 +584,7 @@ export default function Configuracoes() {
             )}
           </CardContent>
         </Card>
+        </SubscriptionGuard>
 
         {/* Segurança */}
         <Card>
@@ -400,34 +620,7 @@ export default function Configuracoes() {
                         )}
                       </div>
                       <div className="text-center">
-                        <p className="text-sm font-medium">{t('2fa_by_email')}</p>
-                        <Badge
-                          variant={twoFactorStatus.email ? "default" : "destructive"}
-                          className="text-xs mt-1"
-                        >
-                          {twoFactorStatus.email ? t('configured') : t('not_configured')}
-                        </Badge>
-                      </div>
-                    </Button>
-                  </div>
-                </Link>
-                <Link to="/2fa/email">
-                  <div className={`border-2 rounded-lg p-3 transition-colors ${
-                    twoFactorStatus.email
-                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                      : 'border-red-300 bg-red-50 dark:bg-red-900/20'
-                  }`}>
-                    <Button variant="ghost" size="sm" className="w-full h-auto flex-col space-y-2 p-2">
-                      <div className="flex items-center space-x-2">
-                        <Mail className="h-4 w-4" />
-                        {twoFactorStatus.email ? (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-600" />
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-medium">{t('2fa_by_email')}</p>
+                        <p className="text-sm font-medium">{t('two_fa_by_email')}</p>
                         <Badge
                           variant={twoFactorStatus.email ? "default" : "destructive"}
                           className="text-xs mt-1"
@@ -468,7 +661,7 @@ export default function Configuracoes() {
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <Checkbox
@@ -563,79 +756,9 @@ export default function Configuracoes() {
           </CardContent>
         </Card>
 
-        {/* Premium Settings */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <DollarSign className="h-5 w-5 text-yellow-500" />
-              <span>{t('premium_settings')}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>{t('premium_auto_renewal')}</Label>
-                <p className="text-sm text-muted-foreground">
-                  {t('automatically_renews_premium')}
-                </p>
-              </div>
-              <Switch
-                checked={settings.premiumSettings.autoRenewal}
-                onCheckedChange={(value) =>
-                  handleSettingChange("premiumSettings", "autoRenewal", value)
-                }
-              />
-            </div>
-            <Separator />
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">{t('current_payment_method')}</span>
-                <span className="text-sm font-medium">{t('card_ending', { lastFour: '1234' })}</span>
-              </div>
-              <Button variant="outline" className="w-full">
-                {t('manage_payment_options')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Dados e Backup */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Database className="h-5 w-5" />
-              <span>{t('data_and_backup')}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>{t('automatic_backup')}</Label>
-                <p className="text-sm text-muted-foreground">
-                  {t('automatically_backup_data')}
-                </p>
-              </div>
-              <Switch
-                checked={settings.dataBackup}
-                onCheckedChange={(value) =>
-                  handleSimpleSettingChange("dataBackup", value)
-                }
-              />
-            </div>
-            <Separator />
-            <div className="flex flex-col md:flex-row gap-3">
-              <Button variant="outline" className="flex-1">
-                {t('export_data')}
-              </Button>
-              <Button variant="outline" className="flex-1">
-                {t('import_data')}
-              </Button>
-              <Button variant="destructive" className="flex-1">
-                {t('delete_account')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+
+
       </div>
     </div>
   );

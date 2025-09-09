@@ -20,6 +20,7 @@ import MetaRealidadeChart from "@/components/charts/MetaRealidadeChart";
 import { budgetApi, DistribuicaoGastosResponse } from "@/services/api/budget";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useMonthYear } from "@/hooks/useMonthYear";
+import { BudgetNoDataGuidance } from "@/components/NewUserGuidance";
 
 export default function BudgetOverview() {
   const { t, formatCurrency } = useTranslation();
@@ -38,6 +39,12 @@ export default function BudgetOverview() {
       try {
         const data = await budgetApi.getDistribuicaoGastosCompleta(mesInt, anoInt);
         setBudgetData(data);
+        
+        // Armazenar hist_data no localStorage para uso futuro
+        if (data.hist_data) {
+          localStorage.setItem('budget_hist_data', JSON.stringify(data.hist_data));
+          localStorage.setItem('budget_meses_disponeis', JSON.stringify(data.meses_disponeis));
+        }
       } catch (error) {
         console.error("Erro ao carregar dados do orçamento:", error);
       } finally {
@@ -131,8 +138,8 @@ export default function BudgetOverview() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="space-y-3 md:space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
@@ -151,34 +158,18 @@ export default function BudgetOverview() {
   // Verificar se há dados para o mês selecionado
   if (budgetData && !mesDisponivel) {
     return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-              <span>Dados não disponíveis</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Não há dados disponíveis para {mesKey}/{ano}. 
-              {budgetData.meses_disponeis.length > 0 && (
-                <>
-                  {" "}Meses disponíveis: {budgetData.meses_disponeis.join(", ")}/{budgetData.ano}
-                </>
-              )}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="space-y-3 md:space-y-6">
+        {/* Orientação específica para o módulo de orçamento */}
+        <BudgetNoDataGuidance />
       </div>
     );
   }
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div className="space-y-3 md:space-y-6">
         {/* Cards de Resumo Principal */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-6">
           <Card className="border-l-4 border-l-success">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium flex items-center space-x-1">

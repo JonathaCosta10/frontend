@@ -11,6 +11,7 @@ import {
   Clock,
 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
+import TrainingPremiumGuard from "@/components/TrainingPremiumGuard";
 
 export default function FundosInvestimentos() {
   const { t } = useTranslation();
@@ -60,9 +61,10 @@ export default function FundosInvestimentos() {
   };
 
   return (
-    <div className="space-y-6">
+    <TrainingPremiumGuard trainingType="fundos-investimentos">
+      <div className="space-y-3 md:space-y-6">
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
@@ -172,5 +174,6 @@ export default function FundosInvestimentos() {
         </CardContent>
       </Card>
     </div>
+    </TrainingPremiumGuard>
   );
 }

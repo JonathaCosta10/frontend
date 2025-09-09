@@ -101,8 +101,34 @@ export class FinancialCalculatorApiService {
       return calculateInvestmentMock(input);
     }
   }
+
+  /**
+   * Calculate time to reach investment goal
+   */
+  static async calculateTimeToReachGoal(
+    input: InvestmentInput,
+  ): Promise<InvestmentResult> {
+    const calculationInput: InvestmentInput = {
+      ...input,
+      type: "time",
+    };
+    return this.calculateInvestment(calculationInput);
+  }
+
+  /**
+   * Calculate required contribution to reach investment goal
+   */
+  static async calculateRequiredContribution(
+    input: InvestmentInput,
+  ): Promise<InvestmentResult> {
+    const calculationInput: InvestmentInput = {
+      ...input,
+      type: "contribution",
+    };
+    return this.calculateInvestment(calculationInput);
+  }
 }
 
 // Export default methods for easier importing
-export const { calculateCompoundInterest, calculateLoan, calculateInvestment } =
+export const { calculateCompoundInterest, calculateLoan, calculateInvestment, calculateTimeToReachGoal, calculateRequiredContribution } =
   FinancialCalculatorApiService;

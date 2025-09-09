@@ -12,6 +12,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
+import TrainingPremiumGuard from "@/components/TrainingPremiumGuard";
 
 export default function Macroeconomia() {
   const { t } = useTranslation();
@@ -114,9 +115,10 @@ export default function Macroeconomia() {
   };
 
   return (
-    <div className="space-y-6">
+    <TrainingPremiumGuard trainingType="macroeconomia">
+      <div className="space-y-3 md:space-y-6">
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
@@ -259,7 +261,7 @@ export default function Macroeconomia() {
           <CardTitle>Cenários Econômicos e Estratégias</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
             <div className="space-y-4">
               <h4 className="font-semibold text-green-600">Cenário Otimista</h4>
               <div className="p-4 border border-green-200 rounded-lg bg-green-50 dark:bg-green-950">
@@ -324,5 +326,6 @@ export default function Macroeconomia() {
         </CardContent>
       </Card>
     </div>
+    </TrainingPremiumGuard>
   );
 }

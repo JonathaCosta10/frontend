@@ -111,6 +111,13 @@ export interface DistribuicaoGastosResponse {
     metas_ativas: number;
     progresso_geral: number;
   };
+  hist_data: {
+    replicar_entradas: boolean;
+    replicar_gastos: boolean;
+    replicar_dividas: boolean;
+    ultimo_registro_mes: number | null;
+    ultimo_registro_ano: number | null;
+  };
 }
 
 class BudgetApiService {
@@ -1081,6 +1088,13 @@ class BudgetApiService {
         metas_concluidas: 1,
         metas_ativas: 1,
         progresso_geral: 50.0
+      },
+      hist_data: {
+        replicar_entradas: true,
+        replicar_gastos: true,
+        replicar_dividas: true,
+        ultimo_registro_mes: 8,
+        ultimo_registro_ano: 2025
       }
     };
   }

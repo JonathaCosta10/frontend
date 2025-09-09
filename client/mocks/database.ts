@@ -563,7 +563,7 @@ export class MockDatabase {
           expertise: "Análise Técnica",
           avatar: "CI",
           imageUrl:
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+            import.meta.env.VITE_AVATAR_IMAGE_1 || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
           youtube: "https://youtube.com/@carlosinvestidor",
           tiktok: "https://tiktok.com/@carlosinvest",
           instagram: "https://instagram.com/carlosinvestidor",
@@ -577,7 +577,7 @@ export class MockDatabase {
           expertise: "Fundos Imobiliários",
           avatar: "AM",
           imageUrl:
-            "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+            import.meta.env.VITE_AVATAR_IMAGE_2 || "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
           youtube: "https://youtube.com/@anamarket",
           tiktok: "https://tiktok.com/@anamarket",
           instagram: "https://instagram.com/anamarket",
@@ -590,7 +590,7 @@ export class MockDatabase {
           expertise: "Criptomoedas",
           avatar: "PC",
           imageUrl:
-            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+            import.meta.env.VITE_AVATAR_IMAGE_3 || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
           youtube: "https://youtube.com/@pedrocripto",
           tiktok: "https://tiktok.com/@pedrocripto",
           instagram: "https://instagram.com/pedrocripto",
@@ -604,7 +604,7 @@ export class MockDatabase {
           expertise: "Ações Americanas",
           avatar: "MS",
           imageUrl:
-            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+            import.meta.env.VITE_AVATAR_IMAGE_4 || "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
           youtube: "https://youtube.com/@marinastocks",
           tiktok: "https://tiktok.com/@marinastocks",
           instagram: "https://instagram.com/marinastocks",

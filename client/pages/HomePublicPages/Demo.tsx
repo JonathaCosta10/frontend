@@ -14,14 +14,17 @@ import {
   Shield,
   Zap,
   Crown,
+  Menu,
+  X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
-import LanguageSelector from "@/components/LanguageSelector";
+import Footer from "@/components/Footer";
 
 export default function Demo() {
   const [darkMode, setDarkMode] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
 
   const toggleDarkMode = () => {
@@ -151,26 +154,16 @@ export default function Demo() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/home" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">
-                  O
-                </span>
-              </div>
+              <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-8 h-8" />
               <h1 className="text-2xl font-bold text-primary">Organizesee</h1>
             </Link>
 
-            <div className="flex items-center space-x-4">
-              {/* Language and Currency Selector */}
-              <LanguageSelector
-                variant="compact"
-                showCurrency={true}
-                size="sm"
-              />
-
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
               <Button
                 variant="ghost"
                 size="icon"
@@ -184,7 +177,7 @@ export default function Demo() {
                 )}
               </Button>
 
-              <div className="hidden md:flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
                 <Link to="/login">
                   <Button
                     variant="ghost"
@@ -202,23 +195,113 @@ export default function Demo() {
                 </Link>
               </div>
             </div>
+
+            {/* Mobile Navigation */}
+            <div className="flex md:hidden items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleDarkMode}
+                className="w-9 h-9"
+              >
+                {darkMode ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="w-9 h-9"
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-4 w-4" />
+                ) : (
+                  <Menu className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 py-4 border-t border-border">
+              <div className="flex flex-col space-y-4">
+                {/* Language Selector Mobile */}
+                <div className="px-2">
+                </div>
+                
+                {/* Main Action Buttons */}
+                <div className="flex flex-col space-y-3 px-2">
+                  <Link to="/login" className="w-full">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full justify-center flex items-center space-x-2 text-lg py-6"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <LogIn className="h-5 w-5" />
+                      <span>{t("login")}</span>
+                    </Button>
+                  </Link>
+                  <Link to="/signup" className="w-full">
+                    <Button
+                      size="lg"
+                      className="w-full justify-center flex items-center space-x-2 text-lg py-6 bg-primary hover:bg-primary/90"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <User className="h-5 w-5" />
+                      <span>{t("signup")}</span>
+                    </Button>
+                  </Link>
+                </div>
+                
+                {/* Quick Actions */}
+                <div className="px-2 pt-2 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-3">Acesso Rápido:</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Link to="/demo" className="w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Demonstração
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pb-32 md:pb-8">
         {/* Hero Section with Video */}
-        <section className="text-center py-16">
+        <section className="text-center py-8 md:py-16">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-3xl md:text-6xl font-bold mb-4 md:mb-6">
               <span className="text-primary">Organizesee</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 px-2">
               {t("platform_description_complete")}
             </p>
 
+            {/* Mobile Quick Access Notice */}
+            <div className="md:hidden bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6 mx-2">
+              <p className="text-sm text-primary font-medium">
+                💡 Acesse Login ou Cadastro pelos botões fixos na parte inferior da tela
+              </p>
+            </div>
+
             {/* Video Section */}
-            <div className="mb-12">
+            <div className="mb-8 md:mb-12">
               {!showVideo ? (
                 <div className="relative bg-muted rounded-lg overflow-hidden aspect-video max-w-3xl mx-auto">
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -233,7 +316,7 @@ export default function Demo() {
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5"></div>
                   <img
-                    src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                    src={import.meta.env.VITE_DEMO_IMAGE_URL || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"}
                     alt="Dashboard Preview"
                     className="w-full h-full object-cover opacity-50"
                   />
@@ -402,7 +485,9 @@ export default function Demo() {
             <p className="text-xl text-muted-foreground mb-8">
               {t("join_thousands_investors")}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            
+            {/* Desktop CTA Buttons */}
+            <div className="hidden md:flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/signup">
                 <Button size="lg" className="flex items-center space-x-2">
                   <span>{t("start_free_today")}</span>
@@ -415,9 +500,49 @@ export default function Demo() {
                 </Button>
               </Link>
             </div>
+            
+            {/* Mobile CTA Message */}
+            <div className="md:hidden">
+              <p className="text-muted-foreground text-sm">
+                Use os botões fixos abaixo para começar! 👇
+              </p>
+            </div>
           </div>
         </section>
       </main>
+
+      {/* Floating Action Buttons for Mobile */}
+      <div className="fixed bottom-6 left-4 right-4 md:hidden z-40">
+        <div className="flex flex-col space-y-3">
+          {/* Primary CTA - Signup */}
+          <Link to="/signup" className="w-full">
+            <Button
+              size="lg"
+              className="w-full justify-center flex items-center space-x-2 text-lg py-4 bg-primary hover:bg-primary/90 shadow-lg transform transition-transform hover:scale-105"
+            >
+              <User className="h-5 w-5" />
+              <span className="font-semibold">{t("signup")}</span>
+              <Badge variant="secondary" className="ml-2 bg-white text-primary text-xs px-2">
+                GRÁTIS
+              </Badge>
+            </Button>
+          </Link>
+          
+          {/* Secondary CTA - Login */}
+          <Link to="/login" className="w-full">
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full justify-center flex items-center space-x-2 text-lg py-4 bg-background hover:bg-muted shadow-lg border-2 transform transition-transform hover:scale-105"
+            >
+              <LogIn className="h-5 w-5" />
+              <span className="font-semibold">{t("login")}</span>
+            </Button>
+          </Link>
+        </div>
+      </div>
+      
+      <Footer />
     </div>
   );
 }

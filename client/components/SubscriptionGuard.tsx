@@ -56,23 +56,45 @@ export default function SubscriptionGuard({
   fallback,
 }: SubscriptionGuardProps) {
   const {
-    profile,
+    user: profile,
     isLoading,
-    hasFeatureAccess,
     isPaidUser,
-    isTrialUser,
-    getSubscriptionStatusText,
-    getDaysUntilExpiration,
     refreshProfile,
   } = useProfileVerification();
   const { t } = useTranslation();
+  
+  // Funções auxiliares já que algumas estão faltando no hook
+  const hasFeatureAccess = (feature: string) => {
+    return isPaidUser();
+  };
+  
+  const isTrialUser = () => {
+    return false; // Simplificado para este fix
+  };
+  
+  const getSubscriptionStatusText = () => {
+    return isPaidUser() ? t("premium_plan") : t("free_plan");
+  };
+  
+  const getDaysUntilExpiration = () => {
+    if (!profile?.data_expiracao) return null;
+    try {
+      const expDate = new Date(profile.data_expiracao);
+      const today = new Date();
+      const diffTime = expDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 0;
+    } catch (e) {
+      return null;
+    }
+  };
 
   // Debug logs para verificar atualizações
   console.log("🛡️ SubscriptionGuard - Status atual:", {
     feature,
     isPaidUser: isPaidUser(),
     hasFeatureAccess: feature ? hasFeatureAccess(feature) : "N/A",
-    subscriptionType: profile?.subscriptionType,
+    plano: profile?.plano,
     isLoading
   });
 

@@ -73,7 +73,7 @@ export default function InvestmentLayout({
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* Header com filtros */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>

@@ -27,6 +27,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { budgetApi } from "@/services/api/budget";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 // ========================= INTERFACES =========================
 interface Entrada {
@@ -70,13 +72,14 @@ interface ApiResponse {
 // Cores para o gráfico de pizza - tons de verde para entradas
 const COLORS = [
   "#16a34a", // green-600
-  "#22c55e", // green-500
-  "#4ade80", // green-400
-  "#86efac", // green-300
-  "#bbf7d0", // green-200
-  "#dcfce7", // green-100
-  "#15803d", // green-700
-  "#166534", // green-800
+  "#0891b2", // cyan-600
+  "#7c3aed", // violet-600
+  "#dc2626", // red-600
+  "#f97316", // orange-500
+  "#06b6d4", // cyan-500
+  "#8b5cf6", // violet-500
+  "#6366f1", // indigo-500
+  "#ec4899", // pink-500
 ];
 
 // ========================= COMPONENTE PRINCIPAL =========================
@@ -90,10 +93,40 @@ export default function Entradas() {
   const [resumo, setResumo] = useState<ResumoEntradas | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentCategoria, setCurrentCategoria] = useState("Salario");
+  const [formVisible, setFormVisible] = useState(true);
+  const formRef = React.useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<FormData>({
     descricao: "",
     valor_mensal: "",
   });
+  
+  // Hook para detectar cliques fora do formulário
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (formRef.current && !formRef.current.contains(event.target as Node)) {
+        // Se o usuário clicou fora do formulário e havia dados preenchidos, mostrar confirmação
+        if (formData.descricao || formData.valor_mensal) {
+          const confirmClose = window.confirm("Deseja descartar os dados do formulário?");
+          if (confirmClose) {
+            setFormData({
+              descricao: "",
+              valor_mensal: "",
+            });
+          }
+        } else {
+          // Se o formulário está vazio, apenas esconde
+          setFormVisible(false);
+        }
+      }
+    }
+    
+    // Adiciona o listener quando o componente monta
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      // Remove o listener quando o componente desmonta
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [formData]);
 
   // ========================= CONFIGURAÇÕES =========================
   // Obter mês e ano do localStorage
@@ -149,7 +182,7 @@ export default function Entradas() {
       case "Investimentos":
         return t("investment");
       case "Outros":
-        return t("other");
+        return t("others");
       default:
         return categoria;
     }
@@ -187,15 +220,24 @@ export default function Entradas() {
     }
   };
 
+  // Adiciona hook do toast
+  const { toast } = useToast();
+
   // Função para cadastrar uma entrada
   const cadastrarEntrada = async () => {
     if (!isAuthenticated) {
-      alert(t("authentication_required"));
+      toast({
+        title: t("authentication_required"),
+        variant: "destructive",
+      });
       return;
     }
 
     if (!formData.descricao || !formData.valor_mensal) {
-      alert(t("fill_description_monthly_value"));
+      toast({
+        title: t("fill_description_monthly_value"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -208,16 +250,41 @@ export default function Entradas() {
     };
 
     try {
+      // Enviar dados para a API
       await budgetApi.cadastrarEntrada(data);
-      alert(t("entry_registered_successfully"));
+      
+      // Mostrar toast de sucesso na barra lateral
+      toast({
+        title: "Sucesso!",
+        description: `${getCategoriaLabel(currentCategoria)} cadastrado com sucesso.`,
+        variant: "default",
+        duration: 3000,
+      });
+      
+      // Resetar o formulário
       setFormData({
         descricao: "",
         valor_mensal: "",
       });
+      
+      // Adicionar novo item diretamente à lista local para atualização imediata
+      const novaEntrada = {
+        ...data,
+        id: Date.now(), // ID temporário até a próxima atualização
+        flag: true
+      };
+      
+      setEntradas(prevEntradas => [...prevEntradas, novaEntrada as Entrada]);
+      
+      // Atualizar dados completos em segundo plano
       atualizarEntradas();
     } catch (error) {
       console.error("Erro ao cadastrar entrada:", error);
-      alert(t("entry_registration_error"));
+      toast({
+        title: "Erro no cadastro",
+        description: "Não foi possível cadastrar o item. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -227,10 +294,15 @@ export default function Entradas() {
       try {
         await budgetApi.excluirEntrada(id);
         atualizarEntradas();
-        alert(t("entry_deleted_successfully"));
+        toast({
+          title: t("entry_deleted_successfully"),
+        });
       } catch (error) {
         console.error("Erro ao excluir entrada:", error);
-        alert(t("entry_deletion_error"));
+        toast({
+          title: t("entry_deletion_error"),
+          variant: "destructive",
+        });
       }
     }
   };
@@ -291,9 +363,10 @@ export default function Entradas() {
 
   // ========================= RENDER =========================
   return (
-    <div className="space-y-6">
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <>
+      <div className="space-y-3 md:space-y-6">
+        {/* Cards de Resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -399,7 +472,7 @@ export default function Entradas() {
                   <TableCell colSpan={4} className="text-center">
                     <div className="py-8">
                       <p className="text-green-600">
-                        {t("no_entries_registered_for_user")}
+                        {t("no_entries_registered")}
                       </p>
                     </div>
                   </TableCell>
@@ -451,7 +524,7 @@ export default function Entradas() {
       </Card>
 
       {/* Layout lado a lado: Gráfico à esquerda e Cadastro à direita */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
         {/* Seção do Gráfico */}
         <Card>
           <CardHeader>
@@ -496,12 +569,12 @@ export default function Entradas() {
         </Card>
 
         {/* Seção de Cadastro */}
-        <Card>
+        <Card className={formVisible ? "" : "opacity-70"} ref={formRef}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               {getCategoriaIcon(currentCategoria)}
               <span>
-                Cadastrar - {getCategoriaLabel(currentCategoria)}
+                {getCategoriaLabel(currentCategoria)}
               </span>
             </CardTitle>
           </CardHeader>
@@ -584,5 +657,7 @@ export default function Entradas() {
         </Card>
       </div>
     </div>
+    <Toaster />
+  </>
   );
 }

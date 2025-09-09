@@ -1,14 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/finance-logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello world project</title>
+    
+    <!-- SEO Meta Tags -->
+    <title>Organizesee</title>
+    <meta name="description" content="Plataforma completa de gestão financeira com acompanhamento de investimentos, análise de mercado e controle orçamentário." />
+    <meta name="keywords" content="gestão financeira, investimentos, orçamento, análise mercado" />
+    <meta name="author" content="Organizesee" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Organizesee" />
+    <meta property="og:description" content="Plataforma completa de gestão financeira" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://organizesee.com.br" />
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://127.0.0.1:5000 https://www.organizesee.com.br; script-src 'self' 'unsafe-inline' https://accounts.google.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://accounts.google.com;" />
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Critical CSS será injetado pelo Vite -->
   </head>
-
   <body>
     <div id="root"></div>
-
     <script type="module" src="/client/main.tsx"></script>
   </body>
 </html>

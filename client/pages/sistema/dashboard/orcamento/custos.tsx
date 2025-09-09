@@ -63,16 +63,16 @@ interface FormData {
   valor_mensal: string;
 }
 
-// Cores para o gráfico de pizza - tons de vermelho para custos
+// Cores para o gráfico de pizza - paleta mais vibrante e variada para custos
 const COLORS = [
-  "#dc2626", // red-600
-  "#ef4444", // red-500
-  "#f87171", // red-400
-  "#fca5a5", // red-300
-  "#fecaca", // red-200
-  "#fee2e2", // red-100
-  "#991b1b", // red-800
-  "#7f1d1d", // red-900
+  "#dc2626", // vermelho
+  "#2563eb", // azul
+  "#ea580c", // laranja
+  "#16a34a", // verde
+  "#9333ea", // roxo
+  "#0891b2", // ciano
+  "#ca8a04", // amarelo
+  "#db2777", // rosa
 ];
 
 export default function Custos() {
@@ -497,7 +497,7 @@ export default function Custos() {
             <CardTitle className="flex items-center space-x-2">
               {getCategoriaIcon(currentCategoria)}
               <span>
-                Cadastrar - {getCategoriaLabel(currentCategoria)}
+                {t("register_new_cost")}
               </span>
             </CardTitle>
           </CardHeader>

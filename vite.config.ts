@@ -1,39 +1,49 @@
-import { defineConfig, Plugin } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import { createServer } from "./server";
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-    fs: {
-      allow: ["./client", "./shared"],
-      deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**", "server/**"],
-    },
-  },
-  build: {
-    outDir: "dist/spa",
-  },
-  plugins: [react(), expressPlugin()],
+export default defineConfig({
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client"),
-      "@shared": path.resolve(__dirname, "./shared"),
     },
   },
-}));
-
-function expressPlugin(): Plugin {
-  return {
-    name: "express-plugin",
-    apply: "serve", // Only apply during development (serve mode)
-    configureServer(server) {
-      const app = createServer();
-
-      // Add Express app as middleware to Vite dev server
-      server.middlewares.use(app);
+  build: {
+    // Otimizações para produção
+    minify: 'terser',
+    sourcemap: false,
+    cssCodeSplit: true,
+    
+    // Configurações de chunking para melhor cache
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          router: ['react-router-dom'],
+          utils: ['clsx', 'tailwind-merge']
+        }
+      }
     },
-  };
-}
+    
+    // Configurações de performance
+    chunkSizeWarningLimit: 1000,
+    
+    // Otimizar assets
+    assetsInlineLimit: 4096
+  },
+  
+  // Otimizações de desenvolvimento (apenas local)
+  server: {
+    port: 3000,
+    host: true
+  },
+  
+  // Preview para testes de produção
+  preview: {
+    port: 4173,
+    host: true
+  }
+})

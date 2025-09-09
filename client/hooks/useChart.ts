@@ -90,13 +90,7 @@ export const useChart = <T = any>(
     chartConfigGenerator
   } = options;
 
-  const { data: rawData, loading, error, refetch } = useApiData(
-    apiCall,
-    { 
-      refreshInterval,
-      dependencies 
-    }
-  );
+  const { data: rawData, loading, error, refetch } = useApiData(apiCall);
 
   const [chartData, setChartData] = useState<any>(null);
   const [chartConfig, setChartConfig] = useState<ChartConfig | null>(null);
@@ -220,15 +214,27 @@ export const chartTransformers = {
 
   // For investment allocation charts  
   alocacaoTipo: (data: any): ChartDataPoint[] => {
-    const alocacao = data.porcentagem_alocacao;
-    const ordemTipos = ['Acoes', 'Fundos Imobiliários', 'Renda Fixa'];
-    
-    return ordemTipos
-      .filter(tipo => alocacao.hasOwnProperty(tipo))
-      .map(tipo => ({
-        label: tipo,
-        value: alocacao[tipo]
+    // Suporte para formato antigo e novo da API
+    if (data.porcentagem_alocacao) {
+      // Formato antigo
+      const alocacao = data.porcentagem_alocacao;
+      const ordemTipos = ['Acoes', 'Fundos Imobiliários', 'Renda Fixa'];
+      
+      return ordemTipos
+        .filter(tipo => alocacao.hasOwnProperty(tipo))
+        .map(tipo => ({
+          label: tipo,
+          value: alocacao[tipo]
+        }));
+    } else if (data.alocacao_por_tipo) {
+      // Formato novo da API
+      return data.alocacao_por_tipo.map((item: any) => ({
+        label: item.tipo,
+        value: parseFloat(item.percentual_alocacao.toFixed(2))
       }));
+    }
+    
+    return [];
   },
 
   // For monthly variation charts

@@ -1,0 +1,531 @@
+import React, { useState, useEffect, useRef } from "react";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Plus,
+  TrendingDown,
+  AlertCircle,
+  Home,
+  Car,
+  DollarSign,
+  Waves,
+  GraduationCap,
+  Coffee,
+  Trash2,
+  Target,
+  Bell,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { budgetApi } from "@/services/api/budget";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
+interface Custo {
+  id: number;
+  descricao: string;
+  valor_mensal: number;
+  categoria: string;
+  flag: boolean;
+  mes: number;
+  ano: number;
+}
+
+interface TotalPorCategoria {
+  categoria: string;
+  total: number;
+  percentual: number;
+}
+
+interface ResumoCustos {
+  valorTotal: number;
+  quantidadeRegistros: number;
+  totalMesAnterior: number;
+  diferencaMesAnterior: number;
+}
+
+interface FormData {
+  descricao: string;
+  valor_mensal: string;
+}
+
+export default function Custos() {
+  const { isAuthenticated } = useAuth();
+  const { t, formatCurrency } = useTranslation();
+  const [custos, setCustos] = useState<Custo[]>([]);
+  const [totaisPorCategoria, setTotaisPorCategoria] = useState<TotalPorCategoria[]>([]);
+  const [resumoCustos, setResumoCustos] = useState<ResumoCustos | null>(null);
+  const [currentCategoria, setCurrentCategoria] = useState("Custo Fixo");
+  const [formVisible, setFormVisible] = useState(true);
+  const formRef = useRef<HTMLDivElement>(null);
+  const [formData, setFormData] = useState<FormData>({
+    descricao: "",
+    valor_mensal: "",
+  });
+  
+  // Hook para detectar cliques fora do formulário
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (formRef.current && !formRef.current.contains(event.target as Node)) {
+        // Se o usuário clicou fora do formulário e havia dados preenchidos, mostrar confirmação
+        if (formData.descricao || formData.valor_mensal) {
+          const confirmClose = window.confirm("Deseja descartar os dados do formulário?");
+          if (confirmClose) {
+            setFormData({
+              descricao: "",
+              valor_mensal: "",
+            });
+          }
+        } else {
+          // Se o formulário está vazio, apenas esconde
+          setFormVisible(false);
+        }
+      }
+    }
+    
+    // Adiciona o listener quando o componente monta
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      // Remove o listener quando o componente desmonta
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [formData]);
+
+  // Cores para os diferentes tipos de custos
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCustos();
+    }
+  }, [isAuthenticated]);
+
+  const fetchCustos = async () => {
+    try {
+      const response = await budgetApi.getCustos();
+      setCustos(response.data);
+      
+      // Calcular totais por categoria
+      const categorias = response.data.reduce((acc: { [key: string]: number }, custo: Custo) => {
+        if (!acc[custo.categoria]) {
+          acc[custo.categoria] = 0;
+        }
+        acc[custo.categoria] += custo.valor_mensal;
+        return acc;
+      }, {});
+
+      const totalGeral = Object.values(categorias).reduce((sum: number, valor: number) => sum + valor, 0);
+      
+      const totaisPorCat = Object.entries(categorias).map(([categoria, total]) => ({
+        categoria,
+        total,
+        percentual: totalGeral ? (total / totalGeral) * 100 : 0,
+      }));
+
+      setTotaisPorCategoria(totaisPorCat);
+
+      // Calcular resumo
+      const valorTotal = response.data.reduce((sum: number, custo: Custo) => sum + custo.valor_mensal, 0);
+      setResumoCustos({
+        valorTotal,
+        quantidadeRegistros: response.data.length,
+        totalMesAnterior: 0, // Isso seria calculado com dados do mês anterior
+        diferencaMesAnterior: 0, // Diferença calculada
+      });
+    } catch (error) {
+      console.error("Erro ao buscar custos:", error);
+    }
+  };
+
+  const handleCategoriaChange = (categoria: string) => {
+    setCurrentCategoria(categoria);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // Converter valor_mensal para número
+      const valorMensal = parseFloat(formData.valor_mensal.replace(",", "."));
+      
+      if (isNaN(valorMensal)) {
+        toast({
+          title: "Erro",
+          description: "Por favor, informe um valor válido.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Adicionar novo custo
+      await budgetApi.addCusto({
+        descricao: formData.descricao,
+        valor_mensal: valorMensal,
+        categoria: currentCategoria,
+      });
+      
+      // Atualizar estado local para mostrar o novo custo imediatamente
+      const novoCusto = {
+        id: Math.random(), // Temporário até o fetch
+        descricao: formData.descricao,
+        valor_mensal: valorMensal,
+        categoria: currentCategoria,
+        flag: false,
+        mes: new Date().getMonth() + 1,
+        ano: new Date().getFullYear(),
+      };
+      
+      setCustos([...custos, novoCusto]);
+      
+      // Atualizar os totais por categoria
+      const novosTotais = [...totaisPorCategoria];
+      const categoriaIndex = novosTotais.findIndex(c => c.categoria === currentCategoria);
+      
+      if (categoriaIndex >= 0) {
+        novosTotais[categoriaIndex].total += valorMensal;
+        const totalGeral = novosTotais.reduce((sum, cat) => sum + cat.total, 0);
+        novosTotais.forEach(cat => {
+          cat.percentual = (cat.total / totalGeral) * 100;
+        });
+      } else {
+        const totalGeral = novosTotais.reduce((sum, cat) => sum + cat.total, 0) + valorMensal;
+        novosTotais.push({
+          categoria: currentCategoria,
+          total: valorMensal,
+          percentual: (valorMensal / totalGeral) * 100,
+        });
+        novosTotais.forEach(cat => {
+          if (cat.categoria !== currentCategoria) {
+            cat.percentual = (cat.total / totalGeral) * 100;
+          }
+        });
+      }
+      
+      setTotaisPorCategoria(novosTotais);
+      
+      // Atualizar resumo
+      if (resumoCustos) {
+        setResumoCustos({
+          ...resumoCustos,
+          valorTotal: resumoCustos.valorTotal + valorMensal,
+          quantidadeRegistros: resumoCustos.quantidadeRegistros + 1,
+        });
+      }
+      
+      // Limpar formulário
+      setFormData({
+        descricao: "",
+        valor_mensal: "",
+      });
+      
+      // Esconder formulário após envio
+      setFormVisible(false);
+
+      // Mostrar toast de sucesso
+      toast({
+        title: "Sucesso",
+        description: "Custo adicionado com sucesso!",
+      });
+      
+      // Atualizar dados do servidor
+      fetchCustos();
+    } catch (error) {
+      console.error("Erro ao adicionar custo:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o custo. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await budgetApi.deleteCusto(id);
+      
+      // Atualizar estado local imediatamente
+      const custoRemovido = custos.find(c => c.id === id);
+      const custosFiltrados = custos.filter(c => c.id !== id);
+      setCustos(custosFiltrados);
+      
+      if (custoRemovido && resumoCustos) {
+        // Atualizar totais por categoria
+        const novosTotais = totaisPorCategoria.map(cat => {
+          if (cat.categoria === custoRemovido.categoria) {
+            return {
+              ...cat,
+              total: cat.total - custoRemovido.valor_mensal,
+            };
+          }
+          return cat;
+        }).filter(cat => cat.total > 0);
+        
+        const totalGeral = novosTotais.reduce((sum, cat) => sum + cat.total, 0);
+        novosTotais.forEach(cat => {
+          cat.percentual = totalGeral ? (cat.total / totalGeral) * 100 : 0;
+        });
+        
+        setTotaisPorCategoria(novosTotais);
+        
+        // Atualizar resumo
+        setResumoCustos({
+          ...resumoCustos,
+          valorTotal: resumoCustos.valorTotal - custoRemovido.valor_mensal,
+          quantidadeRegistros: resumoCustos.quantidadeRegistros - 1,
+        });
+      }
+      
+      toast({
+        title: "Sucesso",
+        description: "Custo removido com sucesso!",
+      });
+      
+      // Atualizar dados do servidor
+      fetchCustos();
+    } catch (error) {
+      console.error("Erro ao remover custo:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o custo. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getCategoriaIcon = (categoria: string) => {
+    switch (categoria) {
+      case "Custo Fixo":
+        return <Home className="h-4 w-4" />;
+      case "Custo Variável":
+        return <Waves className="h-4 w-4" />;
+      case "Transporte":
+        return <Car className="h-4 w-4" />;
+      case "Educação":
+        return <GraduationCap className="h-4 w-4" />;
+      case "Lazer":
+        return <Coffee className="h-4 w-4" />;
+      default:
+        return <DollarSign className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <div className="flex flex-col space-y-6 p-6">
+      <Toaster />
+      
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">Custos</h2>
+        <Button 
+          variant="outline" 
+          onClick={() => setFormVisible(!formVisible)}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          {formVisible ? "Cancelar" : "Novo Custo"}
+        </Button>
+      </div>
+      
+      {/* Cards de resumo */}
+      {resumoCustos && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Total em Custos</p>
+                  <h3 className="text-2xl font-bold">{formatCurrency(resumoCustos.valorTotal)}</h3>
+                </div>
+                <DollarSign className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Quantidade de Registros</p>
+                  <h3 className="text-2xl font-bold">{resumoCustos.quantidadeRegistros}</h3>
+                </div>
+                <Target className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Maior Categoria</p>
+                  <h3 className="text-2xl font-bold">
+                    {totaisPorCategoria.length > 0 
+                      ? totaisPorCategoria.sort((a, b) => b.total - a.total)[0].categoria 
+                      : "N/A"}
+                  </h3>
+                </div>
+                <Bell className="h-8 w-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Formulário de cadastro */}
+        <Card className={`lg:col-span-2 ${formVisible ? 'opacity-100' : 'opacity-0 hidden lg:block'}`} ref={formRef}>
+          <CardContent className="p-4">
+            <h3 className="text-lg font-semibold mb-4">Novo Custo</h3>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="descricao">Descrição</Label>
+                <Input 
+                  id="descricao"
+                  name="descricao"
+                  value={formData.descricao}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <Label htmlFor="valor_mensal">Valor</Label>
+                <Input 
+                  id="valor_mensal"
+                  name="valor_mensal"
+                  value={formData.valor_mensal}
+                  onChange={handleInputChange}
+                  placeholder="0,00"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Categoria</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["Custo Fixo", "Custo Variável", "Transporte", "Educação", "Lazer"].map((categoria) => (
+                    <Badge
+                      key={categoria}
+                      variant={currentCategoria === categoria ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => handleCategoriaChange(categoria)}
+                    >
+                      {getCategoriaIcon(categoria)}
+                      <span className="ml-1">{categoria}</span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              
+              <Button type="submit" className="w-full">
+                Cadastrar
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        
+        {/* Gráfico */}
+        <Card className="lg:col-span-3">
+          <CardContent className="p-4">
+            <h3 className="text-lg font-semibold mb-4">Distribuição por Categoria</h3>
+            {totaisPorCategoria.length > 0 ? (
+              <div className="w-full h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={totaisPorCategoria}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="total"
+                      nameKey="categoria"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {totaisPorCategoria.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
+                <AlertCircle className="h-12 w-12 mb-2" />
+                <p>Nenhum dado disponível</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Tabela de custos */}
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="text-lg font-semibold mb-4">Lista de Custos</h3>
+          {custos.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead className="w-[100px]">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {custos.map((custo) => (
+                  <TableRow key={custo.id}>
+                    <TableCell>{custo.descricao}</TableCell>
+                    <TableCell>{formatCurrency(custo.valor_mensal)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {getCategoriaIcon(custo.categoria)}
+                        <span className="ml-1">{custo.categoria}</span>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(custo.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-8 text-gray-500">
+              <TrendingDown className="h-12 w-12 mb-2" />
+              <p>Nenhum custo cadastrado</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
