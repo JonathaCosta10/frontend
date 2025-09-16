@@ -37,6 +37,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/contexts/TranslationContext";
 import MarketPremiumGuard from "@/components/MarketPremiumGuard";
+import { authenticatedGet, authenticatedPost, authenticatedFetch } from '@/lib/authenticatedFetch';
 
 // Tipos temporários até a implementação da API real
 interface EconomicIndicator {
@@ -109,7 +110,7 @@ export default function IndicadoresEconomicos() {
       // Endpoint esperado: GET /api/indicadores-economicos/
       // Parâmetros: category, sortBy, sortOrder
       // Exemplo de uso:
-      // const response = await fetch('/api/indicadores-economicos/', {
+      // const response = await authenticatedGet('/api/indicadores-economicos/', {
       //   method: 'GET',
       //   headers: { 'Authorization': `Bearer ${token}` },
       //   params: { category: selectedCategory !== 'all' ? selectedCategory : undefined }

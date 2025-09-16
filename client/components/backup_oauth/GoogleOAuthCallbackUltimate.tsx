@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { localStorageManager } from '@/lib/localStorage';
 import { clearAllAuthState } from '@/lib/authUtils';
+import { authenticatedFetch } from '@/lib/authenticatedFetch';
 
 const GoogleOAuthCallbackUltimate: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -142,11 +143,10 @@ const GoogleOAuthCallbackUltimate: React.FC = () => {
               }
               
               // Verificar perfil do usuário para confirmar autenticação
-              const profileResponse = await fetch(`${backendUrl}/api/user/profile/`, {
+              const profileResponse = await authenticatedFetch(`${backendUrl}/api/user/profile/`, {
                 method: 'GET',
                 headers: {
                   'Content-Type': 'application/json',
-                  'X-API-Key': apiKey,
                   ...(authTokens?.access_token && { 'Authorization': `Bearer ${authTokens.access_token}` })
                 },
                 credentials: 'include',

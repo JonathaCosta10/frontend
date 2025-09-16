@@ -36,17 +36,31 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import { useToast } from "@/hooks/use-toast";
 import { budgetApi } from "@/services/api/budget";
 import PremiumStatusTestSimulator from "@/components/PremiumStatusTestSimulator";
-// Optimized Chart.js import - only import what we need
+// Optimized Chart.js import - import all components needed for doughnut charts
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  ArcElement,
+  DoughnutController,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Doughnut } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  DoughnutController,
+  Title,
+  Tooltip,
+  Legend
+);
 
 // Register only the components we need
 ChartJS.register(

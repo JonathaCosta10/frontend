@@ -11,6 +11,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  PieController,
 } from 'chart.js';
 import ChartContainer from './ChartContainer';
 import { useChart, UseChartOptions, ChartConfig } from '@/hooks/useChart';
@@ -25,7 +26,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  PieController
 );
 
 interface UnifiedChartProps extends UseChartOptions {

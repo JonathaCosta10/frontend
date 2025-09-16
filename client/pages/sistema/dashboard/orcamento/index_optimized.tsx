@@ -186,7 +186,10 @@ export default function BudgetOverview() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <BudgetNoDataGuidance />
+            <BudgetNoDataGuidance 
+              currentMonth={getNomeMes(mesInt)}
+              availableMonths={budgetData.meses_disponeis?.map(m => getNomeMes(parseInt(m))) || []}
+            />
           </CardContent>
         </Card>
       </div>

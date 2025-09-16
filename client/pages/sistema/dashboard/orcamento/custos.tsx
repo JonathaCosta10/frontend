@@ -31,6 +31,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { budgetApi } from "@/services/api/budget";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useMonthYear } from "@/hooks/useMonthYear";
 
 interface Custo {
   id: number;
@@ -87,6 +88,7 @@ export default function Custos() {
     valor_mensal: "",
   });
   const [loading, setLoading] = useState(false);
+  const { mes, ano } = useMonthYear();
 
   // Função para preparar dados do gráfico
   const prepararDadosGrafico = () => {
@@ -104,11 +106,7 @@ export default function Custos() {
     }));
   };
 
-  // Obter mês e ano do localStorage
-  const mes =
-    localStorage.getItem("mes") ||
-    String(new Date().getMonth() + 1).padStart(2, "0");
-  const ano = localStorage.getItem("ano") || String(new Date().getFullYear());
+  // Mês e ano são obtidos do hook useMonthYear
 
   useEffect(() => {
     if (isAuthenticated) {

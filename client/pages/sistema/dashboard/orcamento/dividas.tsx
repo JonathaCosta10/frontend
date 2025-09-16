@@ -31,6 +31,7 @@ import { budgetApi } from "@/services/api/budget";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useMonthYear } from "@/hooks/useMonthYear";
 
 interface Divida {
   id: number;
@@ -100,6 +101,7 @@ export default function Dividas() {
     taxa_juros: "",
     quantidade_parcelas: "",
   });
+  const { mes, ano } = useMonthYear();
   
   // Hook para detectar cliques fora do formulário
   useEffect(() => {
@@ -143,11 +145,7 @@ export default function Dividas() {
     }));
   };
 
-  // Obter mês e ano do localStorage
-  const mes =
-    localStorage.getItem("mes") ||
-    String(new Date().getMonth() + 1).padStart(2, "0");
-  const ano = localStorage.getItem("ano") || String(new Date().getFullYear());
+  // Mês e ano são obtidos do hook useMonthYear
 
   useEffect(() => {
     if (isAuthenticated) {

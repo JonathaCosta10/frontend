@@ -63,6 +63,34 @@ const getAuthHeaders = (endpoint?: string) => {
     baseHeaders['Authorization'] = `Bearer ${token}`;
   }
 
+  // CORREÇÃO: Adicionar session_id e device_fingerprint para resolver erro de token malformado
+  try {
+    // Obter session_id do localStorage
+    const sessionId = localStorageManager.getSessionId();
+    if (sessionId) {
+      console.log("🔑 [InvestmentService] Incluindo session_id:", sessionId);
+      baseHeaders['X-Session-ID'] = sessionId;
+    } else {
+      console.warn("⚠️ [InvestmentService] session_id não encontrado!");
+    }
+    
+    // Obter device_fingerprint do localStorage
+    const fingerprint = localStorageManager.getDeviceFingerprint();
+    if (fingerprint) {
+      // Se for objeto, usar a propriedade hash, se for string usar diretamente
+      const fingerprintValue = typeof fingerprint === 'object' ? 
+        (fingerprint.hash || JSON.stringify(fingerprint)) : 
+        fingerprint;
+        
+      console.log("👆 [InvestmentService] Incluindo device_fingerprint:", fingerprintValue);
+      baseHeaders['X-Device-Fingerprint'] = fingerprintValue;
+    } else {
+      console.warn("⚠️ [InvestmentService] device_fingerprint não encontrado!");
+    }
+  } catch (e) {
+    console.error("❌ [InvestmentService] Erro ao adicionar dados de sessão:", e);
+  }
+
   return baseHeaders;
 };
 

@@ -8,13 +8,14 @@ import {
   ArcElement,
   Tooltip as ChartTooltip,
   Legend,
+  DoughnutController,
 } from 'chart.js';
 import { CreditCard, TrendingDown, Info } from "lucide-react";
-import { useApiData } from "@/hooks/useApiData";
+import { useBudgetCache } from "@/hooks/useApiCache";
 import { useTranslation } from "@/contexts/TranslationContext";
 
 // Register Chart.js components
-ChartJS.register(ArcElement, ChartTooltip, Legend);
+ChartJS.register(ArcElement, ChartTooltip, Legend, DoughnutController);
 
 interface DistribuicaoGastosChartProps {
   mes: number;
@@ -24,9 +25,20 @@ interface DistribuicaoGastosChartProps {
 const DistribuicaoGastosChart: React.FC<DistribuicaoGastosChartProps> = ({ mes, ano }) => {
   const { formatCurrency } = useTranslation();
   
-  // Buscar dados completos do ano inteiro
-  const { data: distribuicaoData, loading, error } = useApiData(
-    () => budgetApi.getDistribuicaoGastosCompleta(mes, ano)
+  // Usar cache inteligente para evitar múltiplas requisições
+  const { 
+    data: distribuicaoData, 
+    loading, 
+    error,
+    isStale 
+  } = useBudgetCache(
+    (mes: number, ano: number) => budgetApi.getDistribuicaoGastosCompleta(mes, ano),
+    mes,
+    ano,
+    {
+      ttl: 3 * 60 * 1000, // 3 minutos para dados de distribuição
+      staleWhileRevalidate: true
+    }
   );
 
   const cores = [
@@ -108,7 +120,9 @@ const DistribuicaoGastosChart: React.FC<DistribuicaoGastosChartProps> = ({ mes, 
   if (loading) {
     return (
       <div className="h-80 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+        <div className="animate-pulse text-muted-foreground">
+          {isStale ? "Atualizando dados..." : "Carregando..."}
+        </div>
       </div>
     );
   }
@@ -120,6 +134,11 @@ const DistribuicaoGastosChart: React.FC<DistribuicaoGastosChartProps> = ({ mes, 
         <div>
           <h3 className="text-lg font-semibold">Nenhum custo cadastrado</h3>
           <p className="text-muted-foreground">Cadastre gastos e dívidas para visualizar a distribuição</p>
+          {isStale && (
+            <p className="text-xs text-orange-500 mt-2">
+              ⚠️ Exibindo dados em cache - falha ao atualizar
+            </p>
+          )}
         </div>
       </div>
     );

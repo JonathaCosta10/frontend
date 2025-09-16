@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +9,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "../contexts/TranslationContext";
 import { useOnboarding } from "../hooks/useOnboarding";
 import LanguageSelector from "./LanguageSelector";
+import { useIntelligentPreload } from "../hooks/useIntelligentPreload";
 
-export default function DashboardLayout() {
+const DashboardLayout = React.memo(() => {
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,59 +19,73 @@ export default function DashboardLayout() {
   const location = useLocation();
   const { t } = useTranslation();
   
+  // Hook de preload inteligente
+  useIntelligentPreload();
+  
   // Onboarding state
   const { shouldShowOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
 
-  const toggleDarkMode = () => {
+  // Funções memoizadas para evitar re-renders
+  const toggleDarkMode = useCallback(() => {
     setDarkMode((prev) => {
       const novo = !prev;
       document.documentElement.classList.toggle("dark", novo);
       return novo;
     });
-  };
+  }, []);
 
-  // Detecta se está em modo desenvolvimento baseado no ID do usuário
-  const isDevMode = user?.id === "dev-user-1";
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed(prev => !prev);
+  }, []);
 
-  // Define título e descrição baseado na rota atual
-  const getPageInfo = () => {
-    if (location.pathname.startsWith("/pagamento")) {
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen(prev => !prev);
+  }, []);
+
+  // Detecta modo desenvolvimento - memoizado
+  const isDevMode = useMemo(() => user?.id === "dev-user-1", [user?.id]);
+
+  // Define título e descrição baseado na rota atual - memoizado
+  const pageInfo = useMemo(() => {
+    const pathname = location.pathname;
+    
+    if (pathname.startsWith("/pagamento")) {
       return {
         title: t("premium_upgrade"),
         description: t("choose_your_plan"),
       };
     }
-    if (location.pathname.startsWith("/dashboard/orcamento")) {
+    if (pathname.startsWith("/dashboard/orcamento")) {
       return {
         title: t("budget") + " - " + t("budget_overview"),
         description: t("budget_domestic_description"),
       };
     }
-    if (location.pathname.startsWith("/dashboard/investimentos")) {
+    if (pathname.startsWith("/dashboard/investimentos")) {
       return {
         title: t("investments"),
         description: t("investment_description"),
       };
     }
-    if (location.pathname.startsWith("/dashboard/mercado")) {
+    if (pathname.startsWith("/dashboard/mercado")) {
       return {
         title: t("market"),
         description: t("market_description"),
       };
     }
-    if (location.pathname.startsWith("/dashboard/cripto")) {
+    if (pathname.startsWith("/dashboard/cripto")) {
       return {
         title: t("crypto"),
         description: t("crypto_description"),
       };
     }
-    if (location.pathname.startsWith("/dashboard/perfil")) {
+    if (pathname.startsWith("/dashboard/perfil")) {
       return {
         title: t("my_profile"),
         description: t("profile_description"),
       };
     }
-    if (location.pathname.startsWith("/dashboard/configuracoes")) {
+    if (pathname.startsWith("/dashboard/configuracoes")) {
       return {
         title: t("settings"),
         description: t("settings_description"),
@@ -80,9 +95,7 @@ export default function DashboardLayout() {
       title: t("dashboard"),
       description: t("dashboard_description"),
     };
-  };
-
-  const pageInfo = getPageInfo();
+  }, [location.pathname, t]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -184,4 +197,8 @@ export default function DashboardLayout() {
       />
     </div>
   );
-}
+});
+
+DashboardLayout.displayName = "DashboardLayout";
+
+export default DashboardLayout;

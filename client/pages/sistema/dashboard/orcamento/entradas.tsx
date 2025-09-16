@@ -29,6 +29,7 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { useMonthYear } from "@/hooks/useMonthYear";
 
 // ========================= INTERFACES =========================
 interface Entrada {
@@ -99,6 +100,7 @@ export default function Entradas() {
     descricao: "",
     valor_mensal: "",
   });
+  const { mes, ano } = useMonthYear();
   
   // Hook para detectar cliques fora do formulário
   useEffect(() => {
@@ -129,9 +131,6 @@ export default function Entradas() {
   }, [formData]);
 
   // ========================= CONFIGURAÇÕES =========================
-  // Obter mês e ano do localStorage
-  const mes = localStorage.getItem("mes") || String(new Date().getMonth() + 1).padStart(2, "0");
-  const ano = localStorage.getItem("ano") || String(new Date().getFullYear());
 
   // Configuração das categorias
   const categorias = [

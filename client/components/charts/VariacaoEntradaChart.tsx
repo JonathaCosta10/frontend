@@ -14,7 +14,7 @@ import {
   Filler,
 } from 'chart.js';
 import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
-import { useApiData } from "@/hooks/useApiData";
+import { useBudgetCache } from "@/hooks/useApiCache";
 import { useTranslation } from "@/contexts/TranslationContext";
 
 // Register Chart.js components
@@ -37,8 +37,20 @@ interface VariacaoEntradaChartProps {
 const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano }) => {
   const { formatCurrency } = useTranslation();
   
-  const { data, loading, error } = useApiData(
-    () => budgetApi.getVariacaoEntrada(mes, ano)
+  // Usar cache inteligente para evitar múltiplas chamadas
+  const { 
+    data, 
+    loading, 
+    error,
+    isStale 
+  } = useBudgetCache(
+    (mes: number, ano: number) => budgetApi.getVariacaoEntrada(mes, ano),
+    mes,
+    ano,
+    {
+      ttl: 2 * 60 * 1000, // 2 minutos para dados de variação
+      staleWhileRevalidate: true
+    }
   );
 
   const calcularEstatisticas = (dados: VariacaoEntrada[]) => {
@@ -149,7 +161,9 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
   if (loading) {
     return (
       <div className="h-80 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+        <div className="animate-pulse text-muted-foreground">
+          {isStale ? "Atualizando dados..." : "Carregando..."}
+        </div>
       </div>
     );
   }
@@ -161,6 +175,11 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
         <div>
           <h3 className="text-lg font-semibold">Nenhum dado disponível</h3>
           <p className="text-muted-foreground">Cadastre entradas para visualizar o gráfico</p>
+          {isStale && (
+            <p className="text-xs text-orange-500 mt-2">
+              ⚠️ Exibindo dados em cache - falha ao atualizar
+            </p>
+          )}
         </div>
       </div>
     );

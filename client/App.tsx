@@ -11,13 +11,15 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { TranslationProvider } from "./contexts/TranslationContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
+import { OptimizedSuspense, withOptimizedLazy } from "./components/OptimizedSuspense";
 
-// Loading component
-const LoadingSpinner = () => (
+// Loading component optimizado
+const LoadingSpinner = React.memo(() => (
   <div className="flex items-center justify-center h-32">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
   </div>
-);
+));
+LoadingSpinner.displayName = "LoadingSpinner";
 
 // Public Pages - Keep critical ones as direct imports
 import Index from "./pages/HomePublicPages/Index";
@@ -45,58 +47,67 @@ import LoginError from "./pages/ErrosTratamento/LoginError";
 import TwoFactorEmailSetup from "./pages/PagesAuth/TwoFactorEmailSetup";
 import Pagamento from "./pages/Pagamento";
 
-// Lazy loaded system pages - Budget
-const Budget = React.lazy(() => import("./pages/sistema/dashboard/orcamento/Budget"));
-const BudgetOverview = React.lazy(() => import("./pages/sistema/dashboard/orcamento/index"));
-const Entradas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/entradas"));
-const Custos = React.lazy(() => import("./pages/sistema/dashboard/orcamento/custos"));
-const Dividas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/dividas"));
-const Metas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/metas"));
+// Lazy loaded system pages - Budget (com preload)
+const Budget = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/Budget"), { preload: true });
+const BudgetOverview = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/index"));
+const Entradas = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/entradas"));
+const Custos = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/custos"));
+const Dividas = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/dividas"));
+const Metas = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/metas"));
 
-// Lazy loaded system pages - Investments
-const Investment = React.lazy(() => import("./pages/sistema/dashboard/investimentos/Investment"));
-// Usando a versão atualizada com exibição correta de ativos e setores
-const Investimentos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/index"));
-const Comparativos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/comparativos"));
-const Cadastro = React.lazy(() => import("./pages/sistema/dashboard/investimentos/cadastro"));
-const Ranking = React.lazy(() => import("./pages/sistema/dashboard/investimentos/ranking"));
-const Patrimonio = React.lazy(() => import("./pages/sistema/dashboard/investimentos/patrimonio"));
+// Lazy loaded system pages - Investments (com preload para Investment principal)
+const Investment = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/Investment"), { preload: true });
+const Investimentos = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/index"));
+const Comparativos = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/comparativos"));
+const Cadastro = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/cadastro"));
+const Ranking = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/ranking"));
+const Patrimonio = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/patrimonio"));
 
-// Lazy loaded system pages - Market
-const Market = React.lazy(() => import("./pages/sistema/dashboard/mercado/Market"));
-const FIIMarket = React.lazy(() => import("./pages/sistema/dashboard/mercado/index"));
-const IndicadoresEconomicos = React.lazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
-const ListaDeDesejo = React.lazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
-const AnaliseTicker = React.lazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
-const CalculadoraFinanceira = React.lazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
+// Lazy loaded system pages - Market (sem preload - usuário precisa navegar primeiro)
+const Market = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/Market"));
+const FIIMarket = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/index"));
+const IndicadoresEconomicos = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
+const ListaDeDesejo = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
+const AnaliseTicker = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
+const CalculadoraFinanceira = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
 
-// Lazy loaded system pages - Crypto
-const DashboardCripto = React.lazy(() => import("./pages/sistema/dashboard/cripto/DashboardCripto"));
-const CriptoDashboard = React.lazy(() => import("./pages/sistema/dashboard/cripto/index"));
-const MercadoCripto = React.lazy(() => import("./pages/sistema/dashboard/cripto/mercado"));
-const CriptoPortfolio = React.lazy(() => import("./pages/sistema/dashboard/cripto/portfolio"));
-const CriptoCadastro = React.lazy(() => import("./pages/sistema/dashboard/cripto/cadastro"));
+// Lazy loaded system pages - Crypto (sem preload)
+const DashboardCripto = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/DashboardCripto"));
+const CriptoDashboard = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/index"));
+const MercadoCripto = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/mercado"));
+const CriptoPortfolio = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/portfolio"));
+const CriptoCadastro = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/cadastro"));
 
-// Lazy loaded system pages - Training
-const Training = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/Training"));
-const FundosInvestimentos = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/fundos-investimentos"));
-const RendaFixa = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/renda-fixa"));
-const Acoes = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/acoes"));
-const Macroeconomia = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/macroeconomia"));
+// Lazy loaded system pages - Training (sem preload)
+const Training = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/Training"));
+const FundosInvestimentos = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/fundos-investimentos"));
+const RendaFixa = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/renda-fixa"));
+const Acoes = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/acoes"));
+const Macroeconomia = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/macroeconomia"));
 
-// Lazy loaded special pages
-const InfoDiaria = React.lazy(() => import("./pages/sistema/dashboard/info-diaria"));
-const Perfil = React.lazy(() => import("./pages/sistema/dashboard/perfil"));
-const Configuracoes = React.lazy(() => import("./pages/sistema/dashboard/configuracoes"));
-const Suporte = React.lazy(() => import("./pages/sistema/dashboard/suporte"));
-const RiskAssessment = React.lazy(() => import("./pages/sistema/dashboard/risk-assessment"));
-const ChangePassword = React.lazy(() => import("./pages/sistema/dashboard/change-password"));
-const PaymentOptions = React.lazy(() => import("./pages/sistema/dashboard/payment-options"));
+// Lazy loaded special pages (com retry)
+const InfoDiaria = withOptimizedLazy(() => import("./pages/sistema/dashboard/info-diaria"), { retryAttempts: 2 });
+const Perfil = withOptimizedLazy(() => import("./pages/sistema/dashboard/perfil"));
+const Configuracoes = withOptimizedLazy(() => import("./pages/sistema/dashboard/configuracoes"));
+const Suporte = withOptimizedLazy(() => import("./pages/sistema/dashboard/suporte"));
+const RiskAssessment = withOptimizedLazy(() => import("./pages/sistema/dashboard/risk-assessment"));
+const ChangePassword = withOptimizedLazy(() => import("./pages/sistema/dashboard/change-password"));
+const PaymentOptions = withOptimizedLazy(() => import("./pages/sistema/dashboard/payment-options"));
 
-const queryClient = new QueryClient();
+// QueryClient com configurações otimizadas
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      gcTime: 10 * 60 * 1000, // 10 minutos
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Lazy-load AuthCallback component
-const AuthCallback = React.lazy(() => import('./components/AuthCallback'));
+const AuthCallback = withOptimizedLazy(() => import('./components/AuthCallback'));
 
 function App() {
   return (
