@@ -71,7 +71,12 @@ export default defineConfig({
           if (id.includes('react-chartjs-2')) {
             return 'react-charts';
           }
+          // Recharts - separar e configurar para evitar dependência circular
           if (id.includes('recharts')) {
+            // Separar getLegendProps especificamente para evitar dependência circular
+            if (id.includes('getLegendProps') || id.includes('ChartUtils')) {
+              return 'recharts-utils';
+            }
             return 'recharts';
           }
           
@@ -161,8 +166,8 @@ export default defineConfig({
     },
     
     // Configurações de performance avançadas
-    chunkSizeWarningLimit: 500, // Reduzido para forçar chunks menores
-    assetsInlineLimit: 1024, // Reduzido para menos inlining
+    chunkSizeWarningLimit: 300, // Reduzido ainda mais para forçar chunks menores
+    assetsInlineLimit: 512, // Reduzido para menos inlining
     
     // Optimize terser for better compression
     terserOptions: {
@@ -216,8 +221,35 @@ export default defineConfig({
       'react-router-dom',
       // Pré-bundle apenas as dependências críticas
       'axios',
-      // Incluir lodash para resolver problema de import
-      'lodash',
+      // Incluir lodash específicos para resolver problema de import
+      'lodash/sortBy',
+      'lodash/isNil', 
+      'lodash/throttle',
+      'lodash/isFunction',
+      'lodash/isObject',
+      'lodash/last',
+      'lodash/upperFirst',
+      'lodash/maxBy',
+      'lodash/minBy',
+      'lodash/isEqual',
+      'lodash/first',
+      'lodash/range',
+      'lodash/some',
+      'lodash/max',
+      'lodash/isNaN',
+      'lodash/min',
+      'lodash/sumBy',
+      'lodash/omit',
+      'lodash/isNumber',
+      'lodash/isString',
+      'lodash/uniqBy',
+      'lodash/flatMap',
+      'lodash/isPlainObject',
+      'lodash/isBoolean',
+      'lodash/mapValues',
+      'lodash/every',
+      'lodash/find',
+      'lodash/memoize',
       'lodash/get',
       'lodash/set',
       'lodash/has',
@@ -230,13 +262,7 @@ export default defineConfig({
     ],
     exclude: [
       '@vite/client',
-      '@vite/env',
-      // Excluir bibliotecas grandes para lazy loading
-      'chart.js',
-      'react-chartjs-2',
-      'recharts',
-      '@tanstack/react-query',
-      'framer-motion'
+      '@vite/env'
     ],
     // Force bundling de dependências pequenas
     force: true

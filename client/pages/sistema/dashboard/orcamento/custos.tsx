@@ -30,6 +30,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { budgetApi } from "@/services/api/budget";
+import { useToast } from "@/components/ui/use-toast";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useMonthYear } from "@/hooks/useMonthYear";
 
@@ -79,6 +80,7 @@ const COLORS = [
 export default function Custos() {
   const { isAuthenticated } = useAuth();
   const { t, formatCurrency } = useTranslation();
+  const { toast } = useToast();
   const [custos, setCustos] = useState<Custo[]>([]);
   const [totaisPorCategoria, setTotaisPorCategoria] = useState<TotalPorCategoria[]>([]);
   const [resumoGastos, setResumoGastos] = useState<ResumoGastos | null>(null);
@@ -140,12 +142,20 @@ export default function Custos() {
   // Função para cadastrar um custo
   const cadastrarCusto = async () => {
     if (!isAuthenticated) {
-      alert(t("authentication_required_cost"));
+      toast({
+        title: "Erro",
+        description: t("authentication_required_cost"),
+        variant: "destructive",
+      });
       return;
     }
 
     if (!formData.descricao || !formData.valor_mensal) {
-      alert(t("fill_description_monthly_value"));
+      toast({
+        title: "Erro",
+        description: t("fill_description_monthly_value"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -160,7 +170,12 @@ export default function Custos() {
 
     try {
       await budgetApi.cadastrarGasto(data);
-      alert(t("cost_registered_successfully"));
+      toast({
+        title: "Sucesso!",
+        description: "Custo cadastrado com sucesso.",
+        variant: "default",
+        duration: 3000,
+      });
       setFormData({
         descricao: "",
         valor_mensal: "",
@@ -168,7 +183,11 @@ export default function Custos() {
       atualizarCustos();
     } catch (error) {
       console.error("Erro ao cadastrar custo:", error);
-      alert(t("cost_registration_error"));
+      toast({
+        title: "Erro",
+        description: t("cost_registration_error"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -178,10 +197,19 @@ export default function Custos() {
       try {
         await budgetApi.excluirGasto(id);
         atualizarCustos();
-        alert(t("cost_deleted_successfully"));
+        toast({
+          title: "Sucesso!",
+          description: "Custo excluído com sucesso.",
+          variant: "default",
+          duration: 3000,
+        });
       } catch (error) {
         console.error("Erro ao excluir custo:", error);
-        alert(t("cost_deletion_error"));
+        toast({
+          title: "Erro",
+          description: t("cost_deletion_error"),
+          variant: "destructive",
+        });
       }
     }
   };
@@ -189,7 +217,11 @@ export default function Custos() {
   // Função para atualizar flag de repetição
   const atualizarFlagCusto = async (id: number, novaFlag: boolean) => {
     if (!isAuthenticated) {
-      alert(t("authentication_required"));
+      toast({
+        title: "Erro",
+        description: t("authentication_required"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -202,9 +234,11 @@ export default function Custos() {
       atualizarCustos();
     } catch (error) {
       console.error("Erro ao atualizar flag do custo:", error);
-      alert(
-        `${t("flag_update_error")}: ${error.response?.data?.detail || t("unexpected_error")}`
-      );
+      toast({
+        title: "Erro",
+        description: `${t("flag_update_error")}: ${error.response?.data?.detail || t("unexpected_error")}`,
+        variant: "destructive",
+      });
     }
   };
 

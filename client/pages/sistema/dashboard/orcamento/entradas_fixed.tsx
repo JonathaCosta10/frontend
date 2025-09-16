@@ -25,6 +25,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { budgetApi } from "@/services/api/budget";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useToast } from "@/components/ui/use-toast";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 // ========================= INTERFACES =========================
@@ -82,6 +83,7 @@ const COLORS = [
 export default function Entradas() {
   const { isAuthenticated } = useAuth();
   const { t, formatCurrency } = useTranslation();
+  const { toast } = useToast();
 
   // ========================= ESTADOS =========================
   const [entradas, setEntradas] = useState<Entrada[]>([]);
@@ -189,12 +191,20 @@ export default function Entradas() {
   // Função para cadastrar uma entrada
   const cadastrarEntrada = async () => {
     if (!isAuthenticated) {
-      alert(t("authentication_required"));
+      toast({
+        title: "Erro",
+        description: t("authentication_required"),
+        variant: "destructive",
+      });
       return;
     }
 
     if (!formData.descricao || !formData.valor_mensal) {
-      alert(t("fill_description_monthly_value"));
+      toast({
+        title: "Erro",
+        description: t("fill_description_monthly_value"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -208,7 +218,12 @@ export default function Entradas() {
 
     try {
       await budgetApi.cadastrarEntrada(data);
-      alert(t("entry_registered_successfully"));
+      toast({
+        title: "Sucesso!",
+        description: "Entrada cadastrada com sucesso.",
+        variant: "default",
+        duration: 3000,
+      });
       setFormData({
         descricao: "",
         valor_mensal: "",
@@ -216,7 +231,11 @@ export default function Entradas() {
       atualizarEntradas();
     } catch (error) {
       console.error("Erro ao cadastrar entrada:", error);
-      alert(t("entry_registration_error"));
+      toast({
+        title: "Erro",
+        description: t("entry_registration_error"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -226,10 +245,19 @@ export default function Entradas() {
       try {
         await budgetApi.excluirEntrada(id);
         atualizarEntradas();
-        alert(t("entry_deleted_successfully"));
+        toast({
+          title: "Sucesso!",
+          description: "Entrada excluída com sucesso.",
+          variant: "default",
+          duration: 3000,
+        });
       } catch (error) {
         console.error("Erro ao excluir entrada:", error);
-        alert(t("entry_deletion_error"));
+        toast({
+          title: "Erro",
+          description: t("entry_deletion_error"),
+          variant: "destructive",
+        });
       }
     }
   };
