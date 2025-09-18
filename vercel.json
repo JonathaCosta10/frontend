@@ -4,11 +4,6 @@
   "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist",
   "installCommand": "npm ci --legacy-peer-deps --omit=optional",
-  "functions": {
-    "client/**/*.{js,ts,jsx,tsx}": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
     {
       "source": "/services/api/(.*)",
