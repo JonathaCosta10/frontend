@@ -5,9 +5,12 @@
   "type": "module",
   "description": "Plataforma completa de gestão financeira com funcionalidades premium",
   "scripts": {
-    "dev": "vite",
-    "start": "npm run dev",
-    "build": "vite build",
+    "dev": "vite --mode development",
+    "dev:prod": "vite --mode production", 
+    "start": "vite --port 3000",
+    "start:build": "vite preview --port 3000",
+    "start:prod": "npm run build:prod && npm run start:build",
+    "build": "vite build --mode production",
     "build:prod": "vite build --config vite.config.prod.ts",
     "build:ultra": "vite build --config vite.config.ultra.ts",
     "build:vercel": "vite build",
@@ -117,7 +120,7 @@
     "tsx": "^4.7.0",
     "typescript": "^5.5.3",
     "vaul": "^0.9.3",
-    "vite": "^6.2.2",
+    "vite": "^5.4.3",
     "vitest": "^3.1.4"
   },
   "overrides": {

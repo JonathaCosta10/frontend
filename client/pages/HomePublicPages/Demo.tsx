@@ -169,6 +169,31 @@ export default function Demo() {
       }`}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-xl font-bold text-primary">Organizesee</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button onClick={toggleDarkMode} variant="ghost" size="sm">
+                {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+              <Link to="/login">
+                <Button variant="ghost" size="sm">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  {t("login")}
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  {t("signup")}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main>
         {/* Hero Section with Video */}
         <section className="text-center py-8 md:py-16">
           <div className="max-w-4xl mx-auto">
@@ -382,6 +407,8 @@ export default function Demo() {
           </div>
         </section>
       </main>
-    </PublicLayout>
+
+      <Footer />
+    </div>
   );
 }
