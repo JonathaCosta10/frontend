@@ -10,29 +10,68 @@
       window.process = window.process || { env: { NODE_ENV: 'production' } };
       window.global = window.global || window;
       
-      // SOLUÇÃO DEFINITIVA: Pré-inicializar TODAS as variáveis temporárias do bundler
-      const tempVars = ['t', 'e', 'r', 'n', 'o', 'i', 'a', 'u', 's', 'c', 'l', 'd', 'f', 'p', 'h', 'm', 'g', 'v', 'y', 'b', 'w', 'x', 'k', 'j', 'q', 'z'];
-      
-      tempVars.forEach(function(varName) {
-        if (typeof window[varName] === 'undefined') {
-          try {
-            Object.defineProperty(window, varName, {
-              value: {},
-              writable: true,
-              configurable: true,
-              enumerable: false
-            });
-          } catch (e) {
-            window[varName] = {};
-          }
+      // SISTEMA DE PRÉ-CARREGAMENTO ROBUSTO
+      // Força a criação de todas as variáveis antes de qualquer script
+      (function() {
+        // Lista expandida de variáveis que podem causar problemas
+        const allPossibleVars = [];
+        
+        // Gerar variáveis de a-z
+        for (let i = 97; i <= 122; i++) {
+          allPossibleVars.push(String.fromCharCode(i));
         }
-      });
+        
+        // Adicionar algumas variáveis numéricas também
+        for (let i = 0; i <= 9; i++) {
+          allPossibleVars.push('_' + i);
+          allPossibleVars.push('var' + i);
+        }
+        
+        // Criar todas as variáveis possíveis
+        allPossibleVars.forEach(function(varName) {
+          if (typeof window[varName] === 'undefined') {
+            try {
+              // Usar uma função que cria a variável de forma mais robusta
+              (function(name) {
+                Object.defineProperty(window, name, {
+                  value: {},
+                  writable: true,
+                  configurable: true,
+                  enumerable: false
+                });
+              })(varName);
+            } catch (e) {
+              // Fallback simples
+              window[varName] = {};
+            }
+          }
+        });
+        
+        console.log('✅ Sistema de pré-carregamento de variáveis ativo');
+      })();
       
       // Interceptar e corrigir erros de inicialização em tempo real
       const originalError = window.onerror;
       window.onerror = function(message, source, lineno, colno, error) {
         if (message && message.includes('before initialization')) {
-          console.warn('Erro de inicialização interceptado e ignorado:', message);
+          console.warn('🔧 Erro de inicialização interceptado:', message);
+          
+          // TENTATIVA DE AUTO-CORREÇÃO: Re-executar o script após definir variáveis
+          setTimeout(function() {
+            try {
+              // Tentar re-carregar o módulo problemático
+              if (source && source.includes('vendor')) {
+                console.log('🔄 Tentando recarregar módulo vendor...');
+                // Forçar re-importação do módulo
+                import(source).catch(function(err) {
+                  console.warn('Falha ao recarregar módulo:', err);
+                });
+              }
+            } catch (retryError) {
+              console.warn('Erro durante tentativa de correção:', retryError);
+            }
+          }, 100);
+          
           return true; // Prevenir que o erro quebre a aplicação
         }
         if (originalError) {

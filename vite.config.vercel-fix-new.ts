@@ -3,8 +3,11 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import { createInitializationFixPlugin } from './client/lib/vite-initialization-fix'
 
-// Configuração simplificada para produção
+// Configuração para evitar problemas de inicialização
 export default defineConfig({
+  // IMPORTANTE: Usar mode development para evitar otimizações agressivas
+  mode: 'production', // Mas com configurações conservadoras
+  
   plugins: [
     // Plugin de correção de inicialização (DEVE vir primeiro)
     createInitializationFixPlugin(),
@@ -37,24 +40,41 @@ export default defineConfig({
   },
   
   build: {
-    // Configurações básicas
-    minify: 'terser',
+    // SOLUÇÃO RADICAL: Desabilitar minificação para evitar problemas de inicialização
+    minify: false, // Desabilitando minificação completamente
     sourcemap: true,
     cssCodeSplit: true,
     target: 'es2015',
     
-    // Configurações do Terser simplificadas
+    // Terser desabilitado para evitar problemas de inicialização
+    /*
     terserOptions: {
       compress: {
         drop_console: false,
         drop_debugger: false,
         passes: 1,
-        toplevel: false
+        toplevel: false,
+        // CRÍTICO: Desabilitar otimizações que causam problemas de inicialização
+        collapse_vars: false,
+        reduce_vars: false,
+        inline: false,
+        hoist_vars: false,
+        join_vars: false,
+        sequences: false,
+        // Manter estrutura original das variáveis
+        keep_fargs: true,
+        keep_fnames: true
+      },
+      mangle: {
+        // Desabilitar mangling que pode causar problemas
+        toplevel: false,
+        keep_fnames: true
       },
       format: {
         comments: false
       }
     },
+    */
     
     // Configurações do Rollup
     rollupOptions: {
@@ -112,10 +132,16 @@ export default defineConfig({
     ]
   },
   
-  // Configurações do esbuild
+  // Configurações do esbuild - conservadoras para evitar problemas
   esbuild: {
-    // Usar configurações compatíveis
+    // Usar configurações que não causam problemas de inicialização
     target: 'es2015',
-    legalComments: 'none'
+    legalComments: 'none',
+    // CRÍTICO: Desabilitar otimizações que podem causar problemas
+    minifyIdentifiers: false,
+    minifyWhitespace: false,
+    minifySyntax: false,
+    keepNames: true,
+    treeShaking: false
   }
 });
