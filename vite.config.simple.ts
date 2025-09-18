@@ -1,16 +1,16 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
+import react from '@vitejs/plugin-react' // Usando plugin React padrão em vez de SWC
 import path from 'path'
+import { createESModulesFixPlugin } from './client/lib/vite-esmodules-fix'
 
 /**
- * Configuração simplificada para builds no Vercel
- * Evita problemas com o Rollup e modules
+ * Configuração ultra-simplificada para builds no Vercel
+ * Evita problemas com módulos nativos (SWC e Rollup)
  */
 export default defineConfig({
   plugins: [
-    react({
-      tsDecorators: true,
-    }),
+    react(), // Plugin React vanilla sem SWC
+    createESModulesFixPlugin(),
   ],
   
   resolve: {
@@ -20,22 +20,16 @@ export default defineConfig({
   },
   
   build: {
-    minify: 'terser',
+    minify: false, // Desabilitar minificação para evitar problemas com módulos nativos
     sourcemap: false,
     cssCodeSplit: true,
+    cssMinify: false, // Desabilitar minificação CSS também
     
-    // Configuração simplificada do Rollup para evitar erros
+    // Configuração ultra simplificada do Rollup para evitar erros
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor': [
-            'react', 
-            'react-dom',
-            'react-router-dom',
-            'recharts',
-            'chart.js',
-          ]
-        },
+        // Desabilitar manualChunks completamente
+        manualChunks: undefined,
         // Garantir que os módulos sejam criados de forma compatível
         format: 'es',
       },
