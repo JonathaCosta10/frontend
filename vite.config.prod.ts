@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import path from 'path'
 import { visualizer } from 'rollup-plugin-visualizer'
+import { createESModulesFixPlugin } from './client/lib/vite-esmodules-fix'
 
 // Configuração específica para produção com otimizações agressivas
 export default defineConfig({
@@ -10,6 +11,8 @@ export default defineConfig({
       // Otimizações do SWC para produção
       tsDecorators: true,
     }),
+    // Plugin customizado para resolver problemas de ES modules
+    createESModulesFixPlugin(),
     // Análise de bundle apenas se solicitado
     process.env.ANALYZE === 'true' && visualizer({
       filename: 'dist/bundle-analysis.html',
