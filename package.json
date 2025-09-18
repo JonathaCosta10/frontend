@@ -7,10 +7,10 @@
   "scripts": {
     "dev": "vite",
     "start": "npm run dev",
-    "build": "vite build --config vite.config.simple.ts",
+    "build": "npx vite build --config vite.config.simple.ts",
     "build:prod": "vite build --config vite.config.prod.ts",
     "build:ultra": "vite build --config vite.config.ultra.ts",
-    "build:vercel": "vite build --config vite.config.simple.ts",
+    "build:vercel": "npx vite build --config vite.config.simple.ts",
     "build:with-typecheck": "tsc && vite build",
     "build:analyze": "ANALYZE=true npm run build:ultra",
     "build:optimized": "npm run typecheck && npm run build:ultra",
@@ -28,6 +28,7 @@
     "env:prod": "powershell -ExecutionPolicy Bypass -File scripts/set-environment.ps1 production",
     "dev:local": "npm run env:dev && npm run dev",
     "build:prod-env": "npm run env:prod && npm run build:ultra",
+    "postinstall": "npm install vite",
     "perf:analyze": "node scripts/analyze-performance.cjs",
     "perf:build": "npm run build:ultra && npm run perf:analyze",
     "bundle:visualize": "ANALYZE=true npm run build:ultra"
@@ -36,6 +37,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "axios": "^1.11.0",
     "chart.js": "^4.5.0",
+    "vite": "^6.2.2",
     "dayjs": "^1.11.13",
     "dotenv": "^17.2.0",
     "eventemitter3": "^5.0.1",
@@ -125,7 +127,6 @@
     "tsx": "^4.7.0",
     "typescript": "^5.5.3",
     "vaul": "^0.9.3",
-    "vite": "^6.2.2",
     "vitest": "^3.1.4"
   },
   "overrides": {
