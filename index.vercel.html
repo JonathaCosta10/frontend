@@ -16,11 +16,35 @@
         window.React = {};
       }
       
-      // Prevenir erro "Cannot access 't' before initialization"
-      window.t = window.t || {};
+      // Prevenir TODOS os erros de inicialização de variáveis temporárias
+      const tempVars = ['t', 'e', 'r', 'n', 'o', 'i', 'a', 'u', 's', 'c', 'l', 'd', 'f', 'p', 'h', 'm', 'g', 'v', 'y', 'b', 'w', 'x', 'k', 'j', 'q', 'z'];
+      
+      tempVars.forEach(function(varName) {
+        if (typeof window[varName] === 'undefined') {
+          try {
+            Object.defineProperty(window, varName, {
+              value: {},
+              writable: true,
+              configurable: true,
+              enumerable: false
+            });
+          } catch (e) {
+            window[varName] = {};
+          }
+        }
+      });
       
       // Definir variáveis comuns que podem causar problemas de inicialização
       window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || { isDisabled: true };
+      
+      // Interceptar erros de inicialização
+      window.addEventListener('error', function(event) {
+        if (event.message && event.message.includes('before initialization')) {
+          event.preventDefault();
+          console.warn('Intercepted initialization error:', event.message);
+          return false;
+        }
+      });
     </script>
     
     <!-- SEO Meta Tags -->

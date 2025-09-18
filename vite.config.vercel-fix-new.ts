@@ -22,19 +22,6 @@ export default defineConfig({
       jsxRuntime: 'classic'
     })
   ],
-    // Usar o plugin React padrão
-    react({
-      // Configurações do React plugin
-      babel: {
-        plugins: [
-          // Plugins Babel necessários
-          '@babel/plugin-transform-react-jsx'
-        ]
-      },
-      // Usar JSX Runtime clássico
-      jsxRuntime: 'classic'
-    })
-  ],
   
   // Resolução de módulos
   resolve: {
@@ -61,7 +48,8 @@ export default defineConfig({
       compress: {
         drop_console: false,
         drop_debugger: false,
-        passes: 1
+        passes: 1,
+        toplevel: false
       },
       format: {
         comments: false
@@ -71,7 +59,7 @@ export default defineConfig({
     // Configurações do Rollup
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.vercel.html'), // Usar arquivo específico para Vercel
+        main: path.resolve(__dirname, 'index.vercel.html'),
         vendor: path.resolve(__dirname, 'client/vendor-preload.js')
       },
       output: {

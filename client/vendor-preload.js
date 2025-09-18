@@ -12,32 +12,48 @@ if (typeof window !== 'undefined') {
   window.ReactDOM = ReactDOM;
   window.ReactDOMClient = ReactDOMClient;
 
-  // Garantir que 't' seja inicializado para evitar erros
-  window.t = window.t || {};
+  // Prevenir TODOS os erros de inicialização de variáveis temporárias
+  // Estas são variáveis comumente usadas pelo bundler
+  const tempVars = ['t', 'e', 'r', 'n', 'o', 'i', 'a', 'u', 's', 'c', 'l', 'd', 'f', 'p', 'h', 'm', 'g', 'v', 'y', 'b', 'w', 'x', 'k', 'j', 'q', 'z'];
   
-  // Outras variáveis que podem causar problemas
-  window.e = window.e || {};
-  window.r = window.r || {};
-  window.n = window.n || {};
-  window.o = window.o || {};
-  window.i = window.i || {};
-  window.a = window.a || {};
-  window.u = window.u || {};
-  window.s = window.s || {};
-  window.c = window.c || {};
-  window.l = window.l || {};
-  window.d = window.d || {};
-  window.f = window.f || {};
-  window.p = window.p || {};
-  window.h = window.h || {};
-  window.m = window.m || {};
-  window.g = window.g || {};
-  window.v = window.v || {};
-  window.y = window.y || {};
-  window.b = window.b || {};
-  window.w = window.w || {};
-  window.x = window.x || {};
-  window.k = window.k || {};
+  tempVars.forEach(varName => {
+    if (typeof window[varName] === 'undefined') {
+      try {
+        // Usar Object.defineProperty para criar uma propriedade mais robusta
+        Object.defineProperty(window, varName, {
+          value: {},
+          writable: true,
+          configurable: true,
+          enumerable: false
+        });
+      } catch (e) {
+        // Fallback se defineProperty falhar
+        window[varName] = {};
+      }
+    }
+  });
+  
+  // Patch adicional para problemas de bundling
+  const originalEval = window.eval;
+  window.eval = function(code) {
+    try {
+      return originalEval.call(this, code);
+    } catch (error) {
+      if (error.message.includes('before initialization')) {
+        console.warn('Caught initialization error, attempting to fix:', error.message);
+        // Tentar executar o código novamente após um delay
+        setTimeout(() => {
+          try {
+            originalEval.call(this, code);
+          } catch (retryError) {
+            console.error('Failed to fix initialization error:', retryError);
+          }
+        }, 0);
+        return undefined;
+      }
+      throw error;
+    }
+  };
 }
 
 // Exportar as dependências

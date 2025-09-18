@@ -8,7 +8,7 @@
     "dev": "vite",
     "start": "npm run dev",
     "build": "vite build --config vite.config.ts",
-    "build:prod": "vite build --config vite.config.vercel-fix.ts && node scripts/fix-initialization-issues.js",
+    "build:prod": "vite build --config vite.config.vercel-fix-new.ts && node scripts/fix-initialization-issues.js",
     "build:ultra": "vite build --config vite.config.ultra.ts",
     "build:vercel": "vite build --config vite.config.prod.ts",
     "build:with-typecheck": "tsc && vite build",

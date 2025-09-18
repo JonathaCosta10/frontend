@@ -8,7 +8,7 @@
       "config": {
         "distDir": "dist",
         "buildCommand": "npm run build:prod",
-        "installCommand": "npm install --no-optional=false"
+        "installCommand": "npm install --omit=optional"
       }
     }
   ],
