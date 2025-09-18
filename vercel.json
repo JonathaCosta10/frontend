@@ -12,6 +12,11 @@
       }
     }
   ],
+  "functions": {
+    "app/api/**/*.js": {
+      "runtime": "@vercel/node@1"
+    }
+  },
   "rewrites": [
     {
       "source": "/services/api/(.*)",

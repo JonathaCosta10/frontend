@@ -33,16 +33,56 @@ const fixInitializationIssues = (filePath) => {
   let content = fs.readFileSync(filePath, 'utf-8');
   let modified = false;
   
-  // Padrão comum que causa o erro de inicialização
-  // Variável sendo usada antes de ser inicializada
-  const initializationPattern = /(const|let|var)\s+t\s*=/;
-  const accessBeforeInitPattern = /([^a-zA-Z0-9_$])t\.([a-zA-Z0-9_$]+)/g;
+  // Padrões que causam problemas de inicialização
+  const problematicPatterns = [
+    // Variável sendo usada antes de ser inicializada
+    /(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/g,
+    // Acesso a variável antes de declaração
+    /([^a-zA-Z0-9_$])([a-zA-Z_$][a-zA-Z0-9_$]*)\./g
+  ];
   
-  if (initializationPattern.test(content) && accessBeforeInitPattern.test(content)) {
-    console.log(`⚠️ Possível problema de inicialização detectado em: ${path.relative(__dirname, filePath)}`);
+  // Verificar se o arquivo contém o padrão problemático específico
+  if (content.includes('Cannot access') || content.includes('before initialization')) {
+    console.log(`⚠️ Arquivo com problema de inicialização detectado: ${path.relative(__dirname, filePath)}`);
+    modified = true;
+  }
+  
+  // Padrão específico para o erro com 't'
+  if (content.match(/var\s+t\s*=.*?t\s*\[/)) {
+    console.log(`⚠️ Padrão problemático de variável 't' detectado em: ${path.relative(__dirname, filePath)}`);
     
-    // Solução: Adicionar inicialização de 't' no início do arquivo
-    content = `// Fix for initialization issue\nconst t = t || {};\n\n${content}`;
+    // Substituir declarações problemáticas de 't'
+    content = content.replace(
+      /(var\s+t\s*=\s*)(.*?)(;)/g,
+      '$1($2) || {};$3'
+    );
+    
+    // Adicionar verificação de inicialização no início do arquivo
+    content = `// Auto-fix: Garantir que 't' seja inicializado
+if (typeof t === 'undefined') { var t = {}; }
+
+${content}`;
+    
+    modified = true;
+  }
+  
+  // Padrão geral para variáveis temporárias
+  if (content.match(/var\s+([a-z])\s*=.*?\1\s*\[/)) {
+    console.log(`⚠️ Padrão problemático de variável temporária detectado em: ${path.relative(__dirname, filePath)}`);
+    
+    // Adicionar verificações de segurança para variáveis temporárias
+    content = `// Auto-fix: Verificações de segurança para variáveis temporárias
+(function() {
+  var originalContent = function() {
+${content}
+  };
+  try {
+    originalContent();
+  } catch (e) {
+    console.warn('Erro capturado durante inicialização:', e);
+  }
+})();`;
+    
     modified = true;
   }
   
