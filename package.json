@@ -7,10 +7,10 @@
   "scripts": {
     "dev": "vite",
     "start": "npm run dev",
-    "build": "npx vite build --config vite.config.simple.ts",
+    "build": "npx vite build --config vite.config.minimal.ts",
     "build:prod": "vite build --config vite.config.prod.ts",
     "build:ultra": "vite build --config vite.config.ultra.ts",
-    "build:vercel": "npx vite build --config vite.config.simple.ts",
+    "build:vercel": "npx vite build --config vite.config.minimal.ts",
     "build:with-typecheck": "tsc && vite build",
     "build:analyze": "ANALYZE=true npm run build:ultra",
     "build:optimized": "npm run typecheck && npm run build:ultra",
@@ -29,6 +29,7 @@
     "dev:local": "npm run env:dev && npm run dev",
     "build:prod-env": "npm run env:prod && npm run build:ultra",
     "postinstall": "npm install vite",
+    "prebuild": "node vercel-prebuild.js",
     "perf:analyze": "node scripts/analyze-performance.cjs",
     "perf:build": "npm run build:ultra && npm run perf:analyze",
     "bundle:visualize": "ANALYZE=true npm run build:ultra"

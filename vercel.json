@@ -7,8 +7,8 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist",
-        "buildCommand": "bash vercel.build.sh",
-        "installCommand": "npm install --no-optional=false"
+        "buildCommand": "npm run build",
+        "installCommand": "npm install"
       }
     }
   ],
