@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface NavigationLinkProps {
   to: string;
@@ -28,6 +29,8 @@ interface NavigationLinksProps {
 }
 
 const NavigationLinks: React.FC<NavigationLinksProps> = ({ currentPath, onClick }) => {
+  const { t } = useTranslation();
+  
   // Define all navigation links in a single array for easy maintenance
   const links = [
     { to: "/market", label: "Mercado" },
@@ -36,6 +39,7 @@ const NavigationLinks: React.FC<NavigationLinksProps> = ({ currentPath, onClick 
     { to: "/about", label: "Sobre" },
     { to: "/privacy-policy", label: "Política de Privacidade" },
     { to: "/terms", label: "Termos" },
+    { to: "/plans", label: t("plans") },
   ];
 
   return (

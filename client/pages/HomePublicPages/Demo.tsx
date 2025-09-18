@@ -3,10 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Moon,
-  Sun,
-  User,
-  LogIn,
   Check,
   Star,
   Play,
@@ -14,36 +10,14 @@ import {
   Shield,
   Zap,
   Crown,
-  Menu,
-  X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
-import Footer from "@/components/Footer";
+import PublicLayout from "@/components/PublicLayout";
 
 export default function Demo() {
-  const [darkMode, setDarkMode] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const { t } = useTranslation();
-  
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const novo = !prev;
-      document.documentElement.classList.toggle("dark", novo);
-      return novo;
-    });
-  };
 
   const plans = [
     {
@@ -162,39 +136,8 @@ export default function Demo() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className={`border-b bg-card transition-all duration-300 ${
-        isScrolled ? 'fixed top-0 left-0 right-0 z-50 shadow-lg' : 'sticky top-0 z-50'
-      }`}>
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-xl font-bold text-primary">Organizesee</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button onClick={toggleDarkMode} variant="ghost" size="sm">
-                {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
-              <Link to="/login">
-                <Button variant="ghost" size="sm">
-                  <LogIn className="h-4 w-4 mr-2" />
-                  {t("login")}
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button size="sm">
-                  <User className="h-4 w-4 mr-2" />
-                  {t("signup")}
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main>
-        {/* Hero Section with Video */}
+    <PublicLayout>
+      {/* Hero Section with Video */}
         <section className="text-center py-8 md:py-16">
           <div className="max-w-4xl mx-auto">
             <h1 className="text-3xl md:text-6xl font-bold mb-4 md:mb-6">
@@ -406,9 +349,6 @@ export default function Demo() {
             </div>
           </div>
         </section>
-      </main>
-
-      <Footer />
-    </div>
+    </PublicLayout>
   );
 }

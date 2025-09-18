@@ -728,6 +728,7 @@ const translations = {
   platform_description_complete: "Plataforma completa para gestão de investimentos e finanças pessoais",
   plans_below: "Confira nossos planos abaixo",
   flexible_plans_investor_type: "Planos flexíveis para cada tipo de investidor",
+  plans: "Planos",
   free_plan: "Plano Gratuito",
   monthly_premium: "Premium Mensal",
   quarterly_premium: "Premium Trimestral",
@@ -831,6 +832,14 @@ const translations = {
   system_section: "Seção do Sistema",
   my_profile: "Meu Perfil",
   support: "Suporte",
+  monday_to_friday_9_to_18: "Segunda a Sexta, 9h às 18h",
+  real_time_chat: "Chat em Tempo Real",
+  response_time_24h: "Tempo de Resposta 24h",
+  our_social_networks: "Nossas Redes Sociais",
+  follow_us_for_tips: "Siga-nos para dicas e atualizações",
+  help_center_technical_support: "Central de ajuda e suporte técnico",
+  security: "Segurança",
+  save_11_percent: "Economize 11%",
   
   // Forms (only non-duplicated)
   name: "Nome",
