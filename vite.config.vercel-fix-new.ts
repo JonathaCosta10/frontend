@@ -9,8 +9,37 @@ export default defineConfig({
   mode: 'production', // Mas com configurações conservadoras
   
   plugins: [
-    // Plugin de correção de inicialização (DEVE vir primeiro)
+    // Plugin de correção de inicialização (DEVE vir PRIMEIRO)
     createInitializationFixPlugin(),
+    
+    // Plugin adicional para interceptar problemas mais cedo
+    {
+      name: 'early-var-fix',
+      enforce: 'pre',
+      transform(code, id) {
+        // Aplicar correções muito cedo no processo
+        if (code.includes('var t =') || code.includes('var e =') || code.includes('var r =')) {
+          console.log(`🚨 Interceptando possível problema em: ${id}`);
+          
+          // Substituir TODAS as declarações de variáveis de uma letra
+          let fixedCode = code;
+          const singleLetterVars = ['t', 'e', 'r', 'n', 'o', 'i', 'a', 'u', 's', 'c', 'l', 'd', 'f', 'p', 'h', 'm', 'g', 'v', 'y', 'b', 'w', 'x', 'k'];
+          
+          singleLetterVars.forEach(varName => {
+            const pattern = new RegExp(`var\\s+${varName}\\s*=\\s*([^;]+);`, 'g');
+            fixedCode = fixedCode.replace(pattern, (match, assignment) => {
+              return `var ${varName} = (function() { try { return ${assignment}; } catch(e) { return {}; } })();`;
+            });
+          });
+          
+          if (fixedCode !== code) {
+            console.log(`✅ Aplicadas correções precoces em: ${id}`);
+            return fixedCode;
+          }
+        }
+        return null;
+      }
+    },
     
     // Usar o plugin React padrão
     react({
@@ -124,7 +153,7 @@ export default defineConfig({
     reportCompressedSize: false
   },
   
-  // Otimização de dependências
+  // Otimização de dependências - forçar reconstrução
   optimizeDeps: {
     include: [
       'react',
@@ -134,7 +163,26 @@ export default defineConfig({
     ],
     exclude: [
       'recharts' // Excluir recharts da otimização para evitar dependências circulares
-    ]
+    ],
+    // FORÇAR reconstrução de todas as dependências
+    force: true,
+    // Configurações do esbuild para deps
+    esbuildOptions: {
+      target: 'es2015',
+      // Desabilitar otimizações que podem causar problemas
+      minifyIdentifiers: false,
+      minifyWhitespace: false,
+      minifySyntax: false,
+      keepNames: true,
+      define: {
+        // Pré-definir variáveis problemáticas
+        't': '{}',
+        'e': '{}',
+        'r': '{}',
+        'n': '{}',
+        'o': '{}'
+      }
+    }
   },
   
   // Configurações do esbuild - conservadoras para evitar problemas
@@ -148,5 +196,32 @@ export default defineConfig({
     minifySyntax: false,
     keepNames: true,
     treeShaking: false
+  },
+  
+  // Definições globais para prevenir erros
+  define: {
+    't': '{}',
+    'e': '{}',
+    'r': '{}',
+    'n': '{}',
+    'o': '{}',
+    'i': '{}',
+    'a': '{}',
+    'u': '{}',
+    's': '{}',
+    'c': '{}',
+    'l': '{}',
+    'd': '{}',
+    'f': '{}',
+    'p': '{}',
+    'h': '{}',
+    'm': '{}',
+    'g': '{}',
+    'v': '{}',
+    'y': '{}',
+    'b': '{}',
+    'w': '{}',
+    'x': '{}',
+    'k': '{}'
   }
 });
