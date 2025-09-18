@@ -34,7 +34,7 @@ const CriptoMarket = withOptimizedLazy(() => import("./pages/HomePublicPages/Cri
 const LoginRequired = withOptimizedLazy(() => import("./pages/HomePublicPages/LoginRequired"));
 const Whitepaper = withOptimizedLazy(() => import("./pages/HomePublicPages/Documents/Whitepaper"));
 const About = withOptimizedLazy(() => import("./pages/HomePublicPages/About"));
-const PrivacyPolicy = withOptimizedLazy(() => import("./pages/HomePublicPages/PrivacyPolicy"));
+const PrivacyPolicy = withOptimizedLazy(() => import("./pages/HomePublicPages/Privacy"));
 const Terms = withOptimizedLazy(() => import("./pages/HomePublicPages/Terms"));
 const Login = withOptimizedLazy(() => import("./pages/HomePublicPages/Login"), { preload: true });
 const Signup = withOptimizedLazy(() => import("./pages/HomePublicPages/Signup"), { preload: true });

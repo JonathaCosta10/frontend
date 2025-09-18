@@ -51,7 +51,7 @@ export default function Home() {
                     variant="outline"
                     className="text-lg"
                   >
-                    <Link to="/demo" className="inline-flex items-center">
+                    <Link to="/about" className="inline-flex items-center">
                       {t("Saiba Mais")} <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                   </Button>
@@ -188,7 +188,7 @@ export default function Home() {
                   variant="ghost"
                   className="mt-4 p-0 hover:bg-transparent"
                 >
-                  <Link to="/demo" className="flex items-center text-blue-600 dark:text-blue-400">
+                  <Link to="/about" className="flex items-center text-blue-600 dark:text-blue-400">
                     {t("Saiba mais")}
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
@@ -419,7 +419,7 @@ export default function Home() {
                 <Link to="/signup">{t("Criar conta grátis")}</Link>
               </Button>
               <Button asChild size="lg" className="bg-white text-gray-900 font-semibold hover:bg-gray-100 shadow-lg">
-                <Link to="/demo">{t("Saber mais")}</Link>
+                <Link to="/about">{t("Saber mais")}</Link>
               </Button>
             </div>
           </div>

@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Moon,
+  Sun,
+  User,
+  LogIn,
   Check,
   Star,
   Play,
@@ -10,19 +14,36 @@ import {
   Shield,
   Zap,
   Crown,
-  User,
-  LogIn
+  Menu,
+  X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
-import PublicLayout from "@/components/PublicLayout";
+import Footer from "@/components/Footer";
 
-/**
- * Demo page showing Organizesee features and pricing plans
- */
 export default function Demo() {
+  const [darkMode, setDarkMode] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { t } = useTranslation();
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => {
+      const novo = !prev;
+      document.documentElement.classList.toggle("dark", novo);
+      return novo;
+    });
+  };
 
   const plans = [
     {
@@ -141,8 +162,13 @@ export default function Demo() {
   ];
 
   return (
-    <PublicLayout>
-      <main className="container mx-auto px-4 py-8 pb-32 md:pb-8">
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
+      <header className={`border-b bg-card transition-all duration-300 ${
+        isScrolled ? 'fixed top-0 left-0 right-0 z-50 shadow-lg' : 'sticky top-0 z-50'
+      }`}>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
         {/* Hero Section with Video */}
         <section className="text-center py-8 md:py-16">
           <div className="max-w-4xl mx-auto">

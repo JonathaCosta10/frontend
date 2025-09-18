@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
-import { CoinGeckoCrypto, backendCryptoApi } from "@/services/api/crypto";
-import { CRYPTO_ROUTES } from "@/contexts/Rotas";
+import { cryptoApi, CoinGeckoCrypto } from "@/services/api/crypto";
 import { formatCurrency } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -95,24 +94,6 @@ const CryptoErrorHandler = ({ error, onRetry, isPending }: {
   </div>
 );
 
-/**
- * Crypto Market Page
- * 
- * Esta página busca e exibe dados em tempo real do mercado de criptomoedas.
- * 
- * API Integration:
- * - Endpoint principal: /services/api/market/crypto/
- * - Fallback: backendCryptoApi (que pode usar cache local)
- * - Atualização: A cada 60 segundos
- * 
- * Funcionalidades:
- * - Lista das principais criptomoedas com preços e variações
- * - Estatísticas globais do mercado
- * - Filtros e ordenação
- * - Busca por nome/símbolo
- * 
- * @returns {JSX.Element} Componente renderizado
- */
 export default function CriptoMarket() {
   const { t } = useTranslation();
   const [cryptoAssets, setCryptoAssets] = useState<CoinGeckoCrypto[]>([]);
@@ -164,30 +145,14 @@ export default function CriptoMarket() {
       setLoading(true);
       setError(null);
       
-      // Usar a API do backend corretamente
-      console.log('🚀 Buscando dados de criptomoedas...');
-      
-      // Obter URL base da API
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-      const apiUrl = `${baseUrl}/services/api/market/crypto/`;
-      
-      console.log('📍 URL da requisição:', apiUrl);
-      
-      // Fazer a requisição utilizando a API correta
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': import.meta.env.VITE_API_KEY || '',
-        }
-      });
+      // Consultar API diretamente na URL especificada
+      const response = await fetch('http://127.0.0.1:5000/services/api/market/crypto/');
       
       if (!response.ok) {
         throw new Error(`API respondeu com status ${response.status}`);
       }
       
       const result = await response.json();
-      console.log('📦 Resposta da API:', result);
       
       if (result.status !== "success" || !result.data?.cryptocurrencies) {
         throw new Error("Formato de resposta inválido");
@@ -195,34 +160,18 @@ export default function CriptoMarket() {
       
       // Processar os dados recebidos
       const cryptoData = result.data.cryptocurrencies;
-      console.log('✅ Dados obtidos com sucesso:', cryptoData.length, 'moedas');
       setCryptoAssets(cryptoData);
       
       // Calcular estatísticas globais
-      let totalMarketCap, totalVolume24h, btcDominance, ethDominance;
+      const totalMarketCap = cryptoData.reduce((acc, curr) => acc + (curr.market_cap || 0), 0);
+      const totalVolume24h = cryptoData.reduce((acc, curr) => acc + (curr.total_volume || 0), 0);
       
-      // Verificar se as estatísticas globais já vêm da API
-      if (result.data.global_stats) {
-        const stats = result.data.global_stats;
-        totalMarketCap = stats.total_market_cap;
-        totalVolume24h = stats.total_volume_24h;
-        btcDominance = stats.btc_dominance;
-        // Se não tivermos eth_dominance, calculamos
-        ethDominance = cryptoData.find(c => c.symbol.toLowerCase() === 'eth')?.market_cap
-          ? (cryptoData.find(c => c.symbol.toLowerCase() === 'eth')?.market_cap || 0) / totalMarketCap * 100
-          : 0;
-      } else {
-        // Calcular manualmente se não temos da API
-        totalMarketCap = cryptoData.reduce((acc, curr) => acc + (curr.market_cap || 0), 0);
-        totalVolume24h = cryptoData.reduce((acc, curr) => acc + (curr.total_volume || 0), 0);
-        
-        // Obter BTC e ETH para calcular dominância
-        const btc = cryptoData.find(c => c.symbol.toLowerCase() === 'btc');
-        const eth = cryptoData.find(c => c.symbol.toLowerCase() === 'eth');
-        
-        btcDominance = btc && btc.market_cap ? (btc.market_cap / totalMarketCap) * 100 : 0;
-        ethDominance = eth && eth.market_cap ? (eth.market_cap / totalMarketCap) * 100 : 0;
-      }
+      // Obter BTC e ETH para calcular dominância
+      const btc = cryptoData.find(c => c.symbol.toLowerCase() === 'btc');
+      const eth = cryptoData.find(c => c.symbol.toLowerCase() === 'eth');
+      
+      const btcDominance = btc && btc.market_cap ? (btc.market_cap / totalMarketCap) * 100 : 0;
+      const ethDominance = eth && eth.market_cap ? (eth.market_cap / totalMarketCap) * 100 : 0;
       
       // Calcular variação média
       const changes = cryptoData
@@ -252,60 +201,6 @@ export default function CriptoMarket() {
       // Definir mensagem de erro apropriada
       const errorMessage = err.message || 'Erro desconhecido';
       
-      // Tentar usar backendCryptoApi como fallback
-      try {
-        console.log('⚠️ Tentando usar backendCryptoApi como fallback...');
-        const fallbackData = await backendCryptoApi.getMarkets({
-          limit: 50,
-          vs_currency: 'brl',
-          order: 'market_cap_desc'
-        });
-        
-        if (fallbackData && fallbackData.length > 0) {
-          console.log('✅ Fallback bem-sucedido!', fallbackData.length, 'moedas');
-          setCryptoAssets(fallbackData);
-          
-          // Calcular estatísticas globais
-          const totalMarketCap = fallbackData.reduce((acc, curr) => acc + (curr.market_cap || 0), 0);
-          const totalVolume24h = fallbackData.reduce((acc, curr) => acc + (curr.total_volume || 0), 0);
-          
-          // Obter BTC e ETH para calcular dominância
-          const btc = fallbackData.find(c => c.symbol.toLowerCase() === 'btc');
-          const eth = fallbackData.find(c => c.symbol.toLowerCase() === 'eth');
-          
-          const btcDominance = btc && btc.market_cap ? (btc.market_cap / totalMarketCap) * 100 : 0;
-          const ethDominance = eth && eth.market_cap ? (eth.market_cap / totalMarketCap) * 100 : 0;
-          
-          // Calcular variação média
-          const changes = fallbackData
-            .filter(c => c.price_change_percentage_24h !== null)
-            .map(c => c.price_change_percentage_24h || 0);
-          
-          const avgChange = changes.length > 0
-            ? changes.reduce((a, b) => a + b, 0) / changes.length
-            : 0;
-          
-          setGlobalStats({
-            total_market_cap: totalMarketCap,
-            total_volume_24h: totalVolume24h,
-            btc_dominance: btcDominance,
-            eth_dominance: ethDominance,
-            avgChange
-          });
-          
-          setApiStatus({
-            status: 'limited',
-            message: 'Usando dados de fallback'
-          });
-          
-          // Ainda mostramos um alerta, mas os dados foram carregados
-          setError("API principal com problemas. Exibindo dados de backup.");
-          return;
-        }
-      } catch (fallbackErr) {
-        console.error("Fallback também falhou:", fallbackErr);
-      }
-      
       if (errorMessage.includes('429')) {
         setError("Limite de requisições da API excedido. Por favor, tente novamente mais tarde.");
         setApiStatus({
@@ -332,30 +227,14 @@ export default function CriptoMarket() {
   
   // Carregar dados na montagem do componente
   useEffect(() => {
-    // Função de inicialização
-    const initializeData = async () => {
-      console.log('🔄 Inicializando página de criptomoedas...');
-      await fetchCryptoData();
-    };
+    fetchCryptoData();
     
-    // Inicializar dados
-    initializeData();
-    
-    // Configurar atualização periódica com intervalo fixo
-    // Usamos intervalo fixo para evitar problemas com closures e clearInterval
-    const updateInterval = 60000; // 1 minuto
-    console.log(`⏱️ Configurando atualização automática a cada ${updateInterval/1000}s`);
-    
-    const timer = setInterval(() => {
-      console.log('🔄 Atualizando dados...');
+    // Configurar atualização periódica
+    const interval = setInterval(() => {
       fetchCryptoData();
-    }, updateInterval);
+    }, 60000); // Atualizar a cada 1 minuto
     
-    // Cleanup function
-    return () => {
-      console.log('🛑 Limpando intervalo de atualização');
-      clearInterval(timer);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   // Função para tentar novamente em caso de erro

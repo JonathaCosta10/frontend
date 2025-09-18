@@ -1,44 +1,22 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react' // Usando plugin React padrão em vez de SWC
+import react from '@vitejs/plugin-react-swc'
 import path from 'path'
 import { visualizer } from 'rollup-plugin-visualizer'
-import { createESModulesFixPlugin } from './client/lib/vite-esmodules-fix-vercel' // Versão compatível com Vercel
 
 // Configuração específica para produção com otimizações agressivas
 export default defineConfig({
   plugins: [
     react({
-      // Configuração para o plugin React padrão
-      babel: {
-        plugins: [
-          ['@babel/plugin-transform-react-jsx']
-        ]
-      },
-      jsxRuntime: 'classic', // Usar o runtime clássico para evitar problemas de inicialização
+      // Otimizações do SWC para produção
+      tsDecorators: true,
     }),
-    // Plugin customizado para resolver problemas de ES modules
-    createESModulesFixPlugin(),
     // Análise de bundle apenas se solicitado
     process.env.ANALYZE === 'true' && visualizer({
       filename: 'dist/bundle-analysis.html',
       open: true,
       gzipSize: true,
       brotliSize: true,
-    }),
-    // Adicionar plugin para resolver problemas de transformação do Rollup
-    {
-      name: 'rollup-fix',
-      transform(code, id) {
-        // Corrigir problemas conhecidos com módulos específicos
-        if (id.includes('node_modules/') && (id.includes('react-is') || id.includes('eventemitter3'))) {
-          return {
-            code: code.replace(/export\s+\{\s*default\s+as\s+/g, 'export {'),
-            map: null
-          };
-        }
-        return null;
-      }
-    }
+    })
   ].filter(Boolean),
   
   resolve: {
@@ -54,40 +32,16 @@ export default defineConfig({
   build: {
     // Configurações otimizadas para produção
     minify: 'terser',
-    sourcemap: true, // Habilitar sourcemap para depuração
+    sourcemap: false,
     cssCodeSplit: true,
-    target: 'es2015', // Aumentar compatibilidade com navegadores
-    terserOptions: {
-      compress: {
-        // Desativar passes de otimização que podem causar problemas com variáveis temporárias
-        toplevel: false,
-        passes: 1,
-        drop_console: false
-      }
-    },
+    target: 'esnext',
     
     rollupOptions: {
-      // Configurações de input para melhorar compatibilidade
-      treeshake: {
-        moduleSideEffects: true, // Considerar módulos com side-effects
-        propertyReadSideEffects: true, // Evitar otimizações agressivas
-      },
-      input: {
-        main: path.resolve(__dirname, 'index.html'),
-        vendor: path.resolve(__dirname, 'client/vendor-preload.js')
-      },
       output: {
-        // Evitar hoisting excessivo que pode causar problemas de ordem de inicialização
-        hoistTransitiveImports: false,
-        // Garantir que nomes de variáveis não colidam
-        generatedCode: {
-          reservedNamesAsProps: true,
-          objectShorthand: false
-        },
         manualChunks: (id) => {
           // Vendor libraries - separar por funcionalidade específica
           if (id.includes('node_modules')) {
-            // React core - manter pequeno e separado
+            // React core - manter pequeno
             if (id.includes('react/') || id.includes('react-dom/') || id.includes('scheduler')) {
               return 'react-vendor';
             }
@@ -241,29 +195,27 @@ export default defineConfig({
         return false;
       },
       
-      // Comentando estas otimizações para resolver problemas de inicialização
-      /*
+      // Otimizações de input
       treeshake: {
         moduleSideEffects: false,
         propertyReadSideEffects: false,
         unknownGlobalSideEffects: false
       }
-      */
     },
     
     // Configurações de performance
     chunkSizeWarningLimit: 150, // Ainda mais restritivo para forçar chunks menores
     assetsInlineLimit: 256, // Inline apenas assets muito pequenos
     
-    // Terser com configurações básicas
+    // Terser otimizado para máxima compressão
     terserOptions: {
       compress: {
-        drop_console: false, // Manter console para debug
-        drop_debugger: false, // Manter debugger statements
-        pure_funcs: [], // Remover otimizações de funções puras
-        passes: 1, // Minimizar passes para evitar otimizações excessivas
-        toplevel: false, // Não transformar variáveis de nível superior
-    */
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
+        passes: 5, // Mais passes para melhor compressão
+        unsafe_arrows: true,
+        unsafe_methods: true,
         unsafe_proto: true,
         unsafe_regexp: true,
         unsafe_undefined: true,
@@ -343,14 +295,14 @@ export default defineConfig({
   
   // ESBuild configuration
   esbuild: {
-    target: 'es2015',
+    target: 'esnext',
     platform: 'browser',
     format: 'esm',
     treeShaking: true,
-    minifyIdentifiers: false,  // Desativado para evitar problemas
+    minifyIdentifiers: true,
     minifyWhitespace: true,
-    minifySyntax: false,       // Desativado para evitar problemas
-    keepNames: true,           // Manter nomes para evitar problemas
+    minifySyntax: true,
+    keepNames: false,
     legalComments: 'none',
     logOverride: { 
       'this-is-undefined-in-esm': 'silent',
