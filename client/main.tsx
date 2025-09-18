@@ -1,6 +1,8 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+// Importar o arquivo que expõe React globalmente
+import "./lib/react-global";
 
 // Get the root element
 const container = document.getElementById("root");
