@@ -19,7 +19,21 @@ export default defineConfig({
       open: true,
       gzipSize: true,
       brotliSize: true,
-    })
+    }),
+    // Adicionar plugin para resolver problemas de transformação do Rollup
+    {
+      name: 'rollup-fix',
+      transform(code, id) {
+        // Corrigir problemas conhecidos com módulos específicos
+        if (id.includes('node_modules/') && (id.includes('react-is') || id.includes('eventemitter3'))) {
+          return {
+            code: code.replace(/export\s+\{\s*default\s+as\s+/g, 'export {'),
+            map: null
+          };
+        }
+        return null;
+      }
+    }
   ].filter(Boolean),
   
   resolve: {
