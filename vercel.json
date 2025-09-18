@@ -1,15 +1,10 @@
 {
   "version": 2,
-  "name": "organizesee-frontend",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
+  "framework": "vite",
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist",
+  "installCommand": "npm ci --legacy-peer-deps --no-optional",
+  "functions": {},
   "rewrites": [
     {
       "source": "/services/api/(.*)",
