@@ -13,7 +13,8 @@ export default defineConfig({
         plugins: [
           ['@babel/plugin-transform-react-jsx']
         ]
-      }
+      },
+      jsxRuntime: 'classic', // Usar o runtime clássico para evitar problemas de inicialização
     }),
     // Plugin customizado para resolver problemas de ES modules
     createESModulesFixPlugin(),
@@ -53,16 +54,40 @@ export default defineConfig({
   build: {
     // Configurações otimizadas para produção
     minify: 'terser',
-    sourcemap: false,
+    sourcemap: true, // Habilitar sourcemap para depuração
     cssCodeSplit: true,
-    target: 'esnext',
+    target: 'es2015', // Aumentar compatibilidade com navegadores
+    terserOptions: {
+      compress: {
+        // Desativar passes de otimização que podem causar problemas com variáveis temporárias
+        toplevel: false,
+        passes: 1,
+        drop_console: false
+      }
+    },
     
     rollupOptions: {
+      // Configurações de input para melhorar compatibilidade
+      treeshake: {
+        moduleSideEffects: true, // Considerar módulos com side-effects
+        propertyReadSideEffects: true, // Evitar otimizações agressivas
+      },
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        vendor: path.resolve(__dirname, 'client/vendor-preload.js')
+      },
       output: {
+        // Evitar hoisting excessivo que pode causar problemas de ordem de inicialização
+        hoistTransitiveImports: false,
+        // Garantir que nomes de variáveis não colidam
+        generatedCode: {
+          reservedNamesAsProps: true,
+          objectShorthand: false
+        },
         manualChunks: (id) => {
           // Vendor libraries - separar por funcionalidade específica
           if (id.includes('node_modules')) {
-            // React core - manter pequeno
+            // React core - manter pequeno e separado
             if (id.includes('react/') || id.includes('react-dom/') || id.includes('scheduler')) {
               return 'react-vendor';
             }
@@ -216,27 +241,29 @@ export default defineConfig({
         return false;
       },
       
-      // Otimizações de input
+      // Comentando estas otimizações para resolver problemas de inicialização
+      /*
       treeshake: {
         moduleSideEffects: false,
         propertyReadSideEffects: false,
         unknownGlobalSideEffects: false
       }
+      */
     },
     
     // Configurações de performance
     chunkSizeWarningLimit: 150, // Ainda mais restritivo para forçar chunks menores
     assetsInlineLimit: 256, // Inline apenas assets muito pequenos
     
-    // Terser otimizado para máxima compressão
+    // Terser com configurações básicas
     terserOptions: {
       compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
-        passes: 5, // Mais passes para melhor compressão
-        unsafe_arrows: true,
-        unsafe_methods: true,
+        drop_console: false, // Manter console para debug
+        drop_debugger: false, // Manter debugger statements
+        pure_funcs: [], // Remover otimizações de funções puras
+        passes: 1, // Minimizar passes para evitar otimizações excessivas
+        toplevel: false, // Não transformar variáveis de nível superior
+    */
         unsafe_proto: true,
         unsafe_regexp: true,
         unsafe_undefined: true,
