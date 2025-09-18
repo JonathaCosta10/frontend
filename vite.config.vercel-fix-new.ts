@@ -59,7 +59,7 @@ export default defineConfig({
     // Configurações do Rollup
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.vercel.html'),
+        main: path.resolve(__dirname, 'index.html'), // Usar o arquivo HTML principal corrigido
         vendor: path.resolve(__dirname, 'client/vendor-preload.js')
       },
       output: {

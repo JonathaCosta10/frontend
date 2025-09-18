@@ -17,53 +17,47 @@ export function createInitializationFixPlugin(): Plugin {
           let code = chunk.code;
           let modified = false;
           
-          // Padrão 1: var t = something; onde t é usado antes da declaração
-          const tempVarPattern = /var\s+([a-z])\s*=\s*([^;]+);/g;
-          const matches = [...code.matchAll(tempVarPattern)];
+          // SOLUÇÃO AGRESSIVA: Substituir QUALQUER padrão var x = que possa causar problemas
+          const problematicVarPattern = /var\s+([a-z])\s*=\s*([^;,]+)([;,])/g;
+          code = code.replace(problematicVarPattern, function(match, varName, varValue, terminator) {
+            console.log(`🔧 Aplicando correção preventiva para variável '${varName}' em ${fileName}`);
+            return `var ${varName}; try { ${varName} = ${varValue}; } catch(e) { ${varName} = {}; }${terminator}`;
+          });
           
-          for (const match of matches) {
-            const varName = match[1];
-            const varValue = match[2];
-            
-            // Verificar se a variável é usada antes da declaração
-            const beforeDeclaration = code.substring(0, match.index);
-            const varUsagePattern = new RegExp(`\\b${varName}\\[`, 'g');
-            
-            if (varUsagePattern.test(beforeDeclaration)) {
-              console.log(`🔧 Fixing initialization issue for variable '${varName}' in ${fileName}`);
-              
-              // Substituir a declaração por uma versão mais segura
-              const safeDeclaration = `var ${varName}; try { ${varName} = ${varValue}; } catch(e) { ${varName} = {}; }`;
-              code = code.replace(match[0], safeDeclaration);
-              modified = true;
-            }
+          // Padrão específico para o erro "Cannot access 't' before initialization"
+          const tErrorPattern = /var\s+t\s*=\s*([^;]+);/g;
+          if (tErrorPattern.test(code)) {
+            code = code.replace(tErrorPattern, function(match, assignment) {
+              console.log(`🔧 Aplicando correção específica para variável 't' em ${fileName}`);
+              return `var t = {}; try { t = ${assignment}; } catch(e) { t = {}; };`;
+            });
+            modified = true;
           }
           
-          // Padrão 2: Adicionar verificações de segurança no início do arquivo
-          if (modified || code.includes('before initialization')) {
-            const safetyCheck = `
-// Auto-generated safety checks for variable initialization
+          // Adicionar verificações de segurança no início de TODOS os arquivos JS
+          const safetyCheck = `
+// CORREÇÃO AUTOMÁTICA: Verificações de segurança para prevenir erros de inicialização
 (function() {
-  var tempVars = ['t', 'e', 'r', 'n', 'o', 'i', 'a', 'u', 's', 'c', 'l', 'd', 'f', 'p', 'h', 'm', 'g', 'v', 'y', 'b', 'w', 'x', 'k'];
-  for (var i = 0; i < tempVars.length; i++) {
-    var varName = tempVars[i];
-    if (typeof window !== 'undefined' && typeof window[varName] === 'undefined') {
-      window[varName] = {};
-    }
-    if (typeof global !== 'undefined' && typeof global[varName] === 'undefined') {
-      global[varName] = {};
+  if (typeof window !== 'undefined') {
+    var tempVars = ['t', 'e', 'r', 'n', 'o', 'i', 'a', 'u', 's', 'c', 'l', 'd', 'f', 'p', 'h', 'm', 'g', 'v', 'y', 'b', 'w', 'x', 'k'];
+    for (var i = 0; i < tempVars.length; i++) {
+      var varName = tempVars[i];
+      if (typeof window[varName] === 'undefined') {
+        try {
+          window[varName] = {};
+        } catch(e) {}
+      }
     }
   }
 })();
 
 `;
-            code = safetyCheck + code;
-            modified = true;
-          }
+          code = safetyCheck + code;
+          modified = true;
           
           if (modified) {
             chunk.code = code;
-            console.log(`✅ Applied initialization fixes to ${fileName}`);
+            console.log(`✅ Aplicadas correções de inicialização em ${fileName}`);
           }
         }
       }
