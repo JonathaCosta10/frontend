@@ -1,16 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react' // Usando plugin React padrão em vez de SWC
 import path from 'path'
-import { createESModulesFixPlugin } from './client/lib/vite-esmodules-fix'
+// Removendo dependência do ESModulesFix que pode usar módulos nativos
 
 /**
  * Configuração ultra-simplificada para builds no Vercel
- * Evita problemas com módulos nativos (SWC e Rollup)
+ * Evita problemas com módulos nativos (SWC, ESBuild e Rollup)
  */
 export default defineConfig({
   plugins: [
-    react(), // Plugin React vanilla sem SWC
-    createESModulesFixPlugin(),
+    react({
+      // Desativando JSX runtime para evitar dependências de SWC/esbuild
+      jsxRuntime: 'classic',
+    }),
   ],
   
   resolve: {
@@ -20,19 +22,30 @@ export default defineConfig({
   },
   
   build: {
-    minify: false, // Desabilitar minificação para evitar problemas com módulos nativos
+    // Desabilitar TODAS as otimizações para evitar dependências nativas
+    minify: false,
     sourcemap: false,
     cssCodeSplit: true,
-    cssMinify: false, // Desabilitar minificação CSS também
+    cssMinify: false,
+    target: 'es2015', // Target mais compatível
     
-    // Configuração ultra simplificada do Rollup para evitar erros
+    // Evitar completamente uso de esbuild
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+    
+    // Configuração ultra simplificada do Rollup
     rollupOptions: {
       output: {
-        // Desabilitar manualChunks completamente
+        // Sem chunks manuais
         manualChunks: undefined,
-        // Garantir que os módulos sejam criados de forma compatível
+        // Formato mais compatível
         format: 'es',
+        // Sem compressão
+        compact: false
       },
+      // Desativar plugins que podem usar esbuild
+      treeshake: false,
     },
   },
   

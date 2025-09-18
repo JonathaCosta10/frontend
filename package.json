@@ -49,7 +49,11 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "latest",
-    "@rollup/rollup-win32-x64-msvc": "latest"
+    "@rollup/rollup-win32-x64-msvc": "latest",
+    "@esbuild/linux-x64": "latest",
+    "@esbuild/win32-x64": "latest",
+    "@swc/core-linux-x64-gnu": "latest",
+    "@swc/core-win32-x64-msvc": "latest"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.9.0",
