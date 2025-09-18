@@ -9,8 +9,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TranslationProvider } from "./contexts/TranslationContext";
+// TODO: Implementar LazyContextProviders para reduzir entry chunk
+// import { LazyContextProviders } from "./contexts/LazyContexts";
 import ProtectedRoute from "./components/ProtectedRoute";
-import DashboardLayout from "./components/DashboardLayout";
+const DashboardLayout = withOptimizedLazy(() => import("./components/DashboardLayout"), { preload: true });
 import { OptimizedSuspense, withOptimizedLazy } from "./components/OptimizedSuspense";
 
 // Loading component optimizado
@@ -21,31 +23,34 @@ const LoadingSpinner = React.memo(() => (
 ));
 LoadingSpinner.displayName = "LoadingSpinner";
 
-// Public Pages - Keep critical ones as direct imports
-import Index from "./pages/HomePublicPages/Index";
-import Home from "./pages/HomePublicPages/Home";
-import Demo from "./pages/HomePublicPages/Demo";
-import PublicMarket from "./pages/HomePublicPages/PublicMarket";
-import MarketPage from "./pages/MarketPage";
-import LoginRequired from "./pages/HomePublicPages/LoginRequired";
-import Whitepaper from "./pages/HomePublicPages/Documents/Whitepaper";
-import Login from "./pages/HomePublicPages/Login";
-import Signup from "./pages/HomePublicPages/Signup";
-import ForgotPassword from "./pages/HomePublicPages/ForgotPassword";
-import PasswordResetSent from "./pages/HomePublicPages/PasswordResetSent";
-import VerifyResetCode from "./pages/HomePublicPages/VerifyResetCode";
-import ResetPassword from "./pages/HomePublicPages/ResetPassword";
+// Public Pages - Convert all to lazy loading to reduce entry chunk
+const Index = withOptimizedLazy(() => import("./pages/HomePublicPages/Index"), { preload: true });
+const Home = withOptimizedLazy(() => import("./pages/HomePublicPages/Home"));
+const Demo = withOptimizedLazy(() => import("./pages/HomePublicPages/Demo"));
+const PublicMarket = withOptimizedLazy(() => import("./pages/HomePublicPages/PublicMarket"));
+const MarketPage = withOptimizedLazy(() => import("./pages/MarketPage"));
+const PublicMarketPage = withOptimizedLazy(() => import("./pages/HomePublicPages/Market"));
+const CriptoMarket = withOptimizedLazy(() => import("./pages/HomePublicPages/CriptoMarket"));
+const LoginRequired = withOptimizedLazy(() => import("./pages/HomePublicPages/LoginRequired"));
+const Whitepaper = withOptimizedLazy(() => import("./pages/HomePublicPages/Documents/Whitepaper"));
+const About = withOptimizedLazy(() => import("./pages/HomePublicPages/About"));
+const PrivacyPolicy = withOptimizedLazy(() => import("./pages/HomePublicPages/PrivacyPolicy"));
+const Terms = withOptimizedLazy(() => import("./pages/HomePublicPages/Terms"));
+const Login = withOptimizedLazy(() => import("./pages/HomePublicPages/Login"), { preload: true });
+const Signup = withOptimizedLazy(() => import("./pages/HomePublicPages/Signup"), { preload: true });
+const ForgotPassword = withOptimizedLazy(() => import("./pages/HomePublicPages/ForgotPassword"));
+const PasswordResetSent = withOptimizedLazy(() => import("./pages/HomePublicPages/PasswordResetSent"));
+const VerifyResetCode = withOptimizedLazy(() => import("./pages/HomePublicPages/VerifyResetCode"));
+const ResetPassword = withOptimizedLazy(() => import("./pages/HomePublicPages/ResetPassword"));
 
-// Error Pages
-import NotFound from "./pages/ErrosTratamento/NotFound";
-import AuthenticationError from "./pages/ErrosTratamento/AuthenticationError";
-import LoginError from "./pages/ErrosTratamento/LoginError";
+// Error Pages - also convert to lazy
+const NotFound = withOptimizedLazy(() => import("./pages/ErrosTratamento/NotFound"));
+const AuthenticationError = withOptimizedLazy(() => import("./pages/ErrosTratamento/AuthenticationError"));
+const LoginError = withOptimizedLazy(() => import("./pages/ErrosTratamento/LoginError"));
 
-// OAuth Components removidos
-
-// Auth Pages (remain in original location)
-import TwoFactorEmailSetup from "./pages/PagesAuth/TwoFactorEmailSetup";
-import Pagamento from "./pages/Pagamento";
+// Auth Pages - also convert to lazy
+const TwoFactorEmailSetup = withOptimizedLazy(() => import("./pages/PagesAuth/TwoFactorEmailSetup"));
+const Pagamento = withOptimizedLazy(() => import("./pages/Pagamento"));
 
 // Lazy loaded system pages - Budget (com preload)
 const Budget = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/Budget"), { preload: true });
@@ -120,26 +125,94 @@ function App() {
               <BrowserRouter>
               <Routes>
                 {/* Public Routes */}
-                <Route path="/" element={<Index />} />
-                <Route path="/home" element={<Home />} />
-                <Route path="/demo" element={<Demo />} />
-                <Route path="/market" element={<MarketPage />} />
-                <Route path="/whitepaper" element={<Whitepaper />} />
-                <Route path="/login-required" element={<LoginRequired />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Index />
+                  </Suspense>
+                } />
+                <Route path="/home" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Home />
+                  </Suspense>
+                } />
+                <Route path="/demo" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Demo />
+                  </Suspense>
+                } />
+                <Route path="/market" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PublicMarketPage />
+                  </Suspense>
+                } />
+                <Route path="/cripto-market" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <CriptoMarket />
+                  </Suspense>
+                } />
+                <Route path="/whitepaper" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Whitepaper />
+                  </Suspense>
+                } />
+                <Route path="/about" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <About />
+                  </Suspense>
+                } />
+                <Route path="/privacy-policy" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PrivacyPolicy />
+                  </Suspense>
+                } />
+                <Route path="/terms" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Terms />
+                  </Suspense>
+                } />
+                <Route path="/login-required" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <LoginRequired />
+                  </Suspense>
+                } />
+                <Route path="/login" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Login />
+                  </Suspense>
+                } />
+                <Route path="/signup" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Signup />
+                  </Suspense>
+                } />
+                <Route path="/forgot-password" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ForgotPassword />
+                  </Suspense>
+                } />
                 <Route
                   path="/password-reset-sent"
-                  element={<PasswordResetSent />}
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <PasswordResetSent />
+                    </Suspense>
+                  }
                 />
                 <Route
                   path="/verify-reset-code"
-                  element={<VerifyResetCode />}
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <VerifyResetCode />
+                    </Suspense>
+                  }
                 />
                 <Route
                   path="/reset-password"
-                  element={<ResetPassword />}
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <ResetPassword />
+                    </Suspense>
+                  }
                 />
                 
                 {/* OAuth Callback Routes */}
@@ -155,34 +228,58 @@ function App() {
                 {/* OAuth Callbacks removidos */}
 
                 {/* Auth Routes */}
-                <Route path="/2fa/email" element={<TwoFactorEmailSetup />} />
-                <Route path="/2fa/totp" element={<TwoFactorEmailSetup />} />
+                <Route path="/2fa/email" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <TwoFactorEmailSetup />
+                  </Suspense>
+                } />
+                <Route path="/2fa/totp" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <TwoFactorEmailSetup />
+                  </Suspense>
+                } />
                 
                 {/* Protected Payment Route */}
                 <Route 
                   path="/pagamento" 
                   element={
                     <ProtectedRoute>
-                      <DashboardLayout />
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <DashboardLayout />
+                      </Suspense>
                     </ProtectedRoute>
                   }
                 >
-                  <Route index element={<Pagamento />} />
+                  <Route index element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Pagamento />
+                    </Suspense>
+                  } />
                 </Route>
 
                 {/* Error Routes */}
                 <Route
                   path="/authentication-error"
-                  element={<AuthenticationError />}
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AuthenticationError />
+                    </Suspense>
+                  }
                 />
-                <Route path="/login-error" element={<LoginError />} />
+                <Route path="/login-error" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <LoginError />
+                  </Suspense>
+                } />
 
                 {/* Protected Dashboard Routes */}
                 <Route
                   path="/dashboard"
                   element={
                     <ProtectedRoute>
-                      <DashboardLayout />
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <DashboardLayout />
+                      </Suspense>
                     </ProtectedRoute>
                   }
                 >
@@ -404,7 +501,11 @@ function App() {
                 </Route>
 
                 {/* Catch-all route for 404 */}
-                <Route path="*" element={<NotFound />} />
+                <Route path="*" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <NotFound />
+                  </Suspense>
+                } />
               </Routes>
             </BrowserRouter>
           </TooltipProvider>

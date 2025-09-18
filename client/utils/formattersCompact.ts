@@ -3,7 +3,7 @@
  * Útil para gráficos e displays com espaço limitado
  * 
  * @param value Valor a ser formatado
- * @param locale Código do idioma (padrão: pt-BR)
+ * @param locale Código do idioma (padrão: pt-BR) - PORTUGUÊS APENAS
  * @returns String formatada de forma compacta (ex: R$ 1,5M)
  */
 export const formatCurrencyCompact = (
@@ -12,15 +12,13 @@ export const formatCurrencyCompact = (
 ): string => {
   if (value === undefined || value === null) return '-';
 
-  // Define símbolos por localidade
+  // Define símbolos para português (Brasil)
   const symbols = {
-    'pt-BR': { currency: 'R$', thousand: 'mil', million: 'M', billion: 'B' },
-    'en-US': { currency: '$', thousand: 'K', million: 'M', billion: 'B' },
-    'es-ES': { currency: '€', thousand: 'mil', million: 'M', billion: 'B' }
+    'pt-BR': { currency: 'R$', thousand: 'mil', million: 'M', billion: 'B' }
   };
 
-  // Usa símbolos da localidade ou padrão pt-BR
-  const sym = symbols[locale] || symbols['pt-BR'];
+  // Usa símbolos do português brasileiro
+  const sym = symbols['pt-BR'];
 
   // Define casas decimais baseado na magnitude
   const abs = Math.abs(value);

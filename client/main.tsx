@@ -1,8 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
-// Importar configuração de WebSocket para corrigir problemas de conexão
-import "./lib/wsConfig";
 
 // Get the root element
 const container = document.getElementById("root");

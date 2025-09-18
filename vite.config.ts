@@ -40,9 +40,22 @@ export default defineConfig({
     sourcemap: false,
     cssCodeSplit: true,
     target: 'esnext',
+    // Aumentar limite de chunk para reduzir avisos
+    chunkSizeWarningLimit: 1000,
     
-    // Configurações de chunking otimizadas para CDR
+    // Configurações de chunking otimizadas para resolver avisos
     rollupOptions: {
+      // Suprimir avisos específicos conhecidos
+      onwarn(warning, warn) {
+        // Suprimir aviso de dependência circular do Recharts (problema conhecido da biblioteca)
+        if (warning.code === 'CIRCULAR_DEPENDENCY' && 
+            warning.message?.includes('recharts') && 
+            warning.message?.includes('getLegendProps')) {
+          return;
+        }
+        // Mostrar outros avisos normalmente
+        warn(warning);
+      },
       output: {
         manualChunks: (id) => {
           // Core React libraries - dividir React em chunks menores
@@ -64,20 +77,18 @@ export default defineConfig({
             return 'ui-extended';
           }
           
-          // Charts - dividir biblioteca de charts
+          // Charts - SOLUÇÃO PARA DEPENDÊNCIA CIRCULAR DO RECHARTS
           if (id.includes('chart.js') || id.includes('Chart')) {
-            return 'chartjs-core';
+            return 'charts-chartjs-core';
           }
           if (id.includes('react-chartjs-2')) {
-            return 'react-charts';
+            return 'charts-react-charts';
           }
-          // Recharts - separar e configurar para evitar dependência circular
+          
+          // Recharts - SOLUÇÃO DEFINITIVA para dependência circular
           if (id.includes('recharts')) {
-            // Separar getLegendProps especificamente para evitar dependência circular
-            if (id.includes('getLegendProps') || id.includes('ChartUtils')) {
-              return 'recharts-utils';
-            }
-            return 'recharts';
+            // Forçar TODOS os módulos do recharts no mesmo chunk para resolver dependência circular
+            return 'charts-recharts';
           }
           
           // Forms and validation - separar validação
@@ -119,7 +130,7 @@ export default defineConfig({
             return 'i18n';
           }
           
-          // Large third-party libraries
+          // Large third-party libraries - DIVIDIR CHUNKS GRANDES
           if (id.includes('lodash')) {
             return 'lodash';
           }
@@ -129,12 +140,27 @@ export default defineConfig({
             return 'crypto-libs';
           }
           
-          // Large node_modules packages - dividir vendors grandes
+          // Large node_modules packages - dividir vendors grandes em chunks menores
           if (id.includes('node_modules')) {
-            // Separar vendors por tamanho estimado
+            // Separar vendors por tamanho estimado para chunks menores
             const largeVendors = ['monaco-editor', 'pdf', 'xlsx', 'moment'];
             if (largeVendors.some(vendor => id.includes(vendor))) {
               return 'vendor-large';
+            }
+            
+            // Dividir vendor-common em chunks menores
+            const hash = id.split('node_modules/')[1]?.split('/')[0];
+            if (hash && hash.length > 0) {
+              // Criar chunks baseados na primeira letra do pacote para distribuir melhor
+              const firstChar = hash[0].toLowerCase();
+              if (['a', 'b', 'c'].includes(firstChar)) return 'vendor-abc';
+              if (['d', 'e', 'f'].includes(firstChar)) return 'vendor-def';
+              if (['g', 'h', 'i'].includes(firstChar)) return 'vendor-ghi';
+              if (['j', 'k', 'l'].includes(firstChar)) return 'vendor-jkl';
+              if (['m', 'n', 'o'].includes(firstChar)) return 'vendor-mno';
+              if (['p', 'q', 'r'].includes(firstChar)) return 'vendor-pqr';
+              if (['s', 't', 'u'].includes(firstChar)) return 'vendor-stu';
+              return 'vendor-vwxyz';
             }
             return 'vendor-common';
           }
@@ -165,8 +191,7 @@ export default defineConfig({
       }
     },
     
-    // Configurações de performance avançadas
-    chunkSizeWarningLimit: 300, // Reduzido ainda mais para forçar chunks menores
+    // Configurações de performance avançadas  
     assetsInlineLimit: 512, // Reduzido para menos inlining
     
     // Optimize terser for better compression

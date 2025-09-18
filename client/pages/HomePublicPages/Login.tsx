@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useToast } from "@/hooks/use-toast";
-import LanguageSelector from "@/components/LanguageSelector";
+// LanguageSelector removed - Portuguese only application
 import OAuthService from "@/services/oauth";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
 import Footer from "@/components/Footer";

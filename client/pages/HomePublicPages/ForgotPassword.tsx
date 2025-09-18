@@ -8,7 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useToast } from "@/hooks/use-toast";
-import LanguageSelector from "@/components/LanguageSelector";
+// LanguageSelector removed - Portuguese only application
 import EmailService from "@/services/emailService";
 
 interface ForgotPasswordForm {
@@ -94,8 +94,7 @@ export default function ForgotPassword() {
             </Link>
 
             <div className="flex items-center space-x-4">
-              {/* Language and Currency Selector */}
-              <LanguageSelector variant="compact" showCurrency={false} size="sm" />
+              {/* Language selector removed - Portuguese only */}
 
               <Button
                 variant="ghost"

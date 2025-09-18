@@ -7,12 +7,8 @@ import { visualizer } from 'rollup-plugin-visualizer'
 export default defineConfig({
   plugins: [
     react({
-      // Otimizações do SWC
-      jsxImportSource: '@emotion/react',
-      plugins: [
-        // Plugin para remover console.log em produção
-        ['@swc/plugin-remove-console', { exclude: ['error'] }]
-      ]
+      // Otimizações do SWC para produção
+      tsDecorators: true,
     }),
     // Análise de bundle apenas se solicitado
     process.env.ANALYZE === 'true' && visualizer({
@@ -26,11 +22,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client"),
-      // Alias otimizados para produção
-      'lodash': 'lodash-es', // Usar versão ES modules para melhor tree shaking
+      // Alias otimizados para produção - usar lodash padrão
+      'lodash': path.resolve(__dirname, 'node_modules/lodash'),
     },
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
-    dedupe: ['react', 'react-dom', 'react-is', 'eventemitter3', 'lodash-es']
+    dedupe: ['react', 'react-dom', 'react-is', 'eventemitter3', 'lodash']
   },
   
   build: {
@@ -42,36 +38,149 @@ export default defineConfig({
     
     rollupOptions: {
       output: {
-        manualChunks: {
-          // React ecosystem
-          'react-vendor': ['react', 'react-dom'],
-          'react-router': ['react-router-dom'],
+        manualChunks: (id) => {
+          // Vendor libraries - separar por funcionalidade específica
+          if (id.includes('node_modules')) {
+            // React core - manter pequeno
+            if (id.includes('react/') || id.includes('react-dom/') || id.includes('scheduler')) {
+              return 'react-vendor';
+            }
+            
+            // React Router - separar
+            if (id.includes('react-router')) {
+              return 'react-router';
+            }
+            
+            // Charts - separar cada biblioteca de charts
+            if (id.includes('chart.js')) return 'charts-chartjs';
+            if (id.includes('react-chartjs-2')) return 'charts-react';
+            if (id.includes('recharts')) {
+              // Separar ainda mais o recharts para evitar dependência circular
+              if (id.includes('getLegendProps') || id.includes('ChartUtils')) {
+                return 'recharts-utils';
+              }
+              return 'charts-recharts';
+            }
+            
+            // UI Libraries - dividir Radix em chunks menores
+            if (id.includes('@radix-ui/react-dialog') || 
+                id.includes('@radix-ui/react-dropdown-menu') ||
+                id.includes('@radix-ui/react-popover')) {
+              return 'ui-core';
+            }
+            if (id.includes('@radix-ui/react-select') || 
+                id.includes('@radix-ui/react-tabs') ||
+                id.includes('@radix-ui/react-form')) {
+              return 'ui-forms';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'ui-extended';
+            }
+            if (id.includes('lucide-react')) {
+              return 'ui-icons';
+            }
+            
+            // Forms and validation
+            if (id.includes('react-hook-form')) return 'forms-core';
+            if (id.includes('zod') || id.includes('@hookform')) return 'forms-validation';
+            
+            // Data fetching
+            if (id.includes('@tanstack/react-query')) return 'data-query';
+            if (id.includes('axios')) return 'data-http';
+            
+            // Date utilities
+            if (id.includes('date-fns')) return 'date-utils';
+            if (id.includes('dayjs')) return 'date-dayjs';
+            
+            // Utils
+            if (id.includes('clsx') || id.includes('tailwind-merge') || id.includes('class-variance-authority')) {
+              return 'ui-utils';
+            }
+            
+            // Lodash - grupo único para todas as funções
+            if (id.includes('lodash')) return 'lodash';
+            
+            // Translation
+            if (id.includes('i18next') || id.includes('react-i18next')) return 'i18n';
+            
+            // Crypto/financial libs
+            if (id.includes('crypto') || id.includes('bitcoin') || id.includes('financial')) {
+              return 'crypto-libs';
+            }
+            
+            // Animations
+            if (id.includes('framer-motion')) return 'animations';
+            
+            // Outras libs menores
+            if (id.includes('react-country-flag') || id.includes('react-is') || id.includes('prop-types')) {
+              return 'vendor';
+            }
+            
+            // Default vendor chunk
+            return 'vendor-common';
+          }
           
-          // UI libraries
-          'ui-core': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
-          'ui-extended': ['@radix-ui/react-tabs', 'lucide-react'],
+          // Application code - separar por funcionalidade
           
-          // Charts separados por biblioteca
-          'charts-chartjs': ['chart.js', 'react-chartjs-2'],
-          'charts-recharts': ['recharts'],
+          // Budget pages
+          if (id.includes('orcamento') || id.includes('budget')) {
+            if (id.includes('entradas')) return 'entradas';
+            if (id.includes('custos')) return 'custos';
+            if (id.includes('dividas')) return 'dividas';
+            if (id.includes('metas')) return 'metas';
+            return 'budget';
+          }
           
-          // Forms
-          'forms': ['react-hook-form', 'zod', '@hookform/resolvers'],
+          // Investment pages
+          if (id.includes('investimentos') || id.includes('investment')) {
+            if (id.includes('comparativos')) return 'comparativos';
+            if (id.includes('cadastro') && id.includes('investimento')) return 'cadastro';
+            if (id.includes('ranking')) return 'ranking';
+            if (id.includes('patrimonio')) return 'patrimonio';
+            return 'investimentos';
+          }
           
-          // Data fetching
-          'data-query': ['@tanstack/react-query'],
-          'data-http': ['axios'],
+          // Market pages
+          if (id.includes('mercado') || id.includes('market')) {
+            if (id.includes('indicadores-economicos')) return 'indicadores-economicos';
+            if (id.includes('lista-de-desejo')) return 'lista-de-desejo';
+            if (id.includes('analise-ticker')) return 'analise-ticker';
+            if (id.includes('calculadora-financeira')) return 'calculadora-financeira';
+            return 'mercado';
+          }
           
-          // Utilities
-          'lodash': ['lodash-es'],
-          'date-utils': ['date-fns', 'dayjs'],
-          'ui-utils': ['clsx', 'tailwind-merge'],
+          // Training pages
+          if (id.includes('treinamentos') || id.includes('training')) {
+            if (id.includes('fundos-investimentos')) return 'fundos-investimentos';
+            if (id.includes('renda-fixa')) return 'renda-fixa';
+            if (id.includes('acoes')) return 'acoes';
+            if (id.includes('macroeconomia')) return 'macroeconomia';
+            return 'training';
+          }
           
-          // Translations
-          'i18n': ['i18next', 'react-i18next'],
+          // Crypto pages
+          if (id.includes('cripto') || id.includes('crypto')) {
+            if (id.includes('DashboardCripto')) return 'DashboardCripto';
+            if (id.includes('portfolio')) return 'crypto-portfolio';
+            if (id.includes('cadastro') && id.includes('cripto')) return 'crypto-cadastro';
+            return 'crypto';
+          }
           
-          // Outros vendors
-          'vendor': ['framer-motion', 'eventemitter3']
+          // Special pages que são grandes
+          if (id.includes('info-diaria')) return 'info-diaria';
+          if (id.includes('perfil')) return 'perfil';
+          if (id.includes('configuracoes')) return 'configuracoes';
+          if (id.includes('suporte')) return 'suporte';
+          if (id.includes('risk-assessment')) return 'risk-assessment';
+          if (id.includes('change-password')) return 'change-password';
+          if (id.includes('payment-options')) return 'payment-options';
+          
+          // Services e utilities
+          if (id.includes('services/api')) return 'api-services';
+          if (id.includes('hooks/')) return 'hooks';
+          if (id.includes('contexts/')) return 'contexts';
+          if (id.includes('components/ui')) return 'ui-components';
+          if (id.includes('lib/')) return 'utils';
         },
         
         // Nomeação otimizada
@@ -95,7 +204,7 @@ export default defineConfig({
     },
     
     // Configurações de performance
-    chunkSizeWarningLimit: 250, // Ainda mais restritivo
+    chunkSizeWarningLimit: 150, // Ainda mais restritivo para forçar chunks menores
     assetsInlineLimit: 256, // Inline apenas assets muito pequenos
     
     // Terser otimizado para máxima compressão
@@ -135,9 +244,6 @@ export default defineConfig({
       }
     },
     
-    // Configurações CSS
-    cssMinify: 'lightningcss',
-    
     // Configurações experimentais
     reportCompressedSize: false
   },
@@ -150,23 +256,23 @@ export default defineConfig({
       'react-router-dom',
       'axios',
       // Lodash específicos
-      'lodash-es/get',
-      'lodash-es/set',
-      'lodash-es/has',
-      'lodash-es/merge',
-      'lodash-es/isNil',
-      'lodash-es/throttle',
-      'lodash-es/isFunction',
-      'lodash-es/maxBy',
-      'lodash-es/minBy',
-      'lodash-es/sumBy',
-      'lodash-es/sortBy',
-      'lodash-es/uniqBy',
-      'lodash-es/flatMap',
-      'lodash-es/find',
-      'lodash-es/every',
-      'lodash-es/some',
-      'lodash-es/memoize',
+      'lodash/get',
+      'lodash/set',
+      'lodash/has',
+      'lodash/merge',
+      'lodash/isNil',
+      'lodash/throttle',
+      'lodash/isFunction',
+      'lodash/maxBy',
+      'lodash/minBy',
+      'lodash/sumBy',
+      'lodash/sortBy',
+      'lodash/uniqBy',
+      'lodash/flatMap',
+      'lodash/find',
+      'lodash/every',
+      'lodash/some',
+      'lodash/memoize',
       // React ecosystem
       'react-is',
       'prop-types'
@@ -206,7 +312,7 @@ export default defineConfig({
   
   // SSR configuration
   ssr: {
-    noExternal: ['react-is', 'eventemitter3', 'recharts', 'lodash-es']
+    noExternal: ['react-is', 'eventemitter3', 'recharts', 'lodash']
   },
   
   // Define globals

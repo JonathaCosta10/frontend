@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import LanguageSelector from "../components/LanguageSelector";
+// LanguageSelector removed - Portuguese only application
 
 // Interface para os dados globais da API
 interface GlobalStats {
@@ -223,7 +223,7 @@ export default function MarketPage() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              <LanguageSelector variant="compact" showCurrency={false} size="sm" />
+              {/* Language selector removed - Portuguese only */}
 
               <Button
                 variant="ghost"

@@ -47,9 +47,4 @@ export function initWebSocketConfig() {
   }
 }
 
-// Executar automaticamente em desenvolvimento
-if (import.meta.env.DEV) {
-  initWebSocketConfig();
-}
-
 export default { configureWebsocket, initWebSocketConfig };

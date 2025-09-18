@@ -14,7 +14,7 @@ import { Moon, Sun, User, LogIn, Search, Menu, X, Play, TrendingUp } from "lucid
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
-import LanguageSelector from "@/components/LanguageSelector";
+// LanguageSelector removed - Portuguese only application
 import { fetchTop10Ranking } from "@/services/api/PublicPages/ranking/pesquisaRankingporTipoPublic";
 
 interface FinancialData {
@@ -161,12 +161,7 @@ export default function PublicMarket() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* Language and Currency Selector */}
-              <LanguageSelector
-                variant="compact"
-                showCurrency={false}
-                size="sm"
-              />
+              {/* Language selector removed - Portuguese only */}
 
               <Button
                 variant="ghost"

@@ -8,7 +8,7 @@ import Onboarding from "./Onboarding";
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "../contexts/TranslationContext";
 import { useOnboarding } from "../hooks/useOnboarding";
-import LanguageSelector from "./LanguageSelector";
+// LanguageSelector removed - Portuguese only application
 import { useIntelligentPreload } from "../hooks/useIntelligentPreload";
 
 const DashboardLayout = React.memo(() => {
@@ -158,14 +158,7 @@ const DashboardLayout = React.memo(() => {
             </div>
 
             <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
-              {/* Language Selector only - Hidden on very small screens */}
-              <div className="hidden sm:block">
-                <LanguageSelector
-                  variant="compact"
-                  showCurrency={false}
-                  size="sm"
-                />
-              </div>
+              {/* Language selector removed - Portuguese only */}
 
               <Button
                 variant="ghost"

@@ -23,7 +23,7 @@ import { useProfileVerification } from "../hooks/useProfileVerification";
 import { usePersonalData } from "../hooks/usePersonalData";
 import { useTranslation } from "../contexts/TranslationContext";
 import SubscriptionGuard from "./SubscriptionGuard";
-import LanguageSelector from "./LanguageSelector";
+// LanguageSelector removed - Portuguese only application
 
 interface SidebarItem {
   labelKey: string;

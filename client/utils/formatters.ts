@@ -1,23 +1,22 @@
 /**
  * Funções utilitárias para formatação de dados
  * Centraliza a lógica de formatação para manter consistência em toda a aplicação
+ * PORTUGUÊS BRASILEIRO APENAS
  */
 
 import { format, parseISO, isValid, Locale as DateFnsLocale } from 'date-fns';
-import { ptBR, enUS, es } from 'date-fns/locale';
+import { ptBR } from 'date-fns/locale';
 import { currencyFormatMap, dateFormatMap } from './mappings';
 
-// Map de locales do date-fns
+// Map de locales do date-fns - apenas português brasileiro
 const localeMap: Record<string, DateFnsLocale> = {
-  'pt-BR': ptBR,
-  'en-US': enUS,
-  'es-ES': es
+  'pt-BR': ptBR
 };
 
 /**
  * Formata um valor para moeda
  * @param value Valor a ser formatado
- * @param locale Código do idioma (padrão: pt-BR)
+ * @param locale Código do idioma (padrão: pt-BR) - PORTUGUÊS APENAS
  * @param hideCents Ocultar os centavos (padrão: false)
  * @returns String formatada em moeda
  */
