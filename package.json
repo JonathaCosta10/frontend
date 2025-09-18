@@ -11,7 +11,7 @@
     "start:build": "vite preview --port 3000",
     "start:prod": "npm run build:prod && npm run start:build",
     "build": "vite build --mode production",
-    "build:vercel": "npm ci --legacy-peer-deps --no-optional && vite build --mode production",
+    "build:vercel": "vite build --mode production",
     "build:prod": "vite build --config vite.config.prod.ts",
     "build:ultra": "vite build --config vite.config.ultra.ts",
     "build:with-typecheck": "tsc && vite build",
