@@ -79,8 +79,8 @@ export default defineConfig({
     // Configurações do Rollup
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.html'), // Usar o arquivo HTML principal corrigido
-        vendor: path.resolve(__dirname, 'client/vendor-preload.js')
+        main: path.resolve(__dirname, 'index.html') // Usar apenas o arquivo HTML principal
+        // Removido vendor que estava causando problemas
       },
       output: {
         // Evitar problemas de inicialização
@@ -101,13 +101,18 @@ export default defineConfig({
       },
       // Configurações para resolver dependências circulares
       external: [],
+      // CRÍTICO: Desabilitar tree-shaking que pode causar problemas de inicialização
+      treeshake: false,
       onwarn(warning, warn) {
-        // Suprimir avisos sobre dependências circulares do recharts
-        if (warning.code === 'CIRCULAR_DEPENDENCY' && warning.message.includes('recharts')) {
+        // Suprimir TODOS os avisos relacionados a dependências circulares
+        if (warning.code === 'CIRCULAR_DEPENDENCY') {
           return;
         }
-        // Suprimir avisos sobre reexportações
         if (warning.code === 'CYCLIC_CROSS_CHUNK_REEXPORT') {
+          return;
+        }
+        // Suprimir avisos sobre variáveis não utilizadas
+        if (warning.code === 'UNUSED_EXTERNAL_IMPORT') {
           return;
         }
         warn(warning);

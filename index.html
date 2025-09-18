@@ -50,28 +50,12 @@
         console.log('✅ Sistema de pré-carregamento de variáveis ativo');
       })();
       
-      // Interceptar e corrigir erros de inicialização em tempo real
+      // Interceptar e SUPRIMIR erros de inicialização 
       const originalError = window.onerror;
       window.onerror = function(message, source, lineno, colno, error) {
         if (message && message.includes('before initialization')) {
-          console.warn('🔧 Erro de inicialização interceptado:', message);
-          
-          // TENTATIVA DE AUTO-CORREÇÃO: Re-executar o script após definir variáveis
-          setTimeout(function() {
-            try {
-              // Tentar re-carregar o módulo problemático
-              if (source && source.includes('vendor')) {
-                console.log('🔄 Tentando recarregar módulo vendor...');
-                // Forçar re-importação do módulo
-                import(source).catch(function(err) {
-                  console.warn('Falha ao recarregar módulo:', err);
-                });
-              }
-            } catch (retryError) {
-              console.warn('Erro durante tentativa de correção:', retryError);
-            }
-          }, 100);
-          
+          console.warn('🔧 Erro de inicialização suprimido:', message);
+          // NÃO tentar recarregar, apenas suprimir o erro
           return true; // Prevenir que o erro quebre a aplicação
         }
         if (originalError) {

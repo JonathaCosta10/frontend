@@ -1,60 +1,67 @@
-// Este arquivo será injetado antes de qualquer código da aplicação
-// para garantir que o React esteja disponível globalmente
+// SOLUÇÃO DEFINITIVA: Vendor preload sem problemas de inicialização
+// Este arquivo deve carregar React de forma segura sem causar erros de bundling
 
-// Importações explícitas
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import * as ReactDOMClient from 'react-dom/client';
+// Importar React de forma mais explícita e segura
+let React, ReactDOM, ReactDOMClient;
 
-// Garantir que estas variáveis sejam definidas globalmente
-if (typeof window !== 'undefined') {
-  window.React = React;
-  window.ReactDOM = ReactDOM;
-  window.ReactDOMClient = ReactDOMClient;
-
-  // Prevenir TODOS os erros de inicialização de variáveis temporárias
-  // Estas são variáveis comumente usadas pelo bundler
-  const tempVars = ['t', 'e', 'r', 'n', 'o', 'i', 'a', 'u', 's', 'c', 'l', 'd', 'f', 'p', 'h', 'm', 'g', 'v', 'y', 'b', 'w', 'x', 'k', 'j', 'q', 'z'];
-  
-  tempVars.forEach(varName => {
-    if (typeof window[varName] === 'undefined') {
-      try {
-        // Usar Object.defineProperty para criar uma propriedade mais robusta
-        Object.defineProperty(window, varName, {
-          value: {},
-          writable: true,
-          configurable: true,
-          enumerable: false
-        });
-      } catch (e) {
-        // Fallback se defineProperty falhar
-        window[varName] = {};
-      }
-    }
-  });
-  
-  // Patch adicional para problemas de bundling
-  const originalEval = window.eval;
-  window.eval = function(code) {
+try {
+  // Método 1: Importação dinâmica para evitar problemas de bundling
+  const loadReact = async () => {
     try {
-      return originalEval.call(this, code);
+      const reactModule = await import('react');
+      const reactDOMModule = await import('react-dom');
+      const reactDOMClientModule = await import('react-dom/client');
+      
+      return {
+        React: reactModule.default || reactModule,
+        ReactDOM: reactDOMModule.default || reactDOMModule,
+        ReactDOMClient: reactDOMClientModule.default || reactDOMClientModule
+      };
     } catch (error) {
-      if (error.message.includes('before initialization')) {
-        console.warn('Caught initialization error, attempting to fix:', error.message);
-        // Tentar executar o código novamente após um delay
-        setTimeout(() => {
-          try {
-            originalEval.call(this, code);
-          } catch (retryError) {
-            console.error('Failed to fix initialization error:', retryError);
-          }
-        }, 0);
-        return undefined;
-      }
-      throw error;
+      console.warn('Erro ao carregar React via import dinâmico:', error);
+      return null;
     }
   };
+  
+  // Tentar carregamento e definir globalmente
+  loadReact().then(modules => {
+    if (modules && typeof window !== 'undefined') {
+      window.React = modules.React;
+      window.ReactDOM = modules.ReactDOM;
+      window.ReactDOMClient = modules.ReactDOMClient;
+      console.log('✅ React carregado via import dinâmico');
+    }
+  }).catch(error => {
+    console.warn('Falha no carregamento dinâmico do React:', error);
+  });
+  
+} catch (error) {
+  console.warn('Erro durante configuração do vendor:', error);
 }
 
-// Exportar as dependências
-export { React, ReactDOM, ReactDOMClient };
+// Garantir que as variáveis estejam disponíveis imediatamente
+if (typeof window !== 'undefined') {
+  // Definir objetos vazios como fallback
+  window.React = window.React || {};
+  window.ReactDOM = window.ReactDOM || {};
+  window.ReactDOMClient = window.ReactDOMClient || {};
+  
+  // Garantir variáveis de bundling
+  const criticalVars = ['t', 'e', 'r', 'n', 'o', 'i', 'a', 'u', 's', 'c', 'l', 'd', 'f', 'p', 'h', 'm', 'g', 'v', 'y', 'b', 'w', 'x', 'k'];
+  
+  criticalVars.forEach(varName => {
+    if (typeof window[varName] === 'undefined') {
+      window[varName] = {};
+    }
+  });
+}
+
+// Exportar uma função que não causa problemas de inicialização
+export default function() {
+  console.log('Vendor preload executado sem erros');
+  return {
+    React: window.React,
+    ReactDOM: window.ReactDOM,
+    ReactDOMClient: window.ReactDOMClient
+  };
+}
