@@ -1,15 +1,19 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
+import react from '@vitejs/plugin-react' // Usando plugin React padrão em vez de SWC
 import path from 'path'
 import { visualizer } from 'rollup-plugin-visualizer'
-import { createESModulesFixPlugin } from './client/lib/vite-esmodules-fix'
+import { createESModulesFixPlugin } from './client/lib/vite-esmodules-fix-vercel' // Versão compatível com Vercel
 
 // Configuração específica para produção com otimizações agressivas
 export default defineConfig({
   plugins: [
     react({
-      // Otimizações do SWC para produção
-      tsDecorators: true,
+      // Configuração para o plugin React padrão
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx']
+        ]
+      }
     }),
     // Plugin customizado para resolver problemas de ES modules
     createESModulesFixPlugin(),
@@ -312,14 +316,14 @@ export default defineConfig({
   
   // ESBuild configuration
   esbuild: {
-    target: 'esnext',
+    target: 'es2015',
     platform: 'browser',
     format: 'esm',
     treeShaking: true,
-    minifyIdentifiers: true,
+    minifyIdentifiers: false,  // Desativado para evitar problemas
     minifyWhitespace: true,
-    minifySyntax: true,
-    keepNames: false,
+    minifySyntax: false,       // Desativado para evitar problemas
+    keepNames: true,           // Manter nomes para evitar problemas
     legalComments: 'none',
     logOverride: { 
       'this-is-undefined-in-esm': 'silent',

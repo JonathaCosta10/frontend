@@ -7,8 +7,8 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist",
-        "buildCommand": "npm run build",
-        "installCommand": "npm install"
+        "buildCommand": "npm run build:prod",
+        "installCommand": "npm install --no-optional=false"
       }
     }
   ],
