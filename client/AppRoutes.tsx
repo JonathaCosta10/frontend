@@ -68,7 +68,7 @@ const Market = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado
 const FIIMarket = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/index"));
 const IndicadoresEconomicos = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
 const ListaDeDesejo = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
-const AnaliseTicker = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
+import AnaliseTicker from "./pages/dashboard/mercado/analise-ticker";
 const CalculadoraFinanceira = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
 
 // Crypto Pages

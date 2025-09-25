@@ -246,13 +246,13 @@ interface Insight {
   message: string;
 }
 
-const generateInsights = (data: FIIAnalysisResponse | null): Insight[] => {
+const generateInsights = (data: any): Insight[] => {
   if (!data || !data.historico_mensal || data.historico_mensal.length === 0) {
     return [];
   }
 
   const insights: Insight[] = [];
-  const historico = data.historico_mensal.sort((a, b) => new Date(a.data_referencia).getTime() - new Date(b.data_referencia).getTime());
+  const historico = data.historico_mensal.sort((a: any, b: any) => new Date(a.data_referencia).getTime() - new Date(b.data_referencia).getTime());
 
   // ========== ANÁLISE TOTAL INVESTIDO ==========
   if (historico.length >= 2) {
@@ -261,6 +261,337 @@ const generateInsights = (data: FIIAnalysisResponse | null): Insight[] => {
     
     const totalInvestidoAtual = atual.total_investido;
     const totalInvestidoAnterior = anterior.total_investido;
+    
+    if (totalInvestidoAtual > 0 && totalInvestidoAnterior > 0) {
+      const crescimentoInvestimento = ((totalInvestidoAtual - totalInvestidoAnterior) / totalInvestidoAnterior) * 100;
+      
+      if (Math.abs(crescimentoInvestimento) > 1) {
+        if (crescimentoInvestimento > 0) {
+          insights.push({
+            type: 'positive',
+            icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+            message: `💰 Total investido cresceu ${crescimentoInvestimento.toFixed(1)}% no último mês`
+          });
+        } else {
+          insights.push({
+            type: 'negative',
+            icon: <ArrowDownRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
+            message: `📉 Total investido caiu ${Math.abs(crescimentoInvestimento).toFixed(1)}% no último mês`
+          });
+        }
+      }
+    }
+  }
+
+  // ========== ANÁLISE ALAVANCAGEM ==========
+  if (historico.length >= 2) {
+    const atual = historico[historico.length - 1];
+    const anterior = historico[historico.length - 2];
+    
+    const alavancagemAtual = atual.alavancagem * 100;
+    const alavancagemAnterior = anterior.alavancagem * 100;
+    
+    if (alavancagemAtual >= 0 && alavancagemAnterior >= 0) {
+      const mudancaAlavancagem = alavancagemAtual - alavancagemAnterior;
+      
+      if (Math.abs(mudancaAlavancagem) > 1) {
+        if (mudancaAlavancagem < 0) {
+          insights.push({
+            type: 'positive',
+            icon: <ArrowDownRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+            message: `📊 Alavancagem reduziu de ${alavancagemAnterior.toFixed(1)}% para ${alavancagemAtual.toFixed(1)}%`
+          });
+        } else {
+          insights.push({
+            type: 'negative',
+            icon: <ArrowUpRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
+            message: `⚠️ Alavancagem aumentou de ${alavancagemAnterior.toFixed(1)}% para ${alavancagemAtual.toFixed(1)}%`
+          });
+        }
+      }
+    }
+  }
+
+  // ========== ANÁLISE DIVIDENDOS ==========
+  if (historico.length >= 2) {
+    const atual = historico[historico.length - 1];
+    const anterior = historico[historico.length - 2];
+    
+    const dividendoAtual = atual.dividendo_periodo;
+    const dividendoAnterior = anterior.dividendo_periodo;
+    
+    // Caso especial: Dividendo = 0
+    if (dividendoAtual === 0) {
+      insights.push({
+        type: 'alert',
+        icon: <AlertTriangle className="h-3 w-3 text-yellow-600 flex-shrink-0" />,
+        message: `🚨 ALERTA: Dividendo zero no período. Favor verificar se há problema na gestão do fundo`
+      });
+    } else if (dividendoAtual > 0 && dividendoAnterior > 0) {
+      const crescimentoDividendo = ((dividendoAtual - dividendoAnterior) / dividendoAnterior) * 100;
+      
+      if (Math.abs(crescimentoDividendo) > 2) {
+        if (crescimentoDividendo > 0) {
+          insights.push({
+            type: 'positive',
+            icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+            message: `💎 Dividendo cresceu ${crescimentoDividendo.toFixed(1)}% no último mês`
+          });
+        } else {
+          insights.push({
+            type: 'negative',
+            icon: <ArrowDownRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
+            message: `📉 Dividendo reduziu ${Math.abs(crescimentoDividendo).toFixed(1)}% no último mês`
+          });
+        }
+      }
+    }
+  }
+
+  // ========== ANÁLISE IDADE DO FUNDO ==========
+  if (data.inicio_fundo) {
+    const dataInicio = new Date(data.inicio_fundo);
+    const hoje = new Date();
+    const idadeEmMeses = Math.floor((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44));
+    const idadeEmAnos = Math.floor(idadeEmMeses / 12);
+
+    if (idadeEmAnos < 2) {
+      insights.push({
+        type: 'alert',
+        icon: <AlertTriangle className="h-3 w-3 text-yellow-600 flex-shrink-0" />,
+        message: `🆕 Fundo jovem (${idadeEmAnos === 0 ? idadeEmMeses + ' meses' : idadeEmAnos + ' anos'}). Histórico limitado`
+      });
+    } else if (idadeEmAnos >= 5) {
+      insights.push({
+        type: 'positive',
+        icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+        message: `✅ Fundo maduro (${idadeEmAnos} anos). Histórico consistente`
+      });
+    }
+  }
+
+  // ========== ANÁLISE P/VP ==========
+  if (data.p_vp && data.p_vp > 0) {
+    const pvp = data.p_vp;
+    
+    if (pvp < 0.8) {
+      insights.push({
+        type: 'positive',
+        icon: <ArrowDownRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+        message: `💰 P/VP baixo (${pvp.toFixed(2)}). Possível oportunidade`
+      });
+    } else if (pvp > 1.2) {
+      insights.push({
+        type: 'negative',
+        icon: <ArrowUpRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
+        message: `⚠️ P/VP alto (${pvp.toFixed(2)}). Fundo pode estar sobrevalorizado`
+      });
+    }
+  }
+
+  return insights.slice(0, 5);
+};
+
+// Componente InfoCard para indicadores
+
+// Componente principal para análise de FII
+  if (!data || !data.historico_mensal || data.historico_mensal.length === 0) {
+    return [];
+  }
+
+  const insights: Insight[] = [];
+  const historico = data.historico_mensal.sort((a: any, b: any) => new Date(a.data_referencia).getTime() - new Date(b.data_referencia).getTime());
+
+  // ========== ANÁLISE TOTAL INVESTIDO ==========
+  if (historico.length >= 2) {
+    const atual = historico[historico.length - 1];
+    const anterior = historico[historico.length - 2];
+    
+    const totalInvestidoAtual = atual.total_investido;
+    const totalInvestidoAnterior = anterior.total_investido;
+    
+    if (totalInvestidoAtual > 0 && totalInvestidoAnterior > 0) {
+      const crescimentoInvestimento = ((totalInvestidoAtual - totalInvestidoAnterior) / totalInvestidoAnterior) * 100;
+      
+      if (Math.abs(crescimentoInvestimento) > 0.5) {
+        if (crescimentoInvestimento > 0) {
+          insights.push({
+            type: 'positive',
+            icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+            message: `💰 Total investido cresceu ${crescimentoInvestimento.toFixed(1)}% no último mês`
+          });
+        } else {
+          insights.push({
+            type: 'negative',
+            icon: <ArrowDownRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
+            message: `📉 Total investido caiu ${Math.abs(crescimentoInvestimento).toFixed(1)}% no último mês`
+          });
+        }
+      }
+    }
+  }
+
+  // ========== ANÁLISE ALAVANCAGEM ==========
+  if (historico.length >= 2) {
+    const atual = historico[historico.length - 1];
+    const anterior = historico[historico.length - 2];
+    
+    const alavancagemAtual = atual.alavancagem * 100;
+    const alavancagemAnterior = anterior.alavancagem * 100;
+    
+    if (alavancagemAtual >= 0 && alavancagemAnterior >= 0) {
+      const mudancaAlavancagem = alavancagemAtual - alavancagemAnterior;
+      
+      if (Math.abs(mudancaAlavancagem) > 0.5) {
+        if (mudancaAlavancagem < 0) {
+          insights.push({
+            type: 'positive',
+            icon: <ArrowDownRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+            message: `📊 Alavancagem reduziu de ${alavancagemAnterior.toFixed(1)}% para ${alavancagemAtual.toFixed(1)}% (menor risco)`
+          });
+        } else {
+          insights.push({
+            type: 'negative',
+            icon: <ArrowUpRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
+            message: `⚠️ Alavancagem aumentou de ${alavancagemAnterior.toFixed(1)}% para ${alavancagemAtual.toFixed(1)}% (maior risco)`
+          });
+        }
+      }
+    }
+  }
+
+  // ========== ANÁLISE DIVIDENDOS ==========
+  if (historico.length >= 2) {
+    const atual = historico[historico.length - 1];
+    const anterior = historico[historico.length - 2];
+    
+    const dividendoAtual = atual.dividendo_periodo;
+    const dividendoAnterior = anterior.dividendo_periodo;
+    
+    // Caso especial: Dividendo = 0
+    if (dividendoAtual === 0 || dividendoAtual === null) {
+      insights.push({
+        type: 'alert',
+        icon: <AlertTriangle className="h-3 w-3 text-yellow-600 flex-shrink-0" />,
+        message: `🚨 ALERTA: Dividendo zero no período. Verificar possível problema na gestão`
+      });
+    } else if (dividendoAtual > 0 && dividendoAnterior > 0) {
+      const crescimentoDividendo = ((dividendoAtual - dividendoAnterior) / dividendoAnterior) * 100;
+      
+      if (Math.abs(crescimentoDividendo) > 1) {
+        if (crescimentoDividendo > 0) {
+          insights.push({
+            type: 'positive',
+            icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+            message: `💎 Dividendo cresceu ${crescimentoDividendo.toFixed(1)}% (R$ ${dividendoAnterior.toFixed(2)} → R$ ${dividendoAtual.toFixed(2)})`
+          });
+        } else {
+          insights.push({
+            type: 'negative',
+            icon: <ArrowDownRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
+            message: `📉 Dividendo reduziu ${Math.abs(crescimentoDividendo).toFixed(1)}% (R$ ${dividendoAnterior.toFixed(2)} → R$ ${dividendoAtual.toFixed(2)})`
+          });
+        }
+      }
+    }
+  }
+
+  // ========== ANÁLISE IDADE DO FUNDO ==========
+  if (data.data_inicio || data.inicio_fundo) {
+    const dataInicio = new Date(data.data_inicio || data.inicio_fundo);
+    const hoje = new Date();
+    const idadeEmDias = Math.floor((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24));
+    const idadeEmAnos = Math.floor(idadeEmDias / 365);
+
+    if (idadeEmAnos < 2) {
+      insights.push({
+        type: 'alert',
+        icon: <AlertTriangle className="h-3 w-3 text-yellow-600 flex-shrink-0" />,
+        message: `🆕 Fundo jovem (${idadeEmAnos} anos). Histórico limitado para análise`
+      });
+    } else if (idadeEmAnos >= 5) {
+      insights.push({
+        type: 'positive',
+        icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+        message: `✅ Fundo maduro (${idadeEmAnos} anos). Histórico consistente para análise`
+      });
+    }
+  }
+
+  // ========== ANÁLISE P/VP ==========
+  if (data.p_vp && data.p_vp > 0) {
+    const pvp = data.p_vp;
+    
+    if (pvp < 0.8) {
+      insights.push({
+        type: 'positive',
+        icon: <ArrowDownRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+        message: `💰 P/VP baixo (${pvp.toFixed(3)}). Fundo com desconto - oportunidade`
+      });
+    } else if (pvp > 1.2) {
+      insights.push({
+        type: 'negative',
+        icon: <ArrowUpRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
+        message: `⚠️ P/VP alto (${pvp.toFixed(3)}). Fundo pode estar sobrevalorizado`
+      });
+    }
+  }
+
+  // ========== ANÁLISE YIELD ==========
+  if (data.ultimo_dividendo && data.last_price) {
+    const yieldMensal = (data.ultimo_dividendo / data.last_price) * 100;
+    const yieldAnual = yieldMensal * 12;
+
+    if (yieldAnual > 10) {
+      insights.push({
+        type: 'positive',
+        icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+        message: `💎 Yield atrativo (${yieldAnual.toFixed(1)}% a.a.) baseado no último dividendo`
+      });
+    } else if (yieldAnual < 6 && yieldAnual > 0) {
+      insights.push({
+        type: 'negative',
+        icon: <ArrowDownRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
+        message: `📉 Yield baixo (${yieldAnual.toFixed(1)}% a.a.) baseado no último dividendo`
+      });
+    }
+  }
+
+  // ========== ANÁLISE PERFORMANCE SEMANA ==========
+  if (data.ultima_semana && data.ultima_semana.length >= 2) {
+    const precoRecente = data.ultima_semana[0].preco;
+    const precoAntigo = data.ultima_semana[data.ultima_semana.length - 1].preco;
+    const variacao = ((precoRecente - precoAntigo) / precoAntigo) * 100;
+
+    if (Math.abs(variacao) > 2) {
+      if (variacao > 0) {
+        insights.push({
+          type: 'positive',
+          icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
+          message: `📈 Valorização de ${variacao.toFixed(1)}% na última semana`
+        });
+      } else {
+        insights.push({
+          type: 'negative',
+          icon: <ArrowDownRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
+          message: `📉 Desvalorização de ${Math.abs(variacao).toFixed(1)}% na última semana`
+        });
+      }
+    }
+  }
+
+  return insights.slice(0, 5);
+};
+
+// Componente InfoCard para indicadores
+const InfoCard: React.FC<{
+  title: string;
+  value: string;
+  tooltip: string;
+  icon: React.ReactNode;
+  trend?: 'up' | 'down' | 'neutral';
+}> = ({ title, value, tooltip, icon, trend }) => (
+  <TooltipProvider>
     
     if (totalInvestidoAtual > 0 && totalInvestidoAnterior > 0) {
       const crescimentoInvestimento = ((totalInvestidoAtual - totalInvestidoAnterior) / totalInvestidoAnterior) * 100;
@@ -369,8 +700,8 @@ const generateInsights = (data: FIIAnalysisResponse | null): Insight[] => {
   }
 
   // ========== ANÁLISE IDADE DO FUNDO ==========
-  if (data.data_inicio) {
-    const dataInicio = new Date(data.data_inicio);
+  if (data.informacoes_gerais?.data_inicio) {
+    const dataInicio = new Date(data.informacoes_gerais.data_inicio);
     const hoje = new Date();
     const idadeEmMeses = Math.floor((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44));
     const idadeEmAnos = Math.floor(idadeEmMeses / 12);
@@ -379,20 +710,20 @@ const generateInsights = (data: FIIAnalysisResponse | null): Insight[] => {
       insights.push({
         type: 'alert',
         icon: <AlertTriangle className="h-3 w-3 text-yellow-600 flex-shrink-0" />,
-        message: `🆕 Fundo jovem (${idadeEmAnos === 0 ? idadeEmMeses + ' meses' : idadeEmAnos + (idadeEmAnos === 1 ? ' ano' : ' anos')}). Histórico limitado`
+        message: `🆕 Fundo jovem (${idadeEmAnos === 0 ? idadeEmMeses + ' meses' : idadeEmAnos + ' anos'}). Histórico limitado para análise`
       });
     } else if (idadeEmAnos >= 5) {
       insights.push({
         type: 'positive',
         icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-        message: `✅ Fundo maduro (${idadeEmAnos} anos). Histórico sólido para análise`
+        message: `✅ Fundo maduro (${idadeEmAnos} anos). Histórico consistente para análise`
       });
     }
   }
 
   // ========== ANÁLISE P/VP (PREÇO SOBRE VALOR PATRIMONIAL) ==========
-  if (data.p_vp && data.p_vp > 0) {
-    const pvp = data.p_vp;
+  if (data.indicadores_principais?.pvp && data.indicadores_principais.pvp > 0) {
+    const pvp = data.indicadores_principais.pvp;
     
     if (pvp < 0.8) {
       insights.push({
@@ -405,12 +736,6 @@ const generateInsights = (data: FIIAnalysisResponse | null): Insight[] => {
         type: 'negative',
         icon: <ArrowUpRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
         message: `⚠️ P/VP alto (${pvp.toFixed(2)}). Fundo pode estar sobrevalorizado`
-      });
-    } else {
-      insights.push({
-        type: 'positive',
-        icon: <ArrowUpRight className="h-3 w-3 text-blue-600 flex-shrink-0" />,
-        message: `📊 P/VP equilibrado (${pvp.toFixed(2)}). Preço justo`
       });
     }
   }
@@ -434,38 +759,6 @@ const generateInsights = (data: FIIAnalysisResponse | null): Insight[] => {
         type: 'negative',
         icon: <ArrowDownRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
         message: `� Yield projetado baixo (${yieldAnual.toFixed(1)}% a.a.) baseado nos últimos 3 meses`
-      });
-    }
-  }
-
-  // ========== ANÁLISE LIQUIDEZ ==========
-  if (data.liquidez?.metrics?.gap_liquidez !== undefined) {
-    const gapLiquidez = data.liquidez.metrics.gap_liquidez * 100;
-    
-    if (gapLiquidez < 1) {
-      insights.push({
-        type: 'alert',
-        icon: <AlertTriangle className="h-3 w-3 text-yellow-600 flex-shrink-0" />,
-        message: `⚠️ Baixa liquidez (${gapLiquidez.toFixed(2)}%). Atenção para necessidades de caixa`
-      });
-    } else if (gapLiquidez > 10) {
-      insights.push({
-        type: 'positive',
-        icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-        message: `💰 Boa liquidez (${gapLiquidez.toFixed(1)}%). Fundo bem posicionado em caixa`
-      });
-    }
-  }
-
-  // ========== ANÁLISE RECEITA DE ALUGUÉIS vs OUTROS ==========
-  if (data.recebiveis?.metrics) {
-    const percentAluguel = data.recebiveis.metrics.percent_aluguel * 100;
-    
-    if (percentAluguel > 70) {
-      insights.push({
-        type: 'positive',
-        icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-        message: `🏢 Foco em aluguéis (${percentAluguel.toFixed(1)}%). Receita recorrente sólida`
       });
     }
   }
@@ -542,7 +835,7 @@ export default function AnaliseTicker() {
   const buscarTickers = async () => {
     setSearchLoading(true);
     try {
-      const results = await investmentService.buscarTickersFII(searchTerm);
+      const results = await investmentService.buscarTickers(searchTerm);
       setTickerSearchResults(results);
     } catch (error) {
       console.error("Erro ao buscar tickers:", error);
@@ -595,7 +888,7 @@ export default function AnaliseTicker() {
       <div className="space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Análise de FII</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Análise Profissional de FII</h1>
           <p className="text-muted-foreground">
             Análise completa e detalhada de Fundos de Investimento Imobiliário
           </p>
@@ -709,26 +1002,26 @@ export default function AnaliseTicker() {
                   </div>
                   
                   {/* Coluna Central: Detalhes da Empresa */}
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div>
-                      <h3 className="font-bold text-gray-800 text-xl mb-2">Razão Social</h3>
-                      <p className="text-lg text-gray-700">{analysisData.razao_social}</p>
+                      <h3 className="font-bold text-gray-800 text-lg mb-1">Razão Social</h3>
+                      <p className="text-base text-gray-700">{analysisData.razao_social}</p>
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-800 text-lg mb-1">CNPJ</h3>
-                      <p className="text-base font-mono text-gray-600">{analysisData.cnpj}</p>
+                      <h3 className="font-bold text-gray-800 text-base mb-1">CNPJ</h3>
+                      <p className="text-sm font-mono text-gray-600">{analysisData.cnpj}</p>
                     </div>
                     {analysisData.site_administrador && (
                       <div>
-                        <h3 className="font-bold text-gray-800 text-lg mb-1">Site do Administrador</h3>
+                        <h3 className="font-bold text-gray-800 text-base mb-1">Site do Administrador</h3>
                         <a 
                           href={analysisData.site_administrador.startsWith('http') ? analysisData.site_administrador : `https://${analysisData.site_administrador}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium text-base"
+                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium text-sm"
                         >
                           {analysisData.site_administrador}
-                          <ExternalLink className="h-4 w-4" />
+                          <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
                     )}
@@ -800,9 +1093,9 @@ export default function AnaliseTicker() {
               />
               
               <InfoCard
-                title="Dividendo Mês"
+                title="Preço atual / último rendimento"
                 value={formatPercentage(analysisData.rentab_mensal)}
-                tooltip="Preço atual / último rendimento. Rentabilidade mensal estimada do fundo."
+                tooltip="Dividendos dos últimos 12 meses ÷ preço atual. Rentabilidade mensal estimada."
                 icon={<TrendingUp className="h-5 w-5 text-purple-600" />}
               />
               
@@ -1074,70 +1367,7 @@ export default function AnaliseTicker() {
                 </CardContent>
               </Card>
 
-              {/* Aluguéis x Outros Recebíveis */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" />
-                    Aluguéis x Outros Recebíveis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <Bar
-                      data={{
-                        labels: analysisData.historico_mensal.map(item => 
-                          new Date(item.data_referencia).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
-                        ),
-                        datasets: [
-                          {
-                            label: 'Aluguéis (%)',
-                            data: analysisData.historico_mensal.map(item => item.percent_aluguel * 100),
-                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                            borderColor: 'rgb(59, 130, 246)',
-                            borderWidth: 1,
-                          },
-                          {
-                            label: 'Outros Recebíveis (%)',
-                            data: analysisData.historico_mensal.map(item => item.percent_outros * 100),
-                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                            borderColor: 'rgb(16, 185, 129)',
-                            borderWidth: 1,
-                          }
-                        ]
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: {
-                              callback: function(value) {
-                                return value + '%';
-                              }
-                            }
-                          }
-                        },
-                        plugins: {
-                          tooltip: {
-                            callbacks: {
-                              label: function(context) {
-                                return `${context.dataset.label}: ${context.raw}%`;
-                              }
-                            }
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* 3. Recebíveis e Gap de Liquidez (lado a lado) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Evolução da Alavancagem do Fundo */}
+              {/* Alavancagem no Tempo */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1151,10 +1381,10 @@ export default function AnaliseTicker() {
                       data={{
                         labels: analysisData.historico_mensal.map(item => 
                           new Date(item.data_referencia).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
-                        ),
+                        ).reverse(),
                         datasets: [{
                           label: 'Alavancagem do Fundo (%)',
-                          data: analysisData.historico_mensal.map(item => item.alavancagem * 100),
+                          data: analysisData.historico_mensal.map(item => item.alavancagem * 100).reverse(),
                           borderColor: 'rgb(239, 68, 68)',
                           backgroundColor: 'rgba(239, 68, 68, 0.1)',
                           tension: 0.4,
@@ -1188,6 +1418,69 @@ export default function AnaliseTicker() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* 3. Recebíveis e Gap de Liquidez (lado a lado) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Aluguéis x Outros Recebíveis */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Aluguéis x Outros Recebíveis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <Bar
+                      data={{
+                        labels: analysisData.historico_mensal.map(item => 
+                          new Date(item.data_referencia).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+                        ).reverse(),
+                        datasets: [
+                          {
+                            label: 'Aluguéis (%)',
+                            data: analysisData.historico_mensal.map(item => item.percent_aluguel * 100).reverse(),
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            borderColor: 'rgb(59, 130, 246)',
+                            borderWidth: 1,
+                          },
+                          {
+                            label: 'Outros Recebíveis (%)',
+                            data: analysisData.historico_mensal.map(item => item.percent_outros * 100).reverse(),
+                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                            borderColor: 'rgb(16, 185, 129)',
+                            borderWidth: 1,
+                          }
+                        ]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            ticks: {
+                              callback: function(value) {
+                                return value + '%';
+                              }
+                            }
+                          }
+                        },
+                        plugins: {
+                          tooltip: {
+                            callbacks: {
+                              label: function(context) {
+                                return `${context.dataset.label}: ${context.raw}%`;
+                              }
+                            }
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Gap de Liquidez */}
               <Card>
@@ -1203,10 +1496,10 @@ export default function AnaliseTicker() {
                       data={{
                         labels: analysisData.historico_mensal.map(item => 
                           new Date(item.data_referencia).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
-                        ),
+                        ).reverse(),
                         datasets: [{
                           label: 'Gap de Liquidez (%)',
-                          data: analysisData.historico_mensal.map(item => item.gap_liquidez * 100),
+                          data: analysisData.historico_mensal.map(item => item.gap_liquidez * 100).reverse(),
                           borderColor: 'rgb(59, 130, 246)',
                           backgroundColor: 'rgba(59, 130, 246, 0.1)',
                           tension: 0.4,
@@ -1270,7 +1563,7 @@ export default function AnaliseTicker() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {analysisData.historico_mensal.slice().reverse().map((item, index) => (
+                      {analysisData.historico_mensal.map((item, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">
                             {formatDate(item.data_referencia)}

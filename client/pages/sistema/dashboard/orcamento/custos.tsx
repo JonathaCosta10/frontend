@@ -26,9 +26,11 @@ import {
   Trash2,
   Target,
   Bell,
+  EyeOff,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 import { budgetApi } from "@/services/api/budget";
 import { useToast } from "@/components/ui/use-toast";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -80,6 +82,7 @@ const COLORS = [
 export default function Custos() {
   const { isAuthenticated } = useAuth();
   const { t, formatCurrency } = useTranslation();
+  const { formatValue, shouldHideCharts } = usePrivacy();
   const { toast } = useToast();
   const [custos, setCustos] = useState<Custo[]>([]);
   const [totaisPorCategoria, setTotaisPorCategoria] = useState<TotalPorCategoria[]>([]);
@@ -269,7 +272,7 @@ export default function Custos() {
 
   // Função para formatar valores monetários
   const formatarValor = (valor: number) => {
-    return formatCurrency(valor);
+    return formatValue(valor);
   };
 
   // Função para obter o ícone da categoria
@@ -489,7 +492,14 @@ export default function Custos() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {totaisPorCategoria && totaisPorCategoria.length > 0 ? (
+            {shouldHideCharts() ? (
+              <div className="h-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <div className="text-center space-y-2">
+                  <EyeOff className="h-8 w-8 text-gray-400 mx-auto" />
+                  <p className="text-gray-500 text-sm">Gráfico oculto</p>
+                </div>
+              </div>
+            ) : totaisPorCategoria && totaisPorCategoria.length > 0 ? (
               <div className="w-full h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -508,7 +518,7 @@ export default function Custos() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: any) => [formatCurrency(value), 'Valor']}
+                      formatter={(value: any) => [shouldHideCharts() ? 'R$ ****' : formatCurrency(value), 'Valor']}
                       labelFormatter={(label) => `Categoria: ${label}`}
                     />
                     <Legend />

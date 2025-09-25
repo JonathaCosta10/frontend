@@ -8,7 +8,7 @@ import { INVESTMENT_ROUTES } from "@/contexts/Rotas";
 import { createHeaders } from "@/lib/apiKeyUtils";
 
 // Base URL da API
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
 
 // Interfaces baseadas na documentação da API
 export interface TickerSearchResult {
@@ -111,6 +111,54 @@ export const buscarTickers = async (searchTerm: string): Promise<TickerSearchRes
   try {
     const url = `${API_BASE}${INVESTMENT_ROUTES.buscarTickers}?q=${encodeURIComponent(searchTerm)}`;
     const headers = getAuthHeaders(INVESTMENT_ROUTES.buscarTickers);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data || data || [];
+  } catch (error) {
+    handleApiError(error);
+    return [];
+  }
+};
+
+// Buscar tickers específicos para FII
+export const buscarTickersFII = async (searchTerm: string): Promise<TickerSearchResult[]> => {
+  try {
+    const url = `${API_BASE}${INVESTMENT_ROUTES.buscarTickersFII}?q=${encodeURIComponent(searchTerm)}`;
+    const headers = getAuthHeaders(INVESTMENT_ROUTES.buscarTickersFII);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data || data || [];
+  } catch (error) {
+    handleApiError(error);
+    return [];
+  }
+};
+
+// Buscar tickers específicos para Ações
+export const buscarTickersAcoes = async (searchTerm: string): Promise<TickerSearchResult[]> => {
+  try {
+    const url = `${API_BASE}${INVESTMENT_ROUTES.buscarTickersAcoes}?q=${encodeURIComponent(searchTerm)}`;
+    const headers = getAuthHeaders(INVESTMENT_ROUTES.buscarTickersAcoes);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -281,14 +329,45 @@ export const buscarResumoCarteira = async (): Promise<any> => {
   }
 };
 
+/**
+ * Analisar ativo específico - Endpoint: GET /api/investimentos/analise-ativo/
+ * Query Parameter: ticker (string) - código do ticker para análise
+ * Retorna análise completa do ativo
+ */
+export const analisarAtivo = async (ticker: string): Promise<any> => {
+  try {
+    const url = `${API_BASE}${INVESTMENT_ROUTES.analiseAtivo}?ticker=${encodeURIComponent(ticker)}`;
+    const headers = getAuthHeaders(INVESTMENT_ROUTES.analiseAtivo);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data || data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+};
+
 // Export default do serviço
 const investmentService = {
   buscarTickers,
+  buscarTickersFII,
+  buscarTickersAcoes,
   buscarAtivosPessoais,
   cadastrarAtivo,
   editarAtivo,
   excluirAtivo,
   buscarResumoCarteira,
+  analisarAtivo,
 };
 
 export default investmentService;

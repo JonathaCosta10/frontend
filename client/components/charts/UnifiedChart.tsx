@@ -13,8 +13,10 @@ import {
   Legend,
   PieController,
 } from 'chart.js';
+import { EyeOff } from 'lucide-react';
 import ChartContainer from './ChartContainer';
 import { useChart, UseChartOptions, ChartConfig } from '@/hooks/useChart';
+import { usePrivacy } from '@/contexts/PrivacyContext';
 
 // Register all Chart.js components
 ChartJS.register(
@@ -73,6 +75,7 @@ export const UnifiedChart: React.FC<UnifiedChartProps> = ({
   children,
   ...chartOptions
 }) => {
+  const { shouldHideCharts } = usePrivacy();
   const { 
     chartData, 
     chartConfig, 
@@ -88,7 +91,16 @@ export const UnifiedChart: React.FC<UnifiedChartProps> = ({
     return (
       <div className="space-y-4">
         <div className={`w-full ${height}`}>
-          {renderChart(chartConfig.type, chartData, chartConfig.options)}
+          {shouldHideCharts() ? (
+            <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <div className="text-center space-y-2">
+                <EyeOff className="h-8 w-8 text-gray-400 mx-auto" />
+                <p className="text-gray-500 text-sm">Gráfico oculto</p>
+              </div>
+            </div>
+          ) : (
+            renderChart(chartConfig.type, chartData, chartConfig.options)
+          )}
         </div>
         {children}
       </div>

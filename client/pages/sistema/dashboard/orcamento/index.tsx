@@ -18,6 +18,7 @@ import VariacaoEntradaChart from "@/components/charts/VariacaoEntradaChart";
 import DistribuicaoGastosChart from "@/components/charts/DistribuicaoGastosChart";
 import MetaRealidadeChart from "@/components/charts/MetaRealidadeChart";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 import { useMonthYear } from "@/hooks/useMonthYear";
 import { BudgetNoDataGuidance } from "@/components/NewUserGuidance";
 import { useBudgetCache } from "@/hooks/useApiCache";
@@ -25,6 +26,7 @@ import { budgetApi } from "@/services/api/budget";
 
 export default function BudgetOverview() {
   const { t, formatCurrency } = useTranslation();
+  const { formatValue, shouldHideCharts } = usePrivacy();
   const { mes, ano } = useMonthYear();
 
   // Convert to integers for API calls
@@ -238,7 +240,7 @@ export default function BudgetOverview() {
                 </Tooltip>
               </CardTitle>
               <div className="flex items-center space-x-2">
-                {variacaoEntradas !== 0 && (
+                {!shouldHideCharts() && variacaoEntradas !== 0 && (
                   <div className={`flex items-center text-xs ${getVariationColor(variacaoEntradas)}`}>
                     {getVariationIcon(variacaoEntradas)}
                     <span className="ml-1">{Math.abs(variacaoEntradas).toFixed(1)}%</span>
@@ -249,13 +251,15 @@ export default function BudgetOverview() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-success">
-                {formatCurrency(totalEntradas)}
+                {formatValue(totalEntradas)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {variacaoEntradas !== 0 && (
-                  <>vs {mesAnteriorNome}: {variacaoEntradas > 0 ? '+' : ''}{variacaoEntradas.toFixed(1)}%</>
-                )}
-              </p>
+              {!shouldHideCharts() && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {variacaoEntradas !== 0 && (
+                    <>vs {mesAnteriorNome}: {variacaoEntradas > 0 ? '+' : ''}{variacaoEntradas.toFixed(1)}%</>
+                  )}
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -269,12 +273,12 @@ export default function BudgetOverview() {
                     <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Total de gastos ({formatCurrency(totalGastos)}) + dívidas mensais ({formatCurrency(totalDividasMensais)})</p>
+                    <p>Total de gastos ({formatValue(totalGastos)}) + dívidas mensais ({formatValue(totalDividasMensais)})</p>
                   </TooltipContent>
                 </Tooltip>
               </CardTitle>
               <div className="flex items-center space-x-2">
-                {variacaoCustos !== 0 && (
+                {!shouldHideCharts() && variacaoCustos !== 0 && (
                   <div className={`flex items-center text-xs ${getVariationColor(variacaoCustos, true)}`}>
                     {getVariationIcon(variacaoCustos)}
                     <span className="ml-1">{Math.abs(variacaoCustos).toFixed(1)}%</span>
@@ -285,13 +289,15 @@ export default function BudgetOverview() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">
-                {formatCurrency(totalCustos)}
+                {formatValue(totalCustos)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {variacaoCustos !== 0 && (
-                  <>vs {mesAnteriorNome}: {variacaoCustos > 0 ? '+' : ''}{variacaoCustos.toFixed(1)}%</>
-                )}
-              </p>
+              {!shouldHideCharts() && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {variacaoCustos !== 0 && (
+                    <>vs {mesAnteriorNome}: {variacaoCustos > 0 ? '+' : ''}{variacaoCustos.toFixed(1)}%</>
+                  )}
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -313,7 +319,7 @@ export default function BudgetOverview() {
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${saldoMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {formatCurrency(saldoMensal)}
+                {formatValue(saldoMensal)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {saldoMensal >= 0 ? t("positive_balance") : t("attention_negative_balance")}
@@ -376,73 +382,75 @@ export default function BudgetOverview() {
         </Card>
 
         {/* Seção de insights e dicas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Status Financeiro */}
-          <div>
-            <h4 className="font-semibold mb-3">Status Financeiro</h4>
-            <div className="space-y-3">
-              {saldoMensal < 0 && (
-                <div className="flex items-center space-x-2 p-3 bg-destructive/10 rounded-lg">
-                  <AlertTriangle className="h-4 w-4 text-destructive" />
-                  <span className="text-sm">{t("warning_negative_balance")}</span>
-                </div>
-              )}
+        {!shouldHideCharts() && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Status Financeiro */}
+            <div>
+              <h4 className="font-semibold mb-3">Status Financeiro</h4>
+              <div className="space-y-3">
+                {saldoMensal < 0 && (
+                  <div className="flex items-center space-x-2 p-3 bg-destructive/10 rounded-lg">
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <span className="text-sm">{t("warning_negative_balance")}</span>
+                  </div>
+                )}
 
-              {saldoMensal >= 0 && totalCustos > 0 && (
-                <div className="flex items-center space-x-2 p-3 bg-success/10 rounded-lg">
-                  <TrendingUp className="h-4 w-4 text-success" />
-                  <span className="text-sm">{t("congratulations_in_green")}</span>
-                </div>
-              )}
+                {saldoMensal >= 0 && totalCustos > 0 && (
+                  <div className="flex items-center space-x-2 p-3 bg-success/10 rounded-lg">
+                    <TrendingUp className="h-4 w-4 text-success" />
+                    <span className="text-sm">{t("congratulations_in_green")}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Dicas Personalizadas */}
+            <div>
+              <h4 className="font-semibold mb-3">Dicas Personalizadas</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {saldoMensal < 0 ? (
+                  <>
+                    <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg">
+                      <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">
+                        {t("expense_control_tip")}
+                      </h4>
+                      <p className="text-sm text-amber-700 dark:text-amber-300">
+                        {t("expense_control_description")}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                      <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                        {t("detailed_analysis_tip")}
+                      </h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        {t("detailed_analysis_description")}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg">
+                      <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2">
+                        {t("reserve_for_emergencies")}
+                      </h4>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        {t("emergency_reserve_tip")}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
+                      <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">
+                        {t("investment_opportunity")}
+                      </h4>
+                      <p className="text-sm text-purple-700 dark:text-purple-300">
+                        {t("investment_opportunity_description")}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Dicas Personalizadas */}
-          <div>
-            <h4 className="font-semibold mb-3">Dicas Personalizadas</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {saldoMensal < 0 ? (
-                <>
-                  <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg">
-                    <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">
-                      {t("expense_control_tip")}
-                    </h4>
-                    <p className="text-sm text-amber-700 dark:text-amber-300">
-                      {t("expense_control_description")}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                    <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                      {t("detailed_analysis_tip")}
-                    </h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      {t("detailed_analysis_description")}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg">
-                    <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2">
-                      {t("reserve_for_emergencies")}
-                    </h4>
-                    <p className="text-sm text-green-700 dark:text-green-300">
-                      {t("emergency_reserve_tip")}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
-                    <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">
-                      {t("investment_opportunity")}
-                    </h4>
-                    <p className="text-sm text-purple-700 dark:text-purple-300">
-                      {t("investment_opportunity_description")}
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Dicas Educativas */}
         <div>

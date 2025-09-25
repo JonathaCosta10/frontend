@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, TrendingUp, BarChart3, Building2, PieChart as PieChartIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, TrendingUp, BarChart3, Building2, PieChart as PieChartIcon, ChevronDown, ChevronUp, EyeOff } from 'lucide-react';
 import { investmentsApi } from '@/services/api/investments';
 import type { SetorResponse, SetorData } from '@/services/api/investments';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePrivacy } from '@/contexts/PrivacyContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface GraficoSetorialAcaoProps {
@@ -38,6 +39,7 @@ const traduzirTipoInvestimento = (tipo: string): string => {
 
 const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSelecionado = 'Acoes' }) => {
   const { formatCurrency } = useTranslation();
+  const { formatValue, shouldHideCharts } = usePrivacy();
   const [data, setData] = useState<SetorResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +118,7 @@ const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSeleciona
               Análise Setorial - {data.data.tipo_analise}
             </p>
             <p className="text-3xl font-bold text-foreground">
-              {formatCurrency(data.data.valor_total)}
+              {formatValue(data.data.valor_total)}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               {data.data.total_ativos} ativo{data.data.total_ativos > 1 ? 's' : ''} em {data.data.resumo.quantidade_setores} setor{data.data.resumo.quantidade_setores > 1 ? 'es' : ''}
@@ -142,55 +144,66 @@ const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSeleciona
         </div>
         
         <div style={{ height: '380px' }} className="relative">
-          {/* Informação centralizada no donut */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-10 pointer-events-none">
-            <p className="text-sm text-muted-foreground">Total</p>
-            <p className="text-xl font-bold">{formatCurrency(data.data.valor_total)}</p>
-          </div>
-          
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data.data.setores.map((setor, index) => ({
-                  name: setor.setor,
-                  value: setor.percentual_alocacao,
-                  color: CORES_SETORES[index % CORES_SETORES.length].color,
-                  amount: setor.valor_total
-                }))}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${(percent * 100).toFixed(1)}%`}
-                outerRadius={140}
-                innerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-                paddingAngle={1}
-                strokeWidth={1}
-              >
-                {data.data.setores.map((_, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={CORES_SETORES[index % CORES_SETORES.length].color}
-                    stroke="#fff"
+          {shouldHideCharts() ? (
+            <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <div className="text-center space-y-2">
+                <EyeOff className="h-8 w-8 text-gray-400 mx-auto" />
+                <p className="text-gray-500 text-sm">Gráfico oculto</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Informação centralizada no donut */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-10 pointer-events-none">
+                <p className="text-sm text-muted-foreground">Total</p>
+                <p className="text-xl font-bold">{formatValue(data.data.valor_total)}</p>
+              </div>
+              
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data.data.setores.map((setor, index) => ({
+                      name: setor.setor,
+                      value: setor.percentual_alocacao,
+                      color: CORES_SETORES[index % CORES_SETORES.length].color,
+                      amount: setor.valor_total
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${(percent * 100).toFixed(1)}%`}
+                    outerRadius={140}
+                    innerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    paddingAngle={1}
+                    strokeWidth={1}
+                  >
+                    {data.data.setores.map((_, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={CORES_SETORES[index % CORES_SETORES.length].color}
+                        stroke="#fff"
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value, name, props) => [
+                      `${Number(value).toFixed(1)}% - ${formatValue(props.payload.amount)}`,
+                      props.payload.name
+                    ]}
+                    contentStyle={{ 
+                      borderRadius: '8px', 
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      padding: '10px 14px',
+                      border: 'none',
+                      fontWeight: 500
+                    }}
                   />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value, name, props) => [
-                  `${Number(value).toFixed(1)}% - ${formatCurrency(props.payload.amount)}`,
-                  props.payload.name
-                ]}
-                contentStyle={{ 
-                  borderRadius: '8px', 
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  padding: '10px 14px',
-                  border: 'none',
-                  fontWeight: 500
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+                </PieChart>
+              </ResponsiveContainer>
+            </>
+          )}
         </div>
 
         <div className="flex flex-wrap justify-center gap-2 mt-4">
@@ -261,7 +274,7 @@ const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSeleciona
                         {setor.percentual_alocacao.toFixed(1)}%
                       </p>
                       <p className="text-sm text-muted-foreground font-medium">
-                        {formatCurrency(setor.valor_total)}
+                        {formatValue(setor.valor_total)}
                       </p>
                     </div>
                   </div>
@@ -301,10 +314,10 @@ const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSeleciona
                               </div>
                               <div className="text-right">
                                 <p className={`text-sm font-bold ${cores.text}`}>
-                                  {formatCurrency(ativo.valor_atual)}
+                                  {formatValue(ativo.valor_atual)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {formatCurrency(ativo.preco_atual)}/cota
+                                  {formatValue(ativo.preco_atual)}/cota
                                 </p>
                               </div>
                             </div>
@@ -318,7 +331,7 @@ const GraficoSetorialAcao: React.FC<GraficoSetorialAcaoProps> = ({ tipoSeleciona
                                   className="text-xs"
                                 >
                                   {ativo.valor_atual >= ativo.valor_investido ? '+' : ''}
-                                  {formatCurrency(ativo.valor_atual - ativo.valor_investido)}
+                                  {formatValue(ativo.valor_atual - ativo.valor_investido)}
                                 </Badge>
                               </div>
                             </div>

@@ -2,11 +2,12 @@ import React, { useState, useCallback, useMemo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Moon, Sun, Code, Menu, X } from "lucide-react";
+import { Moon, Sun, Code, Menu, X, Eye, EyeOff } from "lucide-react";
 import DashboardSidebar from "./DashboardSidebar";
 import Onboarding from "./Onboarding";
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "../contexts/TranslationContext";
+import { usePrivacy } from "../contexts/PrivacyContext";
 import { useOnboarding } from "../hooks/useOnboarding";
 // LanguageSelector removed - Portuguese only application
 import { useIntelligentPreload } from "../hooks/useIntelligentPreload";
@@ -18,6 +19,7 @@ const DashboardLayout = React.memo(() => {
   const { user } = useAuth();
   const location = useLocation();
   const { t } = useTranslation();
+  const { hideValues, toggleHideValues } = usePrivacy();
   
   // Hook de preload inteligente
   useIntelligentPreload();
@@ -158,6 +160,21 @@ const DashboardLayout = React.memo(() => {
             </div>
 
             <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
+              {/* Privacy Toggle Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleHideValues}
+                className="w-9 h-9"
+                title={hideValues ? "Mostrar Valores" : "Ocultar Valores"}
+              >
+                {hideValues ? (
+                  <Eye className="h-4 w-4" />
+                ) : (
+                  <EyeOff className="h-4 w-4" />
+                )}
+              </Button>
+
               {/* Language selector removed - Portuguese only */}
 
               <Button

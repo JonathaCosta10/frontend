@@ -62,14 +62,14 @@ export const developmentConfig: EnvironmentConfig = {
   mode: 'development',
   
   // API Configuration
-  apiBaseUrl: 'http://127.0.0.1:8000',
-  apiRoot: 'http://127.0.0.1:8000',
-  apiUrl: 'http://127.0.0.1:8000',
+  apiBaseUrl: 'http://127.0.0.1:5000',
+  apiRoot: 'http://127.0.0.1:5000',
+  apiUrl: 'http://127.0.0.1:5000',
   
   // Backend Services
-  backendUrl: 'http://127.0.0.1:8000',
-  authServiceUrl: 'http://127.0.0.1:8000/auth',
-  apiServiceUrl: 'http://127.0.0.1:8000/services/api',
+  backendUrl: 'http://127.0.0.1:5000',
+  authServiceUrl: 'http://127.0.0.1:5000/auth',
+  apiServiceUrl: 'http://127.0.0.1:5000/services/api',
   
   // OAuth Configuration
   googleClientId: (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || 'your-dev-google-client-id',

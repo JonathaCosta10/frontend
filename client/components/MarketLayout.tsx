@@ -16,16 +16,20 @@ export default function MarketLayout({ children }: MarketLayoutProps) {
   const marketNavItems = [
     { label: t("market_nav_fiis"), path: "/dashboard/mercado" },
     {
-      label: t("market_nav_indicators"),
-      path: "/dashboard/mercado/indicadores-economicos",
+      label: t("market_nav_analysis_fii"),
+      path: "/dashboard/mercado/analise-ticker",
+    },
+    {
+      label: t("market_nav_analysis_acoes"),
+      path: "/dashboard/mercado/analise-ticker-acoes",
     },
     {
       label: t("market_nav_wishlist"),
       path: "/dashboard/mercado/lista-de-desejo",
     },
     {
-      label: t("market_nav_analysis"),
-      path: "/dashboard/mercado/analise-ticker",
+      label: t("market_nav_indicators"),
+      path: "/dashboard/mercado/indicadores-economicos",
     },
     {
       label: t("market_nav_calculator"),

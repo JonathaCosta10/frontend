@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TranslationProvider } from "./contexts/TranslationContext";
+import { PrivacyProvider } from "./contexts/PrivacyContext";
 // TODO: Implementar LazyContextProviders para reduzir entry chunk
 // import { LazyContextProviders } from "./contexts/LazyContexts";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -74,6 +75,7 @@ const FIIMarket = withOptimizedLazy(() => import("./pages/sistema/dashboard/merc
 const IndicadoresEconomicos = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
 const ListaDeDesejo = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
 const AnaliseTicker = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
+const AnaliseTickerAcoes = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker-acoes"));
 const CalculadoraFinanceira = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
 
 // Lazy loaded system pages - Crypto (sem preload)
@@ -119,7 +121,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TranslationProvider>
-          <TooltipProvider>
+          <PrivacyProvider>
+            <TooltipProvider>
             <Toaster />
             <Sonner />
               <BrowserRouter>
@@ -406,6 +409,11 @@ function App() {
                         <AnaliseTicker />
                       </Suspense>
                     } />
+                    <Route path="analise-ticker-acoes" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AnaliseTickerAcoes />
+                      </Suspense>
+                    } />
                     <Route
                       path="calculadora-financeira"
                       element={
@@ -508,7 +516,8 @@ function App() {
                 } />
               </Routes>
             </BrowserRouter>
-          </TooltipProvider>
+            </TooltipProvider>
+          </PrivacyProvider>
         </TranslationProvider>
       </AuthProvider>
     </QueryClientProvider>

@@ -20,7 +20,7 @@ import {
 import { eventEmitter, EVENTS } from "../lib/eventEmitter";
 
 // Configuração do ambiente
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
 
 // Interfaces
 interface User {
@@ -656,7 +656,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Função interna para validação com backend
       async function validateWithBackend(tokenToValidate: string): Promise<boolean> {
         // Importante: usar 127.0.0.1 em vez de localhost para evitar problemas com cookies
-        const backendUrl = (BACKEND_URL || 'http://127.0.0.1:8000').replace('localhost', '127.0.0.1');
+        const backendUrl = (BACKEND_URL || 'http://127.0.0.1:5000').replace('localhost', '127.0.0.1');
         
         try {
           const profileResponse = await authenticatedFetch(`${backendUrl}/api/user/profile`, {

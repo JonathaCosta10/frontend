@@ -10,9 +10,10 @@ import {
   Legend,
   DoughnutController,
 } from 'chart.js';
-import { CreditCard, TrendingDown, Info } from "lucide-react";
+import { CreditCard, TrendingDown, Info, EyeOff } from "lucide-react";
 import { useBudgetCache } from "@/hooks/useApiCache";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, ChartTooltip, Legend, DoughnutController);
@@ -24,6 +25,7 @@ interface DistribuicaoGastosChartProps {
 
 const DistribuicaoGastosChart: React.FC<DistribuicaoGastosChartProps> = ({ mes, ano }) => {
   const { formatCurrency } = useTranslation();
+  const { formatValue, shouldHideCharts } = usePrivacy();
   
   // Usar cache inteligente para evitar múltiplas requisições
   const { 
@@ -110,7 +112,7 @@ const DistribuicaoGastosChart: React.FC<DistribuicaoGastosChartProps> = ({ mes, 
             const valor = context.parsed;
             const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
             const percentual = ((valor / total) * 100).toFixed(1);
-            return `${formatCurrency(valor)} (${percentual}%)`;
+            return shouldHideCharts() ? 'R$ **** (****%)' : `${formatCurrency(valor)} (${percentual}%)`;
           },
         },
       },
@@ -173,23 +175,36 @@ const DistribuicaoGastosChart: React.FC<DistribuicaoGastosChartProps> = ({ mes, 
   return (
     <TooltipProvider>
       <div>
-        <div className="text-sm text-muted-foreground mb-4">
-            Total: {formatCurrency(totalGeral)} • {mesesConsiderados} meses considerados
+        {!shouldHideCharts() && (
+          <div className="text-sm text-muted-foreground mb-4">
+            Total: {formatValue(totalGeral)} • {mesesConsiderados} meses considerados
           </div>
+        )}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Gráfico de rosca */}
             <div className="space-y-4">
               <div className="h-64">
-                <Doughnut data={configGrafico} options={opcoes} />
+                {shouldHideCharts() ? (
+                  <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    <div className="text-center space-y-2">
+                      <EyeOff className="h-8 w-8 text-gray-400 mx-auto" />
+                      <p className="text-gray-500 text-sm">Gráfico oculto</p>
+                    </div>
+                  </div>
+                ) : (
+                  <Doughnut data={configGrafico} options={opcoes} />
+                )}
               </div>
               {/* Informações do total abaixo do gráfico */}
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">
-                  {formatCurrency(totalGeral)}
+              {!shouldHideCharts() && (
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">
+                    {formatValue(totalGeral)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Anual</div>
+                  <div className="text-xs text-muted-foreground">{mesesConsiderados} meses</div>
                 </div>
-                <div className="text-sm text-muted-foreground">Total Anual</div>
-                <div className="text-xs text-muted-foreground">{mesesConsiderados} meses</div>
-              </div>
+              )}
             </div>
 
             {/* Lista de categorias */}
@@ -205,41 +220,49 @@ const DistribuicaoGastosChart: React.FC<DistribuicaoGastosChartProps> = ({ mes, 
                       <span className="font-medium text-sm">{item.categoria}</span>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold text-sm">{formatCurrency(item.valor)}</div>
-                      <div className="text-xs text-muted-foreground">{item.percentual.toFixed(1)}%</div>
+                      <div className="font-semibold text-sm">{formatValue(item.valor)}</div>
+                      <div className="text-xs text-muted-foreground">{shouldHideCharts() ? '****%' : `${item.percentual.toFixed(1)}%`}</div>
                     </div>
                   </div>
-                  <Progress 
-                    value={item.percentual} 
-                    className="h-2"
-                    style={{
-                      '--progress-background': cores[index],
-                    } as React.CSSProperties}
-                  />
+                  {shouldHideCharts() ? (
+                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                      <EyeOff className="h-3 w-3 text-gray-400" />
+                    </div>
+                  ) : (
+                    <Progress 
+                      value={item.percentual} 
+                      className="h-2"
+                      style={{
+                        '--progress-background': cores[index],
+                      } as React.CSSProperties}
+                    />
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
           {/* Insights */}
-          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <TrendingDown className="h-4 w-4 text-orange-600" />
-              <span className="font-medium text-sm">Insights</span>
+          {!shouldHideCharts() && (
+            <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                <TrendingDown className="h-4 w-4 text-orange-600" />
+                <span className="font-medium text-sm">Insights</span>
+              </div>
+              <div className="text-sm text-muted-foreground space-y-1">
+                {dadosAgregados.length > 0 && (
+                  <>
+                    <div>• Maior custo: {dadosAgregados[0].categoria} ({dadosAgregados[0].percentual.toFixed(1)}%)</div>
+                    {dadosAgregados.length > 1 && (
+                      <div>• Segundo maior: {dadosAgregados[1].categoria} ({dadosAgregados[1].percentual.toFixed(1)}%)</div>
+                    )}
+                    <div>• Total de categorias: {dadosAgregados.length}</div>
+                    <div>• Período analisado: {mesesConsiderados} meses de {ano}</div>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground space-y-1">
-              {dadosAgregados.length > 0 && (
-                <>
-                  <div>• Maior custo: {dadosAgregados[0].categoria} ({dadosAgregados[0].percentual.toFixed(1)}%)</div>
-                  {dadosAgregados.length > 1 && (
-                    <div>• Segundo maior: {dadosAgregados[1].categoria} ({dadosAgregados[1].percentual.toFixed(1)}%)</div>
-                  )}
-                  <div>• Total de categorias: {dadosAgregados.length}</div>
-                  <div>• Período analisado: {mesesConsiderados} meses de {ano}</div>
-                </>
-              )}
-            </div>
-          </div>
+          )}
       </div>
     </TooltipProvider>
   );

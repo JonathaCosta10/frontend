@@ -39,7 +39,7 @@ const NavigationLinks: React.FC<NavigationLinksProps> = ({ currentPath, onClick 
     { to: "/about", label: "Sobre" },
     { to: "/privacy-policy", label: "Política de Privacidade" },
     { to: "/terms", label: "Termos" },
-    { to: "/plans", label: t("plans") },
+    { to: "/demo", label: "Sistema" },
   ];
 
   return (
