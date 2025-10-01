@@ -357,6 +357,62 @@ export const analisarAtivo = async (ticker: string): Promise<any> => {
   }
 };
 
+/**
+ * Analisar ativo FII específico - Endpoint: GET /api/investimentos/analise-ativo/fii/
+ * Query Parameter: ticker (string) - código do ticker para análise de FII
+ * Retorna análise completa do FII
+ */
+export const analisarAtivoFII = async (ticker: string): Promise<any> => {
+  try {
+    const url = `${API_BASE}${INVESTMENT_ROUTES.analiseAtivoFII}?ticker=${encodeURIComponent(ticker)}`;
+    const headers = getAuthHeaders(INVESTMENT_ROUTES.analiseAtivoFII);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data || data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+};
+
+/**
+ * Analisar ativo de ações específico - Endpoint: GET /api/investimentos/analise-ativo/acoes/
+ * Query Parameter: ticker (string) - código do ticker para análise de ações
+ * Retorna análise completa da ação
+ */
+export const analisarAtivoAcoes = async (ticker: string): Promise<any> => {
+  try {
+    const url = `${API_BASE}${INVESTMENT_ROUTES.analiseAtivoAcoes}?ticker=${encodeURIComponent(ticker)}`;
+    const headers = getAuthHeaders(INVESTMENT_ROUTES.analiseAtivoAcoes);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data || data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+};
+
 // Export default do serviço
 const investmentService = {
   buscarTickers,
@@ -368,6 +424,8 @@ const investmentService = {
   excluirAtivo,
   buscarResumoCarteira,
   analisarAtivo,
+  analisarAtivoFII,
+  analisarAtivoAcoes,
 };
 
 export default investmentService;

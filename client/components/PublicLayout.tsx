@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useResponsive } from "@/hooks/useResponsive";
 import NavigationLinks from "@/components/NavigationLinks";
 import {
   Moon,
@@ -17,9 +19,10 @@ interface PublicLayoutProps {
 }
 
 export default function PublicLayout({ children }: PublicLayoutProps) {
-  const [darkMode, setDarkMode] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { isMobile, isTablet } = useResponsive();
   const { t } = useTranslation();
   const location = useLocation();
 
@@ -33,11 +36,8 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
   }, []);
 
   const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const novo = !prev;
-      document.documentElement.classList.toggle("dark", novo);
-      return novo;
-    });
+    const newTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
   };
 
   return (
@@ -65,7 +65,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                 onClick={toggleDarkMode}
                 className="w-9 h-9"
               >
-                {darkMode ? (
+                {resolvedTheme === 'dark' ? (
                   <Sun className="h-4 w-4" />
                 ) : (
                   <Moon className="h-4 w-4" />
@@ -99,7 +99,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                 onClick={toggleDarkMode}
                 className="w-9 h-9"
               >
-                {darkMode ? (
+                {resolvedTheme === 'dark' ? (
                   <Sun className="h-4 w-4" />
                 ) : (
                   <Moon className="h-4 w-4" />

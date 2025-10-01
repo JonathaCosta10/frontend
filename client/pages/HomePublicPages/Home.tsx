@@ -17,60 +17,62 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useResponsive } from "@/hooks/useResponsive";
 import PublicLayout from "@/components/PublicLayout";
 
 export default function Home() {
   const { t } = useTranslation();
+  const { isMobile, isTablet } = useResponsive();
 
   return (
     <PublicLayout>
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-white dark:bg-gray-950">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="py-12 md:py-20">
-            <div className="grid grid-cols-1 gap-10 md:grid-cols-2 items-center">
+        <div className={`mx-auto max-w-7xl ${isMobile ? 'px-4' : 'px-4 sm:px-6 lg:px-8'}`}>
+          <div className={`${isMobile ? 'py-8' : 'py-12 md:py-20'}`}>
+            <div className={`grid gap-10 items-center ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
+                <h1 className={`font-bold tracking-tight text-gray-900 dark:text-white ${isMobile ? 'text-3xl' : 'text-4xl sm:text-5xl md:text-6xl'}`}>
                   <span className="block">{t("Organize seu")}</span>
                   <span className="block text-blue-600 dark:text-blue-500">
                     {t("Futuro Financeiro")}
                   </span>
                 </h1>
-                <p className="mt-6 max-w-lg text-xl text-gray-500 dark:text-gray-400">
+                <p className={`mt-6 max-w-lg text-gray-500 dark:text-gray-400 ${isMobile ? 'text-lg' : 'text-xl'}`}>
                   {t(
                     "Controle suas finanças pessoais e acompanhe seus investimentos em um único lugar, com ferramentas poderosas e intuitivas."
                   )}
                 </p>
-                <div className="mt-8 flex flex-wrap gap-4">
-                  <Button asChild size="lg" className="text-lg">
+                <div className={`mt-8 flex gap-4 ${isMobile ? 'flex-col' : 'flex-wrap'}`}>
+                  <Button asChild size={isMobile ? "default" : "lg"} className={isMobile ? "w-full" : "text-lg"}>
                     <Link to="/signup">{t("Comece Grátis")}</Link>
                   </Button>
                   <Button
                     asChild
-                    size="lg"
+                    size={isMobile ? "default" : "lg"}
                     variant="outline"
-                    className="text-lg"
+                    className={isMobile ? "w-full" : "text-lg"}
                   >
-                    <Link to="/demo" className="inline-flex items-center">
+                    <Link to="/demo" className="inline-flex items-center justify-center">
                       {t("Saiba Mais")} <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                   </Button>
                 </div>
-                <div className="mt-8">
-                  <Badge variant="outline" className="px-3 py-1 text-sm">
+                <div className={`mt-8 ${isMobile ? 'space-y-2' : ''}`}>
+                  <Badge variant="outline" className={`px-3 py-1 text-sm ${isMobile ? 'w-full justify-center' : ''}`}>
                     <CheckCircle className="mr-1 h-4 w-4 text-green-500" />
                     {t("Sem taxas ocultas")}
                   </Badge>
                   <Badge
                     variant="outline"
-                    className="ml-2 px-3 py-1 text-sm"
+                    className={`px-3 py-1 text-sm ${isMobile ? 'w-full justify-center' : 'ml-2'}`}
                   >
                     <LockKeyhole className="mr-1 h-4 w-4 text-blue-500" />
                     {t("Segurança de dados")}
                   </Badge>
                   <Badge
                     variant="outline"
-                    className="ml-2 px-3 py-1 text-sm"
+                    className={`px-3 py-1 text-sm ${isMobile ? 'w-full justify-center' : 'ml-2'}`}
                   >
                     <Shield className="mr-1 h-4 w-4 text-purple-500" />
                     {t("Proteção de privacidade")}

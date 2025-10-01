@@ -553,6 +553,12 @@ export default function AnaliseTicker() {
   };
 
   const selecionarTicker = (ticker: TickerSearchResult) => {
+    // Se for um FII (termina em 11), redirecionar para a página específica de FII
+    if (ticker.ticker.toUpperCase().endsWith('11')) {
+      window.location.href = `/dashboard/mercado/analise-ticker/fii?ticker=${ticker.ticker.toUpperCase()}`;
+      return;
+    }
+    
     setSelectedTicker(ticker.ticker);
     setSearchTerm("");
     setTickerSearchResults([]);
@@ -562,6 +568,13 @@ export default function AnaliseTicker() {
 
   const performAnalysisForTicker = async (ticker: string) => {
     if (!ticker.trim()) return;
+    
+    // Verificar se o ticker é um FII (termina em 11)
+    if (ticker.toUpperCase().endsWith('11')) {
+      // Redirecionar para a página específica de análise de FII
+      window.location.href = `/dashboard/mercado/analise-ticker/fii?ticker=${ticker.toUpperCase()}`;
+      return;
+    }
 
     setLoading(true);
     setInsights([]); // Limpar insights anteriores
@@ -573,7 +586,13 @@ export default function AnaliseTicker() {
       // Processar insights após receber os dados
       if (data && data.historico_mensal && data.historico_mensal.length > 0) {
         const processedInsights = generateInsights(data);
-        setInsights(processedInsights);
+        // Garantir que os insights estejam no formato correto
+        const formattedInsights = processedInsights.map(insight => ({
+          type: insight.type as 'positive' | 'negative' | 'alert',
+          icon: insight.icon as React.ReactElement,
+          message: insight.message
+        }));
+        setInsights(formattedInsights);
       }
     } catch (error) {
       console.error('Erro ao buscar análise do ticker:', error);

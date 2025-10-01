@@ -110,6 +110,8 @@ export const INVESTMENT_ROUTES = {
   excluirAtivo: "/api/investimentos/ativos-pessoais/deletar/",
   resumoCarteira: "/api/investimentos/resumo-carteira/",
   analiseAtivo: "/api/investimentos/analise-ativo/",
+  analiseAtivoFII: "/api/investimentos/analise-ativo/fii/",
+  analiseAtivoAcoes: "/api/investimentos/analise-ativo/acoes/",
 };
 
 // Rotas de Market (Públicas)

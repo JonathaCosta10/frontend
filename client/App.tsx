@@ -10,6 +10,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TranslationProvider } from "./contexts/TranslationContext";
 import { PrivacyProvider } from "./contexts/PrivacyContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 // TODO: Implementar LazyContextProviders para reduzir entry chunk
 // import { LazyContextProviders } from "./contexts/LazyContexts";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -75,6 +76,7 @@ const FIIMarket = withOptimizedLazy(() => import("./pages/sistema/dashboard/merc
 const IndicadoresEconomicos = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
 const ListaDeDesejo = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
 const AnaliseTicker = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
+const FIIAnalise = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker/fii/index"));
 const AnaliseTickerAcoes = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker-acoes"));
 const CalculadoraFinanceira = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
 
@@ -119,13 +121,14 @@ const AuthCallback = withOptimizedLazy(() => import('./components/AuthCallback')
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TranslationProvider>
-          <PrivacyProvider>
-            <TooltipProvider>
-            <Toaster />
-            <Sonner />
-              <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <TranslationProvider>
+            <PrivacyProvider>
+              <TooltipProvider>
+              <Toaster />
+              <Sonner />
+                <BrowserRouter>
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={
@@ -409,6 +412,11 @@ function App() {
                         <AnaliseTicker />
                       </Suspense>
                     } />
+                    <Route path="analise-ticker/fii" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <FIIAnalise />
+                      </Suspense>
+                    } />
                     <Route path="analise-ticker-acoes" element={
                       <Suspense fallback={<LoadingSpinner />}>
                         <AnaliseTickerAcoes />
@@ -520,6 +528,7 @@ function App() {
           </PrivacyProvider>
         </TranslationProvider>
       </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

@@ -23,6 +23,8 @@ import { useToast } from "@/hooks/use-toast";
 import OAuthService from "@/services/oauth";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
 import Footer from "@/components/Footer";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useResponsive } from "@/hooks/useResponsive";
 
 interface SignupForm {
   firstName: string;
