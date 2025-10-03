@@ -1,8 +1,9 @@
-// API Services - Centralized exports
+                                  // API Services - Centralized exports
 export { budgetApi } from './budget';
 export { investmentsApi } from './investments';
 export { authApi } from './auth';
 export { cadastroApi } from './cadastro';
+export { marketApi } from './market';
 
 // Response Dictionary - Centralized response types and utilities
 export * from './response-dictionary';
@@ -45,6 +46,16 @@ export type {
   GoalCadastro,
   WatchlistCadastro
 } from './cadastro';
+
+export type {
+  TickerData,
+  SetorData,
+  AcoesPerenes,
+  FiisPerenes,
+  ResumoData,
+  DestaquesGeraisData,
+  DestaquesGeraisResponse
+} from './market';
 
 // Charts types
 export type {

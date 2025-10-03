@@ -1,905 +1,370 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import {
-  Heart,
-  Plus,
-  Trash2,
-  Edit,
-  Search,
-  TrendingUp,
-  TrendingDown,
-  Bell,
-  BellOff,
-  Target,
-  Calendar,
-  Filter,
-  Loader2,
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { 
+  Heart, 
+  Plus, 
+  Search, 
+  Trash2, 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign,
+  Star,
+  Eye,
+  AlertCircle
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "@/contexts/TranslationContext";
 import MarketPremiumGuard from "@/components/MarketPremiumGuard";
-import { WishlistApiService } from "@/services/api/entities/wishlistApi";
-import {
-  WishlistItem,
-  WishlistStats,
-  AddWishlistItemRequest,
-  WishlistFilter,
-} from "@/src/entities/Wishlist";
+import { buscarTickers } from "@/services/investmentService";
 
 export default function ListaDeDesejo() {
-  const { toast } = useToast();
-  const { t } = useTranslation();
-  const [isLoading, setIsLoading] = useState(false);
-  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const [wishlistStats, setWishlistStats] = useState<WishlistStats | null>(
-    null,
-  );
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<WishlistItem | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [wishlist, setWishlist] = useState<any[]>([
+    // Dados de exemplo para demonstração
+    {
+      id: 1,
+      ticker: 'PETR4',
+      nome: 'Petróleo Brasileiro S.A.',
+      tipo: 'Ação',
+      precoAtual: 38.45,
+      precoTarget: 40.00,
+      variacao: 2.15,
+      adicionadoEm: '2024-01-15'
+    },
+    {
+      id: 2,
+      ticker: 'HGLG11',
+      nome: 'CSHG Logística',
+      tipo: 'FII',
+      precoAtual: 125.30,
+      precoTarget: 130.00,
+      variacao: -1.45,
+      adicionadoEm: '2024-01-10'
+    }
+  ]);
 
-  // Filter state
-  const [filter, setFilter] = useState<WishlistFilter>({
-    type: "all",
-    sortBy: "addedAt",
-    sortOrder: "desc",
-  });
-
-  // Add form state
-  const [addForm, setAddForm] = useState<AddWishlistItemRequest>({
-    symbol: "",
-    name: "",
-    type: "stock",
-    targetPrice: 0,
-    priceAlert: false,
-    notes: "",
-  });
-
-  // Load data on component mount
-  useEffect(() => {
-    loadWishlistData();
-    loadWishlistStats();
-  }, [filter]);
-
-  const loadWishlistData = async () => {
-    setIsLoading(true);
+  // Função para buscar tickers
+  const handleSearch = async () => {
+    if (!searchTerm || searchTerm.length < 2) return;
+    
+    setIsSearching(true);
     try {
-      const items = await WishlistApiService.getWishlistItems(filter);
-      setWishlistItems(items);
+      const results = await buscarTickers(searchTerm);
+      setSearchResults(results || []);
     } catch (error) {
-      toast({
-        title: t("error"),
-        description: t("failed_load_wishlist"),
-        variant: "destructive",
-      });
+      console.error('Erro ao buscar tickers:', error);
+      setSearchResults([]);
     } finally {
-      setIsLoading(false);
+      setIsSearching(false);
     }
   };
 
-  const loadWishlistStats = async () => {
-    try {
-      const stats = await WishlistApiService.getWishlistStats();
-      setWishlistStats(stats);
-    } catch (error) {
-      console.error("Error loading wishlist stats:", error);
-    }
-  };
-
-  const handleAddItem = async () => {
-    if (!addForm.symbol || !addForm.name || addForm.targetPrice <= 0) {
-      toast({
-        title: t("error"),
-        description: t("fill_required_fields"),
-        variant: "destructive",
-      });
+  // Função para adicionar à lista
+  const addToWishlist = (ticker: any) => {
+    const exists = wishlist.find(item => item.ticker === ticker.ticker);
+    if (exists) {
+      alert('Este ativo já está na sua lista de desejos!');
       return;
     }
 
-    try {
-      setIsLoading(true);
-      await WishlistApiService.addWishlistItem(addForm);
-
-      toast({
-        title: t("success"),
-        description: t("item_added_wishlist"),
-      });
-
-      setIsAddDialogOpen(false);
-      setAddForm({
-        symbol: "",
-        name: "",
-        type: "stock",
-        targetPrice: 0,
-        priceAlert: false,
-        notes: "",
-      });
-
-      // Reload data
-      await loadWishlistData();
-      await loadWishlistStats();
-    } catch (error) {
-      toast({
-        title: t("error"),
-        description: t("failed_add_item"),
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteItem = async (id: string) => {
-    if (!window.confirm(t("confirm_remove_item"))) {
-      return;
-    }
-
-    try {
-      await WishlistApiService.deleteWishlistItem(id);
-      toast({
-        title: t("success"),
-        description: t("item_removed_wishlist"),
-      });
-
-      // Reload data
-      await loadWishlistData();
-      await loadWishlistStats();
-    } catch (error) {
-      toast({
-        title: t("error"),
-        description: t("failed_remove_item"),
-        variant: "destructive",
-      });
-    }
-  };
-
-  const togglePriceAlert = async (item: WishlistItem) => {
-    try {
-      // Update local state immediately for instant UI feedback
-      setWishlistItems((prev) =>
-        prev.map((prevItem) =>
-          prevItem.id === item.id
-            ? { ...prevItem, priceAlert: !prevItem.priceAlert }
-            : prevItem,
-        ),
-      );
-
-      // Then update via API
-      await WishlistApiService.updateWishlistItem({
-        id: item.id,
-        priceAlert: !item.priceAlert,
-      });
-
-      toast({
-        title: t("success"),
-        description: `${t("price_alert_status")} ${!item.priceAlert ? t("price_alert_activated") : t("price_alert_deactivated")}`,
-      });
-    } catch (error) {
-      // Revert local state on error
-      setWishlistItems((prev) =>
-        prev.map((prevItem) =>
-          prevItem.id === item.id
-            ? { ...prevItem, priceAlert: item.priceAlert }
-            : prevItem,
-        ),
-      );
-
-      toast({
-        title: t("error"),
-        description: t("failed_update_alert"),
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEditItem = (item: WishlistItem) => {
-    setEditingItem(item);
-    setAddForm({
-      symbol: item.symbol,
-      name: item.name,
-      type: item.type,
-      targetPrice: item.targetPrice,
-      priceAlert: item.priceAlert,
-      notes: item.notes || "",
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const handleUpdateItem = async () => {
-    if (
-      !editingItem ||
-      !addForm.symbol ||
-      !addForm.name ||
-      addForm.targetPrice <= 0
-    ) {
-      toast({
-        title: t("error"),
-        description: t("fill_required_fields"),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      await WishlistApiService.updateWishlistItem({
-        id: editingItem.id,
-        symbol: addForm.symbol,
-        name: addForm.name,
-        type: addForm.type,
-        targetPrice: addForm.targetPrice,
-        priceAlert: addForm.priceAlert,
-        notes: addForm.notes,
-      });
-
-      toast({
-        title: t("success"),
-        description: t("item_updated_successfully"),
-      });
-
-      setIsEditDialogOpen(false);
-      setEditingItem(null);
-      setAddForm({
-        symbol: "",
-        name: "",
-        type: "stock",
-        targetPrice: 0,
-        priceAlert: false,
-        notes: "",
-      });
-
-      // Reload data
-      await loadWishlistData();
-      await loadWishlistStats();
-    } catch (error) {
-      toast({
-        title: t("error"),
-        description: t("failed_update_item"),
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "stock":
-        return "📈";
-      case "fii":
-        return "🏢";
-      case "crypto":
-        return "₿";
-      case "bond":
-        return "📋";
-      default:
-        return "💰";
-    }
-  };
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "stock":
-        return t("stock");
-      case "fii":
-        return t("fii");
-      case "crypto":
-        return t("crypto");
-      case "bond":
-        return t("bond");
-      default:
-        return t("others");
-    }
-  };
-
-  const getPriceVariation = (currentPrice: number, targetPrice: number) => {
-    const variation = ((currentPrice - targetPrice) / targetPrice) * 100;
-    return {
-      value: variation,
-      isPositive: variation >= 0,
-      formatted: `${variation >= 0 ? "+" : ""}${variation.toFixed(2)}%`,
+    const newItem = {
+      id: Date.now(),
+      ticker: ticker.ticker,
+      nome: ticker.descricao,
+      tipo: ticker.tipo_ativo,
+      precoAtual: Math.random() * 100 + 20, // Preço simulado
+      precoTarget: Math.random() * 100 + 20, // Target simulado
+      variacao: (Math.random() - 0.5) * 10, // Variação simulada
+      adicionadoEm: new Date().toISOString().split('T')[0]
     };
+
+    setWishlist([...wishlist, newItem]);
+    setSearchTerm('');
+    setSearchResults([]);
   };
 
-  const filteredItems = wishlistItems.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.symbol.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // Função para remover da lista
+  const removeFromWishlist = (id: number) => {
+    setWishlist(wishlist.filter(item => item.id !== id));
+  };
 
+  // Funções de formatação
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
     }).format(value);
+  };
+
+  const formatPercentage = (value: number) => {
+    return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+  };
+
+  const getVariationColor = (value: number) => {
+    if (value > 0) return 'text-green-600';
+    if (value < 0) return 'text-red-600';
+    return 'text-gray-600';
+  };
+
+  const getVariationIcon = (value: number) => {
+    if (value > 0) return TrendingUp;
+    if (value < 0) return TrendingDown;
+    return DollarSign;
   };
 
   return (
     <MarketPremiumGuard marketFeature="wishlist">
-      <div className="space-y-3 md:space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center space-x-2">
-              <Heart className="h-8 w-8 text-red-500" />
-              <span>{t("wishlist")}</span>
-            </h1>
-            <p className="text-muted-foreground">
-              {t("follow_favorite_assets")}
-            </p>
-          </div>
-
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                {t("add_asset")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>{t("add_asset_to_wishlist")}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="symbol">
-                      {t("symbol")} {t("required")}
-                    </Label>
-                    <Input
-                      id="symbol"
-                      value={addForm.symbol}
-                      onChange={(e) =>
-                        setAddForm({
-                          ...addForm,
-                          symbol: e.target.value.toUpperCase(),
-                        })
-                      }
-                      placeholder={t("symbol_placeholder")}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="type">
-                      {t("type")} {t("required")}
-                    </Label>
-                    <Select
-                      value={addForm.type}
-                      onValueChange={(value: any) =>
-                        setAddForm({ ...addForm, type: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="stock">{t("stock")}</SelectItem>
-                        <SelectItem value="fii">{t("fii")}</SelectItem>
-                        <SelectItem value="crypto">{t("crypto")}</SelectItem>
-                        <SelectItem value="bond">{t("bond")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="name">
-                    {t("asset_name")} {t("required")}
-                  </Label>
-                  <Input
-                    id="name"
-                    value={addForm.name}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, name: e.target.value })
-                    }
-                    placeholder={t("asset_name_placeholder")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="targetPrice">
-                    {t("target_price")} {t("required")}
-                  </Label>
-                  <Input
-                    id="targetPrice"
-                    type="number"
-                    step="0.01"
-                    value={addForm.targetPrice}
-                    onChange={(e) =>
-                      setAddForm({
-                        ...addForm,
-                        targetPrice: Number(e.target.value),
-                      })
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="priceAlert"
-                    checked={addForm.priceAlert}
-                    onCheckedChange={(checked) =>
-                      setAddForm({ ...addForm, priceAlert: checked })
-                    }
-                  />
-                  <Label htmlFor="priceAlert">{t("enable_price_alert")}</Label>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">{t("observations")}</Label>
-                  <Textarea
-                    id="notes"
-                    value={addForm.notes}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, notes: e.target.value })
-                    }
-                    placeholder={t("observations_placeholder")}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsAddDialogOpen(false)}
-                  >
-                    {t("cancel")}
-                  </Button>
-                  <Button onClick={handleAddItem} disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {t("adding")}
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        {t("add")}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Edit Dialog */}
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {t("edit")} {editingItem?.symbol || t("asset")}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-symbol">
-                      {t("symbol")} {t("required")}
-                    </Label>
-                    <Input
-                      id="edit-symbol"
-                      value={addForm.symbol}
-                      onChange={(e) =>
-                        setAddForm({
-                          ...addForm,
-                          symbol: e.target.value.toUpperCase(),
-                        })
-                      }
-                      placeholder={t("symbol_placeholder")}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-type">
-                      {t("type")} {t("required")}
-                    </Label>
-                    <Select
-                      value={addForm.type}
-                      onValueChange={(value: any) =>
-                        setAddForm({ ...addForm, type: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="stock">{t("stock")}</SelectItem>
-                        <SelectItem value="fii">{t("fii")}</SelectItem>
-                        <SelectItem value="crypto">{t("crypto")}</SelectItem>
-                        <SelectItem value="bond">{t("bond")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-name">
-                    {t("asset_name")} {t("required")}
-                  </Label>
-                  <Input
-                    id="edit-name"
-                    value={addForm.name}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, name: e.target.value })
-                    }
-                    placeholder={t("asset_name_placeholder")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-targetPrice">
-                    {t("target_price")} {t("required")}
-                  </Label>
-                  <Input
-                    id="edit-targetPrice"
-                    type="number"
-                    step="0.01"
-                    value={addForm.targetPrice}
-                    onChange={(e) =>
-                      setAddForm({
-                        ...addForm,
-                        targetPrice: Number(e.target.value),
-                      })
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="edit-priceAlert"
-                    checked={addForm.priceAlert}
-                    onCheckedChange={(checked) =>
-                      setAddForm({ ...addForm, priceAlert: checked })
-                    }
-                  />
-                  <Label htmlFor="edit-priceAlert">
-                    {t("enable_price_alert")}
-                  </Label>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-notes">{t("observations")}</Label>
-                  <Textarea
-                    id="edit-notes"
-                    value={addForm.notes}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, notes: e.target.value })
-                    }
-                    placeholder={t("observations_placeholder")}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditDialogOpen(false);
-                      setEditingItem(null);
-                      setAddForm({
-                        symbol: "",
-                        name: "",
-                        type: "stock",
-                        targetPrice: 0,
-                        priceAlert: false,
-                        notes: "",
-                      });
-                    }}
-                  >
-                    {t("cancel")}
-                  </Button>
-                  <Button onClick={handleUpdateItem} disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {t("updating")}
-                      </>
-                    ) : (
-                      <>
-                        <Edit className="h-4 w-4 mr-2" />
-                        {t("save_changes")}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Lista de Desejos</h1>
+          <p className="text-muted-foreground">Acompanhe seus ativos favoritos e monitore oportunidades</p>
         </div>
 
-        {/* Stats Cards */}
-        {wishlistStats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {t("total_items")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {wishlistStats.totalItems}
+        {/* Campo de Busca para Adicionar Ativos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Adicionar Ativo à Lista
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <Input
+                placeholder="Digite o nome ou código do ativo (ex: PETR4, HGLG11)"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="flex-1"
+              />
+              <Button onClick={handleSearch} disabled={isSearching}>
+                {isSearching ? 'Buscando...' : 'Buscar'}
+              </Button>
+            </div>
+
+            {/* Resultados da Busca */}
+            {searchResults.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <h4 className="font-semibold">Adicionar à lista:</h4>
+                <div className="grid gap-2 max-h-60 overflow-y-auto">
+                  {searchResults.map((result, index) => (
+                    <div
+                      key={index}
+                      className="p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="font-semibold">{result.ticker}</span>
+                          <span className="ml-2 text-gray-600">{result.descricao}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{result.tipo_ativo}</Badge>
+                          <Button
+                            size="sm"
+                            onClick={() => addToWishlist(result)}
+                            className="flex items-center gap-1"
+                          >
+                            <Heart className="h-3 w-3" />
+                            Adicionar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {t("assets_in_list")}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Lista de Desejos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5" />
+              Minha Lista de Desejos ({wishlist.length} ativos)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {wishlist.length === 0 ? (
+              <div className="text-center py-8">
+                <Heart className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                  Sua lista está vazia
+                </h3>
+                <p className="text-gray-500">
+                  Adicione ativos para acompanhar e receber alertas sobre oportunidades.
                 </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ticker</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="text-right">Preço Atual</TableHead>
+                      <TableHead className="text-right">Variação</TableHead>
+                      <TableHead className="text-right">Target</TableHead>
+                      <TableHead className="text-center">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {wishlist.map((item) => {
+                      const VariationIcon = getVariationIcon(item.variacao);
+                      const distanceToTarget = ((item.precoTarget - item.precoAtual) / item.precoAtual) * 100;
+                      
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-semibold">{item.ticker}</TableCell>
+                          <TableCell className="max-w-48 truncate">{item.nome}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={item.tipo.toLowerCase().includes('fii') ? 'default' : 'secondary'}
+                            >
+                              {item.tipo}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {formatCurrency(item.precoAtual)}
+                          </TableCell>
+                          <TableCell className={`text-right font-semibold ${getVariationColor(item.variacao)}`}>
+                            <div className="flex items-center justify-end gap-1">
+                              <VariationIcon className="h-3 w-3" />
+                              {formatPercentage(item.variacao)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex flex-col items-end">
+                              <span className="font-mono">{formatCurrency(item.precoTarget)}</span>
+                              <span className={`text-xs ${distanceToTarget > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatPercentage(distanceToTarget)}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {/* Implementar análise do ativo */}}
+                                className="flex items-center gap-1"
+                              >
+                                <Eye className="h-3 w-3" />
+                                Ver
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => removeFromWishlist(item.id)}
+                                className="flex items-center gap-1"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Remover
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Resumo da Lista */}
+        {wishlist.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total de Ativos</p>
+                    <p className="text-2xl font-bold">{wishlist.length}</p>
+                  </div>
+                  <Star className="h-8 w-8 text-yellow-500" />
+                </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {t("with_alerts")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-orange-600">
-                  {wishlistStats.itemsWithAlerts}
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Em Alta</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {wishlist.filter(item => item.variacao > 0).length}
+                    </p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-green-600" />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {t("active_alerts")}
-                </p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {t("average_discount")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  {wishlistStats.averageTargetDiscount.toFixed(1)}%
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Em Baixa</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {wishlist.filter(item => item.variacao < 0).length}
+                    </p>
+                  </div>
+                  <TrendingDown className="h-8 w-8 text-red-600" />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {t("current_vs_target_price")}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {t("target_value")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
-                  {formatCurrency(wishlistStats.totalTargetValue)}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t("total_target_value")}
-                </p>
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* Filters and Search */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t("search_symbol_name")}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Select
-              value={filter.type || "all"}
-              onValueChange={(value) =>
-                setFilter({
-                  ...filter,
-                  type: value === "all" ? undefined : (value as any),
-                })
-              }
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all")}</SelectItem>
-                <SelectItem value="stock">{t("stocks")}</SelectItem>
-                <SelectItem value="fii">{t("fiis")}</SelectItem>
-                <SelectItem value="crypto">{t("cryptos")}</SelectItem>
-                <SelectItem value="bond">{t("fixed_income")}</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={`${filter.sortBy}-${filter.sortOrder}`}
-              onValueChange={(value) => {
-                const [sortBy, sortOrder] = value.split("-");
-                setFilter({
-                  ...filter,
-                  sortBy: sortBy as any,
-                  sortOrder: sortOrder as any,
-                });
-              }}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="addedAt-desc">{t("most_recent")}</SelectItem>
-                <SelectItem value="addedAt-asc">{t("oldest")}</SelectItem>
-                <SelectItem value="name-asc">{t("name_a_z")}</SelectItem>
-                <SelectItem value="name-desc">{t("name_z_a")}</SelectItem>
-                <SelectItem value="targetPrice-desc">
-                  {t("highest_price")}
-                </SelectItem>
-                <SelectItem value="targetPrice-asc">
-                  {t("lowest_price")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Wishlist Table */}
+        {/* Alertas de Oportunidades */}
         <Card>
           <CardHeader>
-            <CardTitle>{t("my_wishlist")}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Alertas de Oportunidades
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : filteredItems.length === 0 ? (
-              <div className="text-center py-8">
-                <Heart className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  {searchTerm ? t("no_asset_found") : t("wishlist_empty")}
+            <div className="space-y-3">
+              {wishlist.filter(item => {
+                const distanceToTarget = ((item.precoTarget - item.precoAtual) / item.precoAtual) * 100;
+                return Math.abs(distanceToTarget) < 5; // Próximo do target (dentro de 5%)
+              }).map(item => {
+                const distanceToTarget = ((item.precoTarget - item.precoAtual) / item.precoAtual) * 100;
+                return (
+                  <div key={item.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-semibold">{item.ticker}</span>
+                        <span className="ml-2 text-sm text-gray-600">
+                          está {Math.abs(distanceToTarget).toFixed(1)}% {distanceToTarget > 0 ? 'abaixo' : 'acima'} do seu target
+                        </span>
+                      </div>
+                      <Badge variant="outline" className="bg-yellow-100">
+                        Oportunidade
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {wishlist.filter(item => {
+                const distanceToTarget = ((item.precoTarget - item.precoAtual) / item.precoAtual) * 100;
+                return Math.abs(distanceToTarget) < 5;
+              }).length === 0 && (
+                <p className="text-gray-500 text-center py-4">
+                  Nenhum alerta no momento. Continue acompanhando!
                 </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {searchTerm
-                    ? t("adjust_search_filters")
-                    : t("add_assets_to_track")}
-                </p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("asset")}</TableHead>
-                    <TableHead>{t("type")}</TableHead>
-                    <TableHead>{t("current_price")}</TableHead>
-                    <TableHead>{t("target_price")}</TableHead>
-                    <TableHead>{t("variation")}</TableHead>
-                    <TableHead>{t("alert")}</TableHead>
-                    <TableHead>{t("added_date")}</TableHead>
-                    <TableHead>{t("actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredItems.map((item) => {
-                    const variation = getPriceVariation(
-                      item.currentPrice,
-                      item.targetPrice,
-                    );
-
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg">
-                              {getTypeIcon(item.type)}
-                            </span>
-                            <div>
-                              <p className="font-medium">{item.symbol}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {item.name}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {getTypeLabel(item.type)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-semibold">
-                          {formatCurrency(item.currentPrice)}
-                        </TableCell>
-                        <TableCell className="text-blue-600 font-semibold">
-                          {formatCurrency(item.targetPrice)}
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`font-semibold ${
-                              variation.isPositive
-                                ? "text-red-600"
-                                : "text-green-600"
-                            }`}
-                          >
-                            {variation.formatted}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => togglePriceAlert(item)}
-                            className={
-                              item.priceAlert
-                                ? "text-red-600 hover:text-red-700"
-                                : "text-muted-foreground hover:text-orange-600"
-                            }
-                            title={
-                              item.priceAlert
-                                ? t("price_alert_enabled")
-                                : t("price_alert_disabled")
-                            }
-                          >
-                            <Bell
-                              className={`h-4 w-4 ${item.priceAlert ? "fill-current" : ""}`}
-                            />
-                          </Button>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(item.addedAt).toLocaleDateString("pt-BR")}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditItem(item)}
-                              className="hover:bg-blue-50 hover:text-blue-600"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteItem(item.id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -72,12 +72,13 @@ const Patrimonio = withOptimizedLazy(() => import("./pages/sistema/dashboard/inv
 
 // Lazy loaded system pages - Market (sem preload - usuário precisa navegar primeiro)
 const Market = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/Market"));
-const FIIMarket = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/index"));
+const FIIMarket = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/page"));
 const IndicadoresEconomicos = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
 const ListaDeDesejo = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
 const AnaliseTicker = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
 const FIIAnalise = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker/fii/index"));
-const AnaliseTickerAcoes = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker-acoes"));
+const AnaliseAcoesCompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-acoes-completa"));
+const AnaliseFIICompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-fii-completa"));
 const CalculadoraFinanceira = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
 
 // Lazy loaded system pages - Crypto (sem preload)
@@ -414,12 +415,17 @@ function App() {
                     } />
                     <Route path="analise-ticker/fii" element={
                       <Suspense fallback={<LoadingSpinner />}>
-                        <FIIAnalise />
+                        <AnaliseFIICompleta />
                       </Suspense>
                     } />
                     <Route path="analise-ticker-acoes" element={
                       <Suspense fallback={<LoadingSpinner />}>
-                        <AnaliseTickerAcoes />
+                        <AnaliseAcoesCompleta />
+                      </Suspense>
+                    } />
+                    <Route path="analise-ticker-fii" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AnaliseFIICompleta />
                       </Suspense>
                     } />
                     <Route

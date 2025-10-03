@@ -365,19 +365,25 @@ export const analisarAtivo = async (ticker: string): Promise<any> => {
 export const analisarAtivoFII = async (ticker: string): Promise<any> => {
   try {
     const url = `${API_BASE}${INVESTMENT_ROUTES.analiseAtivoFII}?ticker=${encodeURIComponent(ticker)}`;
+    console.log('🚀 Chamando API de FII:', url);
     const headers = getAuthHeaders(INVESTMENT_ROUTES.analiseAtivoFII);
+    console.log('📡 Headers:', headers);
     
     const response = await fetch(url, {
       method: 'GET',
       headers,
     });
 
+    console.log('📥 Response status:', response.status);
+
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('❌ Erro na API:', errorData);
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('✅ Dados recebidos da API:', data);
     return data.data || data;
   } catch (error) {
     handleApiError(error);
@@ -393,19 +399,25 @@ export const analisarAtivoFII = async (ticker: string): Promise<any> => {
 export const analisarAtivoAcoes = async (ticker: string): Promise<any> => {
   try {
     const url = `${API_BASE}${INVESTMENT_ROUTES.analiseAtivoAcoes}?ticker=${encodeURIComponent(ticker)}`;
+    console.log('🚀 Chamando API de Ações:', url);
     const headers = getAuthHeaders(INVESTMENT_ROUTES.analiseAtivoAcoes);
+    console.log('📡 Headers:', headers);
     
     const response = await fetch(url, {
       method: 'GET',
       headers,
     });
 
+    console.log('📥 Response status:', response.status);
+
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('❌ Erro na API:', errorData);
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('✅ Dados recebidos da API:', data);
     return data.data || data;
   } catch (error) {
     handleApiError(error);

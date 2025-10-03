@@ -57,7 +57,7 @@ const Metas = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcament
 
 // Investment Pages
 const Investment = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/Investment"), { preload: true });
-const Investimentos = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/index"));
+const Investimentos = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/index-simple"));
 const Comparativos = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/comparativos"));
 const Cadastro = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/cadastro"));
 const Ranking = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/ranking"));
@@ -68,7 +68,10 @@ const Market = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado
 const FIIMarket = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/index"));
 const IndicadoresEconomicos = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
 const ListaDeDesejo = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
-import AnaliseTicker from "./pages/dashboard/mercado/analise-ticker";
+const AnaliseTicker = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
+const AnaliseAcoesCompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-acoes-completa.tsx"));
+const AnaliseFIICompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-fii-completa.tsx"));
+const FIIAnalise = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker/fii"));
 const CalculadoraFinanceira = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
 
 // Crypto Pages
@@ -369,9 +372,26 @@ export default function AppRoutes() {
                         <ListaDeDesejo />
                       </Suspense>
                     } />
+                    {/* ROTAS PARA PÁGINAS ORGANIZADAS - MAIS ESPECÍFICAS PRIMEIRO */}
+                    <Route path="analise-ticker/fii/:ticker" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AnaliseFIICompleta />
+                      </Suspense>
+                    } />
                     <Route path="analise-ticker" element={
                       <Suspense fallback={<LoadingSpinner />}>
                         <AnaliseTicker />
+                      </Suspense>
+                    } />
+                    {/* ROTAS PARA ANÁLISE DE AÇÕES E FII */}
+                    <Route path="analise-ticker-acoes" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AnaliseAcoesCompleta />
+                      </Suspense>
+                    } />
+                    <Route path="analise-ticker/fii" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AnaliseFIICompleta />
                       </Suspense>
                     } />
                     <Route

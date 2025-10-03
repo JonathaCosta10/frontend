@@ -1,1332 +1,254 @@
-import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  Search,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Percent,
-  Building2,
-  PieChart,
-  BarChart3,
-  ExternalLink,
-  Loader2,
-  LineChart,
-  Calendar,
-  Activity,
-  ArrowUpRight,
-  ArrowDownRight,
-  AlertTriangle
+import { 
+  Search, 
+  Building2, 
+  TrendingUp, 
+  BarChart3, 
+  PieChart
 } from "lucide-react";
 import MarketPremiumGuard from "@/components/MarketPremiumGuard";
-import { useTranslation } from "@/contexts/TranslationContext";
-import investmentService from "@/services/investmentService";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip as ChartTooltip,
-  Legend,
-  ArcElement,
-  BarElement,
-} from 'chart.js';
-import { Line, Pie, Bar } from 'react-chartjs-2';
+import { buscarTickers } from "@/services/investmentService";
 
-// Registro dos componentes do Chart.js
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  ChartTooltip,
-  Legend,
-  ArcElement,
-  BarElement
-);
-
-interface TickerSearchResult {
-  ticker: string;
-  descricao: string;
-  tipo_ativo: string;
-}
-
-// Interface completa da resposta da API FII
-interface FIIAnalysisResponse {
-  ticker: string;
-  cnpj: string;
-  razao_social: string;
-  qt_de_cotas: number;
-  qt_aumento_de_cotas: number;
-  mes_ultima_emicao_de_cotas: string | null;
-  inicio_fundo: string;
-  segmento: string;
-  nome_adiministrador: string;
-  prazo_duracao: string;
-  data_prazo_duracao: string | null;
-  nome_fundo: string;
-  ultima_entrega_anual: string;
-  data_entrega_consolidacao: string;
-  data_inicio: string;
-  objetivo: string;
-  gestao: string;
-  negociado_bolsa: boolean;
-  administrador: string;
-  site_administrador: string;
-  cotistas_pf: number | null;
-  cotistas_pj: number | null;
-  qt_bacos_cotistas: number | null;
-  qt_investidores_internacionais: number | null;
-  valor_ativos: number;
-  patrimonio_liquido: number;
-  valor_patrimonial_cotas: number;
-  caixa: number;
-  total_investido: number;
-  custo_mensal_administracao: number;
-  dividendo: number;
-  valores_a_receber: number;
-  custos_fixos: number;
-  ultimo_dividendo: number;
-  quantidade_ativos_fundo: number;
-  last_price: number;
-  volume: number;
-  min_mes: number;
-  max_mes: number;
-  ultima_semana: Array<{
-    preco: number;
-    data: string;
-  }>;
-  p_vp: number;
-  valor_patrimonial: number;
-  rentab_mensal: number;
-  data_analise: string;
-  status: string;
-  liquidez: {
-    raw: {
-      total_necessidades_liquidez: number;
-      disponibilidades: number;
-      titulos_publicos: number;
-      titulos_privados: number;
-      fundos_renda_fixa: number;
-    };
-    metrics: {
-      gap_liquidez: number;
-      disponibilidade_sobre_total: number;
-    };
-  };
-  composicao_ativo: {
-    raw: {
-      total_investido: number;
-      direitos_bens_imoveis: number;
-      terrenos: number;
-      imoveis_renda_acabados: number;
-      imoveis_renda_construcao: number;
-      fii: number;
-      acoes_sociedades_atividades_fii: number;
-    };
-    metrics: {
-      percent_imobiliario: number;
-      percent_financeiro: number;
-    };
-  };
-  recebiveis: {
-    raw: {
-      valores_receber: number;
-      contas_receber_aluguel: number;
-      contas_receber_venda_imoveis: number;
-      outros_valores_receber: number;
-    };
-    metrics: {
-      percent_aluguel: number;
-      percent_venda: number;
-      percent_outros: number;
-    };
-  };
-  passivo: {
-    raw: {
-      total_passivo: number;
-      taxa_administracao_pagar: number;
-      adiantamento_alugueis: number;
-      obrigacoes_securitizacao_recebiveis: number;
-      outros_valores_pagar: number;
-    };
-    metrics: {
-      alavancagem: number;
-    };
-  };
-  rentabilidade_imobiliaria: {
-    metrics: {
-      imoveis_renda_percentual: number;
-      ultimo_dividendo_calculado: number;
-    };
-  };
-  historico_mensal: Array<{
-    data_referencia: string;
-    gap_liquidez: number;
-    alavancagem: number;
-    percent_imobiliario: number;
-    valores_receber: number;
-    disponibilidades: number;
-    total_investido: number;
-    total_passivo: number;
-    percent_aluguel: number;
-    percent_venda: number;
-    percent_outros: number;
-    dividendo_periodo: number;
-    imoveis_renda_percentual: number;
-  }>;
-}
-
-// Funções de formatação brasileira
-const formatCurrency = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
-
-const formatPercentage = (value: number | null | undefined, decimals: number = 2): string => {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'percent',
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value / 100);
-};
-
-const formatNumber = (value: number | null | undefined, decimals: number = 2): string => {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
-  return new Intl.NumberFormat('pt-BR', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
-};
-
-const formatDate = (dateString: string): string => {
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-  } catch {
-    return dateString;
-  }
-};
-
-// Função para formatação em milhões/bilhões
-const formatLargeNumber = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
-  
-  if (value >= 1000000000) {
-    // Bilhões
-    return `R$ ${(value / 1000000000).toFixed(2)}B`;
-  } else if (value >= 1000000) {
-    // Milhões
-    return `R$ ${(value / 1000000).toFixed(0)}MM`;
-  } else {
-    // Valores menores que milhão
-    return formatCurrency(value);
-  }
-};
-
-// Função para gerar insights automáticos
-interface Insight {
-  type: 'positive' | 'negative' | 'alert';
-  icon: React.ReactNode;
-  message: string;
-}
-
-const generateInsights = (data: FIIAnalysisResponse | null): Insight[] => {
-  if (!data || !data.historico_mensal || data.historico_mensal.length === 0) {
-    return [];
-  }
-
-  const insights: Insight[] = [];
-  const historico = data.historico_mensal.sort((a, b) => new Date(a.data_referencia).getTime() - new Date(b.data_referencia).getTime());
-
-  // ========== ANÁLISE TOTAL INVESTIDO ==========
-  if (historico.length >= 2) {
-    const atual = historico[historico.length - 1];
-    const anterior = historico[historico.length - 2];
-    
-    const totalInvestidoAtual = atual.total_investido;
-    const totalInvestidoAnterior = anterior.total_investido;
-    
-    if (totalInvestidoAtual > 0 && totalInvestidoAnterior > 0) {
-      const crescimentoInvestimento = ((totalInvestidoAtual - totalInvestidoAnterior) / totalInvestidoAnterior) * 100;
-      
-      if (Math.abs(crescimentoInvestimento) > 1) { // Só mostra se mudança > 1%
-        if (crescimentoInvestimento > 0) {
-          insights.push({
-            type: 'positive',
-            icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-            message: `� Total investido cresceu ${crescimentoInvestimento.toFixed(1)}% no último mês`
-          });
-        } else {
-          insights.push({
-            type: 'negative',
-            icon: <ArrowDownRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
-            message: `📉 Total investido caiu ${Math.abs(crescimentoInvestimento).toFixed(1)}% no último mês`
-          });
-        }
-      }
-    }
-  }
-
-  // ========== ANÁLISE ALAVANCAGEM ==========
-  if (historico.length >= 2) {
-    const atual = historico[historico.length - 1];
-    const anterior = historico[historico.length - 2];
-    
-    const alavancagemAtual = atual.alavancagem * 100;
-    const alavancagemAnterior = anterior.alavancagem * 100;
-    
-    if (alavancagemAtual >= 0 && alavancagemAnterior >= 0) {
-      const mudancaAlavancagem = alavancagemAtual - alavancagemAnterior;
-      
-      if (Math.abs(mudancaAlavancagem) > 1) { // Só mostra se mudança > 1%
-        if (mudancaAlavancagem < 0) {
-          insights.push({
-            type: 'positive',
-            icon: <ArrowDownRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-            message: `📊 Alavancagem reduziu de ${alavancagemAnterior.toFixed(1)}% para ${alavancagemAtual.toFixed(1)}%`
-          });
-        } else {
-          insights.push({
-            type: 'negative',
-            icon: <ArrowUpRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
-            message: `⚠️ Alavancagem aumentou de ${alavancagemAnterior.toFixed(1)}% para ${alavancagemAtual.toFixed(1)}%`
-          });
-        }
-      }
-    }
-  }
-
-  // ========== ANÁLISE DIVIDENDOS ==========
-  if (historico.length >= 2) {
-    const atual = historico[historico.length - 1];
-    const anterior = historico[historico.length - 2];
-    
-    const dividendoAtual = atual.dividendo_periodo;
-    const dividendoAnterior = anterior.dividendo_periodo;
-    
-    // Caso especial: Dividendo = 0
-    if (dividendoAtual === 0) {
-      insights.push({
-        type: 'alert',
-        icon: <AlertTriangle className="h-3 w-3 text-yellow-600 flex-shrink-0" />,
-        message: `🚨 ALERTA: Dividendo zero no período. Favor verificar se há problema na gestão do fundo`
-      });
-    } else if (dividendoAtual > 0 && dividendoAnterior > 0) {
-      const crescimentoDividendo = ((dividendoAtual - dividendoAnterior) / dividendoAnterior) * 100;
-      
-      if (Math.abs(crescimentoDividendo) > 2) { // Só mostra se mudança > 2%
-        if (crescimentoDividendo > 0) {
-          insights.push({
-            type: 'positive',
-            icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-            message: `� Dividendo cresceu ${crescimentoDividendo.toFixed(1)}% no último mês`
-          });
-        } else {
-          insights.push({
-            type: 'negative',
-            icon: <ArrowDownRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
-            message: `� Dividendo reduziu ${Math.abs(crescimentoDividendo).toFixed(1)}% no último mês`
-          });
-        }
-      }
-    }
-
-    // Análise de estabilidade prolongada de dividendos
-    if (historico.length >= 6) {
-      const ultimosSeisMeses = historico.slice(-6);
-      const dividendosSemVariacao = ultimosSeisMeses.every((mes, index) => {
-        if (index === 0) return true;
-        const anterior = ultimosSeisMeses[index - 1];
-        if (anterior.dividendo_periodo === 0) return false;
-        const variacao = Math.abs((mes.dividendo_periodo - anterior.dividendo_periodo) / anterior.dividendo_periodo) * 100;
-        return variacao < 1; // Menos de 1% de variação
-      });
-
-      if (dividendosSemVariacao && dividendoAtual > 0) {
-        insights.push({
-          type: 'alert',
-          icon: <AlertTriangle className="h-3 w-3 text-yellow-600 flex-shrink-0" />,
-          message: `⚠️ Dividendos estáveis há 6+ meses. Possível estagnação na gestão`
-        });
-      }
-    }
-  }
-
-  // ========== ANÁLISE IDADE DO FUNDO ==========
-  if (data.data_inicio) {
-    const dataInicio = new Date(data.data_inicio);
-    const hoje = new Date();
-    const idadeEmMeses = Math.floor((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44));
-    const idadeEmAnos = Math.floor(idadeEmMeses / 12);
-
-    if (idadeEmAnos < 2) {
-      insights.push({
-        type: 'alert',
-        icon: <AlertTriangle className="h-3 w-3 text-yellow-600 flex-shrink-0" />,
-        message: `🆕 Fundo jovem (${idadeEmAnos === 0 ? idadeEmMeses + ' meses' : idadeEmAnos + (idadeEmAnos === 1 ? ' ano' : ' anos')}). Histórico limitado`
-      });
-    } else if (idadeEmAnos >= 5) {
-      insights.push({
-        type: 'positive',
-        icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-        message: `✅ Fundo maduro (${idadeEmAnos} anos). Histórico sólido para análise`
-      });
-    }
-  }
-
-  // ========== ANÁLISE P/VP (PREÇO SOBRE VALOR PATRIMONIAL) ==========
-  if (data.p_vp && data.p_vp > 0) {
-    const pvp = data.p_vp;
-    
-    if (pvp < 0.8) {
-      insights.push({
-        type: 'positive',
-        icon: <ArrowDownRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-        message: `💰 P/VP baixo (${pvp.toFixed(2)}). Possível oportunidade de compra`
-      });
-    } else if (pvp > 1.2) {
-      insights.push({
-        type: 'negative',
-        icon: <ArrowUpRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
-        message: `⚠️ P/VP alto (${pvp.toFixed(2)}). Fundo pode estar sobrevalorizado`
-      });
-    } else {
-      insights.push({
-        type: 'positive',
-        icon: <ArrowUpRight className="h-3 w-3 text-blue-600 flex-shrink-0" />,
-        message: `📊 P/VP equilibrado (${pvp.toFixed(2)}). Preço justo`
-      });
-    }
-  }
-
-  // ========== ANÁLISE RENDIMENTO LÍQUIDO ==========
-  if (data.dados_resumo?.patrimonio_liquido && historico.length >= 3) {
-    const ultimosTresMeses = historico.slice(-3);
-    const rendimentoMedio = ultimosTresMeses.reduce((acc, mes) => acc + (mes.dividendo_periodo || 0), 0) / 3;
-    const rendimentoAnual = rendimentoMedio * 12;
-    const precoAtual = data.indicadores_principais?.ultimo_preco || 1;
-    const yieldAnual = (rendimentoAnual / precoAtual) * 100;
-
-    if (yieldAnual > 8) {
-      insights.push({
-        type: 'positive',
-        icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-        message: `� Yield projetado alto (${yieldAnual.toFixed(1)}% a.a.) baseado nos últimos 3 meses`
-      });
-    } else if (yieldAnual < 4 && yieldAnual > 0) {
-      insights.push({
-        type: 'negative',
-        icon: <ArrowDownRight className="h-3 w-3 text-red-600 flex-shrink-0" />,
-        message: `� Yield projetado baixo (${yieldAnual.toFixed(1)}% a.a.) baseado nos últimos 3 meses`
-      });
-    }
-  }
-
-  // ========== ANÁLISE LIQUIDEZ ==========
-  if (data.liquidez?.metrics?.gap_liquidez !== undefined) {
-    const gapLiquidez = data.liquidez.metrics.gap_liquidez * 100;
-    
-    if (gapLiquidez < 1) {
-      insights.push({
-        type: 'alert',
-        icon: <AlertTriangle className="h-3 w-3 text-yellow-600 flex-shrink-0" />,
-        message: `⚠️ Baixa liquidez (${gapLiquidez.toFixed(2)}%). Atenção para necessidades de caixa`
-      });
-    } else if (gapLiquidez > 10) {
-      insights.push({
-        type: 'positive',
-        icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-        message: `💰 Boa liquidez (${gapLiquidez.toFixed(1)}%). Fundo bem posicionado em caixa`
-      });
-    }
-  }
-
-  // ========== ANÁLISE RECEITA DE ALUGUÉIS vs OUTROS ==========
-  if (data.recebiveis?.metrics) {
-    const percentAluguel = data.recebiveis.metrics.percent_aluguel * 100;
-    
-    if (percentAluguel > 70) {
-      insights.push({
-        type: 'positive',
-        icon: <ArrowUpRight className="h-3 w-3 text-green-600 flex-shrink-0" />,
-        message: `🏢 Foco em aluguéis (${percentAluguel.toFixed(1)}%). Receita recorrente sólida`
-      });
-    }
-  }
-
-  return insights.slice(0, 5); // Máximo de 5 insights para não sobrecarregar
-};
-
-// Componente InfoCard para indicadores
-const InfoCard: React.FC<{
-  title: string;
-  value: string;
-  tooltip: string;
-  icon: React.ReactNode;
-  trend?: 'up' | 'down' | 'neutral';
-}> = ({ title, value, tooltip, icon, trend }) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Card className="cursor-help hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                <p className="text-2xl font-bold">{value}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {icon}
-                {trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                {trend === 'down' && <TrendingDown className="h-4 w-4 text-red-500" />}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p className="max-w-xs">{tooltip}</p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
-);
-
-// Componente principal
 export default function AnaliseTicker() {
-  const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTicker, setSelectedTicker] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [tickerSearchResults, setTickerSearchResults] = useState<TickerSearchResult[]>([]);
-  const [analysisData, setAnalysisData] = useState<FIIAnalysisResponse | null>(null);
-  const [insights, setInsights] = useState<Array<{
-    type: 'positive' | 'negative' | 'alert';
-    icon: React.ReactElement;
-    message: string;
-  }>>([]);
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  useEffect(() => {
-    const tickerFromUrl = searchParams.get("ticker");
-    if (tickerFromUrl) {
-      setSelectedTicker(tickerFromUrl);
-      performAnalysisForTicker(tickerFromUrl);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (searchTerm.length >= 2) {
-      buscarTickers();
-    } else {
-      setTickerSearchResults([]);
-    }
-  }, [searchTerm]);
-
-  const buscarTickers = async () => {
-    setSearchLoading(true);
-    try {
-      const results = await investmentService.buscarTickersFII(searchTerm);
-      setTickerSearchResults(results);
-    } catch (error) {
-      console.error("Erro ao buscar tickers:", error);
-      setTickerSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
-  const selecionarTicker = (ticker: TickerSearchResult) => {
-    // Se for um FII (termina em 11), redirecionar para a página específica de FII
-    if (ticker.ticker.toUpperCase().endsWith('11')) {
-      window.location.href = `/dashboard/mercado/analise-ticker/fii?ticker=${ticker.ticker.toUpperCase()}`;
-      return;
-    }
-    
-    setSelectedTicker(ticker.ticker);
-    setSearchTerm("");
-    setTickerSearchResults([]);
-    // Executa análise automaticamente
-    performAnalysisForTicker(ticker.ticker);
-  };
-
-  const performAnalysisForTicker = async (ticker: string) => {
-    if (!ticker.trim()) return;
-    
-    // Verificar se o ticker é um FII (termina em 11)
-    if (ticker.toUpperCase().endsWith('11')) {
-      // Redirecionar para a página específica de análise de FII
-      window.location.href = `/dashboard/mercado/analise-ticker/fii?ticker=${ticker.toUpperCase()}`;
-      return;
-    }
-
-    setLoading(true);
-    setInsights([]); // Limpar insights anteriores
-    
-    try {
-      const data = await investmentService.analisarAtivo(ticker.toUpperCase());
-      setAnalysisData(data);
+  // Debounce search function
+  const debouncedSearch = useCallback(
+    async (term: string) => {
+      if (!term || term.length < 2) {
+        setSearchResults([]);
+        return;
+      }
       
-      // Processar insights após receber os dados
-      if (data && data.historico_mensal && data.historico_mensal.length > 0) {
-        const processedInsights = generateInsights(data);
-        // Garantir que os insights estejam no formato correto
-        const formattedInsights = processedInsights.map(insight => ({
-          type: insight.type as 'positive' | 'negative' | 'alert',
-          icon: insight.icon as React.ReactElement,
-          message: insight.message
-        }));
-        setInsights(formattedInsights);
+      setIsSearching(true);
+      try {
+        const results = await buscarTickers(term);
+        console.log('Resultados da busca:', results);
+        setSearchResults(results || []);
+      } catch (error) {
+        console.error('Erro ao buscar tickers:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    []
+  );
+
+  // Effect for auto-search with delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      debouncedSearch(searchTerm);
+    }, 500); // 0.5 segundo de delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, debouncedSearch]);
+
+  // Função para selecionar um ticker e direcionar para análise específica
+  const selectTicker = (ticker: string, tipo: string) => {
+    console.log('Selecionando ticker:', ticker, 'tipo:', tipo);
+    
+    if (!ticker || ticker.trim() === '') {
+      console.error('Ticker inválido:', ticker);
+      return;
+    }
+    
+    // Se não tem tipo definido, assume que é uma ação se não termina com 11
+    const tipoProcessado = tipo || (ticker.endsWith('11') ? 'FII' : 'AÇÃO');
+    
+    // Limpar os estados de busca
+    setSearchTerm('');
+    setSearchResults([]);
+    
+    try {
+      if (tipoProcessado.toLowerCase().includes('fii') || tipoProcessado.toLowerCase().includes('fund') || ticker.endsWith('11')) {
+        const urlFII = `/dashboard/mercado/analise-ticker/fii?ticker=${ticker.toUpperCase()}`;
+        console.log('Navegando para FII:', urlFII);
+        navigate(urlFII);
+      } else {
+        const urlAcao = `/dashboard/mercado/analise-ticker-acoes?ticker=${ticker.toUpperCase()}`;
+        console.log('Navegando para Ação:', urlAcao);
+        navigate(urlAcao);
       }
     } catch (error) {
-      console.error('Erro ao buscar análise do ticker:', error);
-      setAnalysisData(null);
-      setInsights([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const performAnalysis = () => {
-    if (selectedTicker.trim()) {
-      performAnalysisForTicker(selectedTicker);
+      console.error('Erro na navegação:', error);
     }
   };
 
   return (
     <MarketPremiumGuard marketFeature="ticker-analysis">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Análise de FII</h1>
-          <p className="text-muted-foreground">
-            Análise completa e detalhada de Fundos de Investimento Imobiliário
-          </p>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold">Análise Ativos</h1>
+          <p className="text-muted-foreground text-lg">Análise detalhada de ativos individuais</p>
         </div>
 
-        {/* Search Section - Ocultar quando há análise */}
-        {!analysisData && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder={!selectedTicker ? "Digite o código do ticker (ex: HGLG11)" : `${selectedTicker} selecionado - Digite para alterar`}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8"
-                    />
-                    {searchLoading && (
-                      <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin" />
-                    )}
-                  </div>
+        {/* Campo de Busca Universal - Maior */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <Search className="h-7 w-7" />
+              Digite o codigo do ativo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Input
+                placeholder="Digite o nome ou código do ativo (ex: PETR4, HGLG11, VALE3, Petrobras, Shopping)"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="text-xl h-16 px-8"
+              />
+              
+              {isSearching && (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-sm text-gray-600">Buscando...</span>
+                </div>
+              )}
 
-                  {selectedTicker && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                      <div className="flex items-center justify-between">
-                        <span className="text-green-800 font-medium">Ticker selecionado: {selectedTicker}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTicker("");
-                            setSearchTerm("");
-                          }}
-                          className="text-green-600 hover:text-green-700"
-                        >
-                          Selecionar Novo
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {tickerSearchResults.length > 0 && (
-                    <div className="border rounded-md max-h-40 overflow-y-auto">
-                      {tickerSearchResults.map((result, index) => (
-                        <div
-                          key={index}
-                          className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0"
-                          onClick={() => selecionarTicker(result)}
-                        >
-                          <div className="font-medium">{result.ticker}</div>
-                          <div className="text-sm text-muted-foreground">{result.descricao}</div>
-                          <Badge variant="outline" className="text-xs mt-1">{result.tipo_ativo}</Badge>
+              {/* Resultados da Busca */}
+              {searchResults.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-lg">Resultados encontrados:</h4>
+                  <div className="grid gap-3 max-h-80 overflow-y-auto">
+                    {searchResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-all hover:shadow-md"
+                        onClick={() => {
+                          console.log('Clicando no resultado:', result);
+                          selectTicker(result.ticker, result.tipo_ativo);
+                        }}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-lg">{result.ticker}</span>
+                              <Badge 
+                                variant={result.tipo_ativo?.toLowerCase().includes('fii') ? 'default' : 'secondary'}
+                                className="px-2 py-1 text-xs"
+                              >
+                                {result.tipo_ativo || 'AÇÃO'}
+                              </Badge>
+                            </div>
+                            <p className="text-gray-600 text-sm mt-1">{result.descricao || result.nome_empresa || result.razao_social || 'Nome não disponível'}</p>
+                            {result.setor && (
+                              <p className="text-gray-500 text-xs mt-1">Setor: {result.setor}</p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            {result.preco_atual && (
+                              <p className="font-semibold text-green-600">
+                                R$ {Number(result.preco_atual).toFixed(2)}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-500 mt-1">Clique para analisar</p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                
-                <div className="flex justify-end">
-                  <Button 
-                    onClick={performAnalysis} 
-                    disabled={loading || !selectedTicker.trim()}
-                    className="min-w-[120px]"
-                  >
-                    <Search className="h-4 w-4 mr-2" />
-                    {loading ? "Analisando..." : "Analisar"}
-                  </Button>
+              )}
+
+              {searchResults.length === 0 && searchTerm && !isSearching && searchTerm.length >= 2 && (
+                <div className="p-4 bg-yellow-50 rounded-lg">
+                  <p className="text-yellow-800">
+                    Nenhum resultado encontrado para "{searchTerm}". Tente outros termos de busca.
+                  </p>
                 </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Opções de Análise Especializada - Cards Maiores */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <Card className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-2 hover:border-blue-300 min-h-[280px]">
+            <CardHeader className="pb-6">
+              <CardTitle className="flex items-center gap-4 text-2xl">
+                <Building2 className="h-10 w-10 text-blue-600" />
+                Análise de FIIs
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-muted-foreground text-xl leading-relaxed">
+                Análise especializada em Fundos de Investimento Imobiliário com métricas específicas do setor imobiliário.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="px-3 py-1 text-sm">P/VP</Badge>
+                <Badge variant="outline" className="px-3 py-1 text-sm">Dividend Yield</Badge>
+                <Badge variant="outline" className="px-3 py-1 text-sm">Liquidez</Badge>
+                <Badge variant="outline" className="px-3 py-1 text-sm">Alavancagem</Badge>
+                <Badge variant="outline" className="px-3 py-1 text-sm">Composição</Badge>
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Analysis Results */}
-        {analysisData && (
-          <div className="space-y-8">
-            {/* Botão Nova Pesquisa */}
-            <div className="flex justify-end">
-              <Button
-                onClick={() => {
-                  setAnalysisData(null);
-                  setSelectedTicker("");
-                  setSearchTerm("");
-                }}
-                variant="outline"
-                className="mb-4"
-              >
-                <Search className="h-4 w-4 mr-2" />
-                Nova Pesquisa
-              </Button>
-            </div>
-
-            {/* 🎯 Cabeçalho Principal com Ticker em Destaque */}
-            <Card className="bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 border-2 border-blue-300">
-              <CardContent className="p-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Coluna Esquerda: Ticker + Segmento */}
-                  <div className="text-center lg:text-left space-y-4">
-                    <div className="space-y-2">
-                      <h1 className="text-5xl lg:text-6xl font-black text-blue-900 tracking-tight">
-                        {analysisData.ticker}
-                      </h1>
-                      <Badge variant="default" className="text-xl px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg">
-                        <Building2 className="h-5 w-5 mr-2" />
-                        {analysisData.segmento}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  {/* Coluna Central: Detalhes da Empresa */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-bold text-gray-800 text-xl mb-2">Razão Social</h3>
-                      <p className="text-lg text-gray-700">{analysisData.razao_social}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-800 text-lg mb-1">CNPJ</h3>
-                      <p className="text-base font-mono text-gray-600">{analysisData.cnpj}</p>
-                    </div>
-                    {analysisData.site_administrador && (
-                      <div>
-                        <h3 className="font-bold text-gray-800 text-lg mb-1">Site do Administrador</h3>
-                        <a 
-                          href={analysisData.site_administrador.startsWith('http') ? analysisData.site_administrador : `https://${analysisData.site_administrador}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium text-base"
-                        >
-                          {analysisData.site_administrador}
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Coluna Direita: Insights Automáticos */}
-                  <div className="bg-white rounded-lg border-2 border-blue-200 p-4 shadow-sm">
-                    <h3 className="font-bold text-gray-800 text-base mb-3 flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-blue-600" />
-                      Insights Automáticos
-                    </h3>
-                    <div className="space-y-2">
-                      {loading ? (
-                        <div className="text-center py-3">
-                          <p className="text-xs text-gray-500">
-                            Carregando insights...
-                          </p>
-                        </div>
-                      ) : insights.length > 0 ? (
-                        insights.map((insight, index) => (
-                          <div
-                            key={index}
-                            className={`p-2 rounded-md border-l-3 text-xs ${
-                              insight.type === 'positive'
-                                ? 'bg-green-50 border-green-400'
-                                : insight.type === 'negative'
-                                ? 'bg-red-50 border-red-400'
-                                : 'bg-yellow-50 border-yellow-400'
-                            }`}
-                          >
-                            <div className="flex items-start gap-1">
-                              {insight.icon}
-                              <p className="font-medium text-gray-700 leading-relaxed">
-                                {insight.message}
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-3">
-                          <p className="text-xs text-gray-500">
-                            {analysisData && analysisData.historico_mensal?.length ? 
-                              `Processando ${analysisData.historico_mensal.length} meses de dados...` : 
-                              'Dados históricos insuficientes para insights'
-                            }
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 📊 Cards de Indicadores Principais */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <InfoCard
-                title="Preço Atual"
-                value={formatCurrency(analysisData.last_price)}
-                tooltip="Último preço de fechamento na bolsa de valores."
-                icon={<DollarSign className="h-5 w-5 text-green-600" />}
-              />
-              
-              <InfoCard
-                title="P/VP"
-                value={formatNumber(analysisData.p_vp, 2)}
-                tooltip="Relação Preço ÷ Valor Patrimonial por cota. Indica se o fundo está caro ou barato."
-                icon={<Percent className="h-5 w-5 text-blue-600" />}
-              />
-              
-              <InfoCard
-                title="Dividendo Mês"
-                value={formatPercentage(analysisData.rentab_mensal)}
-                tooltip="Preço atual / último rendimento. Rentabilidade mensal estimada do fundo."
-                icon={<TrendingUp className="h-5 w-5 text-purple-600" />}
-              />
-              
-              <InfoCard
-                title="Último Dividendo"
-                value={formatCurrency(analysisData.rentabilidade_imobiliaria.metrics.ultimo_dividendo_calculado)}
-                tooltip="Última distribuição de dividendos por cota do fundo."
-                icon={<DollarSign className="h-5 w-5 text-green-600" />}
-              />
-              
-              <InfoCard
-                title="Patrimônio Líquido"
-                value={formatLargeNumber(analysisData.patrimonio_liquido)}
-                tooltip={`Valor Patrimonial Total: ${formatCurrency(analysisData.patrimonio_liquido)}`}
-                icon={<Building2 className="h-5 w-5 text-blue-600" />}
-              />
-              
-              <InfoCard
-                title="Alavancagem do Fundo"
-                value={formatPercentage(analysisData.passivo.metrics.alavancagem * 100)}
-                tooltip="Índice de alavancagem (Dívida ÷ Patrimônio Líquido). Indica o nível de endividamento do fundo."
-                icon={<Activity className="h-5 w-5 text-red-600" />}
-              />
-            </div>
-
-            {/* 🏢 Resumo do Fundo */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <Building2 className="h-6 w-6" />
-                  Resumo do Fundo
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Coluna A: Informações Principais */}
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 text-gray-800">Informações Gerais</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Data de Início:</span>
-                          <span className="font-semibold">{formatDate(analysisData.data_inicio)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Prazo de Duração:</span>
-                          <span className="font-semibold">{analysisData.prazo_duracao}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Objetivo:</span>
-                          <Badge variant="secondary">{analysisData.objetivo}</Badge>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Gestão:</span>
-                          <Badge variant="outline">{analysisData.gestao}</Badge>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Administrador:</span>
-                          <span className="font-semibold">{analysisData.administrador}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 text-gray-800">Patrimônio e Cotas</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Qtd. de Cotas:</span>
-                          <span className="font-semibold">{formatNumber(analysisData.qt_de_cotas, 0)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Valor Patrimonial Total:</span>
-                          <span className="font-semibold">{formatCurrency(analysisData.patrimonio_liquido)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Valor por Cota:</span>
-                          <span className="font-semibold">{formatCurrency(analysisData.valor_patrimonial_cotas)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Qtd. de Ativos:</span>
-                          <span className="font-semibold">{formatNumber(analysisData.quantidade_ativos_fundo, 0)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Patrimônio Líquido:</span>
-                          <span className="font-semibold text-blue-600">{formatLargeNumber(analysisData.patrimonio_liquido)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Coluna B: Rentabilidade e Receita */}
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 text-gray-800">Rentabilidade e Qualidade</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Imóveis Renda (%):</span>
-                          <span className="font-semibold text-green-600">
-                            {formatPercentage(analysisData.rentabilidade_imobiliaria.metrics.imoveis_renda_percentual * 100)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Último Dividendo Calculado:</span>
-                          <span className="font-semibold text-green-600">
-                            {formatCurrency(analysisData.rentabilidade_imobiliaria.metrics.ultimo_dividendo_calculado)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Receita Aluguel (%):</span>
-                          <span className="font-semibold">{formatPercentage(analysisData.recebiveis.metrics.percent_aluguel * 100)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Outros Recebíveis (%):</span>
-                          <span className="font-semibold">{formatPercentage(analysisData.recebiveis.metrics.percent_outros * 100)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Qualidade da Receita:</span>
-                          <div className="text-right">
-                            <div className="text-sm">Aluguel: {formatPercentage(analysisData.recebiveis.metrics.percent_aluguel * 100)}</div>
-                            <div className="text-sm">Outros: {formatPercentage(analysisData.recebiveis.metrics.percent_outros * 100)}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 text-gray-800">Custos e Despesas</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Taxa Admin. Mensal:</span>
-                          <span className="font-semibold text-red-600">{formatCurrency(analysisData.custo_mensal_administracao)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Custos Fixos:</span>
-                          <span className="font-semibold text-red-600">{formatCurrency(analysisData.custos_fixos)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Total Passivo:</span>
-                          <span className="font-semibold text-red-600">{formatCurrency(analysisData.passivo.raw.total_passivo)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Nível de Risco:</span>
-                          <div className="text-right">
-                            <span className="font-semibold text-red-600">
-                              {formatPercentage(analysisData.passivo.metrics.alavancagem * 100)}
-                            </span>
-                            <div className="text-xs text-gray-500">alavancagem do fundo</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 📈 Gráficos Interativos - Nova Organização */}
-            
-            {/* 1. Histórico de Preços (Primeira posição, largura completa) */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Histórico de Preços - Última Semana
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <Line
-                    data={{
-                      labels: analysisData.ultima_semana.map(item => item.data).reverse(),
-                      datasets: [{
-                        label: 'Preço (R$)',
-                        data: analysisData.ultima_semana.map(item => item.preco).reverse(),
-                        borderColor: 'rgb(139, 92, 246)',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                      }]
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      scales: {
-                        y: {
-                          ticks: {
-                            callback: function(value) {
-                              return 'R$ ' + value;
-                            }
-                          }
-                        }
-                      },
-                      plugins: {
-                        tooltip: {
-                          callbacks: {
-                            label: function(context) {
-                              return `Preço: ${formatCurrency(context.raw as number)}`;
-                            }
-                          }
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 2. Portfólio e Alavancagem (lado a lado) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Composição do Portfólio */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <PieChart className="h-5 w-5" />
-                    Composição do Portfólio
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <Pie
-                      data={{
-                        labels: [
-                          'Imóveis Acabados',
-                          'Terrenos',
-                          'FIIs',
-                          'Ações/Sociedades',
-                          'Imóveis em Construção'
-                        ],
-                        datasets: [{
-                          data: [
-                            analysisData.composicao_ativo.raw.imoveis_renda_acabados,
-                            analysisData.composicao_ativo.raw.terrenos,
-                            analysisData.composicao_ativo.raw.fii,
-                            analysisData.composicao_ativo.raw.acoes_sociedades_atividades_fii,
-                            analysisData.composicao_ativo.raw.imoveis_renda_construcao
-                          ],
-                          backgroundColor: [
-                            '#3B82F6',
-                            '#10B981',
-                            '#F59E0B',
-                            '#EF4444',
-                            '#8B5CF6'
-                          ],
-                          borderWidth: 2,
-                          borderColor: '#ffffff'
-                        }]
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            position: 'bottom'
-                          },
-                          tooltip: {
-                            callbacks: {
-                              label: function(context) {
-                                const value = context.raw as number;
-                                const total = analysisData.composicao_ativo.raw.total_investido;
-                                const percentage = ((value / total) * 100).toFixed(2);
-                                return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
-                              }
-                            }
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Aluguéis x Outros Recebíveis */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" />
-                    Aluguéis x Outros Recebíveis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <Bar
-                      data={{
-                        labels: analysisData.historico_mensal.map(item => 
-                          new Date(item.data_referencia).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
-                        ),
-                        datasets: [
-                          {
-                            label: 'Aluguéis (%)',
-                            data: analysisData.historico_mensal.map(item => item.percent_aluguel * 100),
-                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                            borderColor: 'rgb(59, 130, 246)',
-                            borderWidth: 1,
-                          },
-                          {
-                            label: 'Outros Recebíveis (%)',
-                            data: analysisData.historico_mensal.map(item => item.percent_outros * 100),
-                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                            borderColor: 'rgb(16, 185, 129)',
-                            borderWidth: 1,
-                          }
-                        ]
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: {
-                              callback: function(value) {
-                                return value + '%';
-                              }
-                            }
-                          }
-                        },
-                        plugins: {
-                          tooltip: {
-                            callbacks: {
-                              label: function(context) {
-                                return `${context.dataset.label}: ${context.raw}%`;
-                              }
-                            }
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* 3. Recebíveis e Gap de Liquidez (lado a lado) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Evolução da Alavancagem do Fundo */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Evolução da Alavancagem do Fundo
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <Line
-                      data={{
-                        labels: analysisData.historico_mensal.map(item => 
-                          new Date(item.data_referencia).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
-                        ),
-                        datasets: [{
-                          label: 'Alavancagem do Fundo (%)',
-                          data: analysisData.historico_mensal.map(item => item.alavancagem * 100),
-                          borderColor: 'rgb(239, 68, 68)',
-                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                          tension: 0.4,
-                          fill: true,
-                        }]
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: {
-                              callback: function(value) {
-                                return value + '%';
-                              }
-                            }
-                          }
-                        },
-                        plugins: {
-                          tooltip: {
-                            callbacks: {
-                              label: function(context) {
-                                return `Alavancagem do Fundo: ${context.raw}%`;
-                              }
-                            }
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Gap de Liquidez */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <LineChart className="h-5 w-5" />
-                    Gap de Liquidez (Mensal)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <Line
-                      data={{
-                        labels: analysisData.historico_mensal.map(item => 
-                          new Date(item.data_referencia).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
-                        ),
-                        datasets: [{
-                          label: 'Gap de Liquidez (%)',
-                          data: analysisData.historico_mensal.map(item => item.gap_liquidez * 100),
-                          borderColor: 'rgb(59, 130, 246)',
-                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                          tension: 0.4,
-                        }]
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: {
-                              callback: function(value) {
-                                return value + '%';
-                              }
-                            }
-                          }
-                        },
-                        plugins: {
-                          tooltip: {
-                            callbacks: {
-                              label: function(context) {
-                                const index = context.dataIndex;
-                                const dataPoint = analysisData.historico_mensal[analysisData.historico_mensal.length - 1 - index];
-                                return [
-                                  `Gap: ${formatPercentage(dataPoint.gap_liquidez * 100)}`,
-                                  `Disponibilidades: ${formatCurrency(dataPoint.disponibilidades)}`
-                                ];
-                              }
-                            }
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* 📊 Dados Históricos */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <Calendar className="h-6 w-6" />
-                  Dados Históricos Mensais
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Gap Liquidez</TableHead>
-                        <TableHead>Alavancagem do Fundo</TableHead>
-                        <TableHead>Total Investido</TableHead>
-                        <TableHead>Total Passivo</TableHead>
-                        <TableHead>Dividendo</TableHead>
-                        <TableHead>% Aluguel</TableHead>
-                        <TableHead>% Imóveis</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {analysisData.historico_mensal.slice().reverse().map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">
-                            {formatDate(item.data_referencia)}
-                          </TableCell>
-                          <TableCell>{formatPercentage(item.gap_liquidez * 100, 4)}</TableCell>
-                          <TableCell>{formatPercentage(item.alavancagem * 100)}</TableCell>
-                          <TableCell>{formatCurrency(item.total_investido)}</TableCell>
-                          <TableCell>{formatCurrency(item.total_passivo)}</TableCell>
-                          <TableCell className="text-green-600 font-semibold">
-                            {formatCurrency(item.dividendo_periodo)}
-                          </TableCell>
-                          <TableCell>{formatPercentage(item.percent_aluguel * 100)}</TableCell>
-                          <TableCell>{formatPercentage(item.imoveis_renda_percentual * 100)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!analysisData && !loading && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">
-                Análise Profissional de FII
-              </h3>
-              <p className="text-muted-foreground">
-                Digite o código de um ticker para começar a análise completa
+          <Card className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-2 hover:border-green-300 min-h-[280px]">
+            <CardHeader className="pb-6">
+              <CardTitle className="flex items-center gap-4 text-2xl">
+                <TrendingUp className="h-10 w-10 text-green-600" />
+                Análise de Ações
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-muted-foreground text-xl leading-relaxed">
+                Análise completa de ações com indicadores fundamentalistas e técnicos para decisões de investimento.
               </p>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="px-3 py-1 text-sm">P/L</Badge>
+                <Badge variant="outline" className="px-3 py-1 text-sm">ROE</Badge>
+                <Badge variant="outline" className="px-3 py-1 text-sm">Dividend Yield</Badge>
+                <Badge variant="outline" className="px-3 py-1 text-sm">Volume</Badge>
+                <Badge variant="outline" className="px-3 py-1 text-sm">Setor</Badge>
+              </div>
             </CardContent>
           </Card>
-        )}
+        </div>
+
+        {/* Informações sobre as Análises - Fonte Maior */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-4 text-3xl">
+              <BarChart3 className="h-8 w-8" />
+              Como Funciona
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              <div className="text-center space-y-6">
+                <Search className="h-16 w-16 mx-auto text-blue-600" />
+                <h4 className="font-semibold text-2xl">1. Busque</h4>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Digite o código ou nome do ativo que deseja analisar. Nossa busca é inteligente e encontra tanto FIIs quanto ações.
+                </p>
+              </div>
+              <div className="text-center space-y-6">
+                <PieChart className="h-16 w-16 mx-auto text-green-600" />
+                <h4 className="font-semibold text-2xl">2. Analise</h4>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Visualize métricas detalhadas e indicadores específicos para cada tipo de ativo com análises profundas.
+                </p>
+              </div>
+              <div className="text-center space-y-6">
+                <TrendingUp className="h-16 w-16 mx-auto text-purple-600" />
+                <h4 className="font-semibold text-2xl">3. Decida</h4>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Use os dados e insights para tomar decisões de investimento informadas e estratégicas.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </MarketPremiumGuard>
   );

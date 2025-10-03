@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, PieChart, TrendingUp, Loader2 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
-import { usePrivacy } from "@/contexts/PrivacyContext";
-import { useResponsive } from "@/hooks/useResponsive";
+// import { usePrivacy } from "@/contexts/PrivacyContext";
+// import { useResponsive } from "@/hooks/useResponsive";
 import PieChartWithLegend from "@/components/charts/PieChartWithLegend";
 import GraficoSetorialAcao from "@/components/charts/GraficoSetorialAcao";
 import GraficoDividendosFII from "@/components/charts/GraficoDividendosFII";
@@ -34,8 +34,15 @@ const calcularRentabilidade = (valorInvestido: number, valorAtual: number): numb
 
 export default function Investimentos() {
   const { t, formatCurrency } = useTranslation();
-  const { formatValue, shouldHideCharts } = usePrivacy();
-  const { isMobile, isTablet } = useResponsive();
+  // const { formatValue, shouldHideCharts } = usePrivacy();
+  // const { isMobile, isTablet } = useResponsive();
+  
+  // Mock values for now
+  const formatValue = (value: any) => value;
+  const shouldHideCharts = false;
+  const isMobile = false;
+  const isTablet = false;
+  
   const getResponsiveClasses = (config: {
     mobile?: string;
     tablet?: string;
@@ -229,7 +236,7 @@ export default function Investimentos() {
       </div>
 
       {/* Valor Total e Valorização - Nova Seção */}
-      {!shouldHideCharts() && (
+      {!shouldHideCharts && (
         <div className={`grid gap-4 ${getResponsiveClasses({
           mobile: 'grid-cols-1',
           tablet: 'grid-cols-1 lg:grid-cols-2',
@@ -341,7 +348,7 @@ export default function Investimentos() {
       )}
 
       {/* Detalhes por Setor - ACIMA dos Gráficos */}
-      {!shouldHideCharts() && (
+      {!shouldHideCharts && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
           {/* Detalhes Ações */}
           <div className="space-y-3">
@@ -462,7 +469,7 @@ export default function Investimentos() {
       )}
 
       {/* Gráficos Setoriais */}
-      {!shouldHideCharts() && (
+      {!shouldHideCharts && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
           {/* Gráfico Ações */}
           <Card className="h-full bg-gradient-to-br from-blue-50 via-white to-blue-50 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -521,7 +528,7 @@ export default function Investimentos() {
       </InvestmentDividendPremiumGuard>
 
       {/* Resumo de Performance */}
-      {!shouldHideCharts() && (
+      {!shouldHideCharts && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
