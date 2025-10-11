@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleInfoDaily, handleMarketInsights } from "./routes/infodaily";
+import { handleDestaquesGerais } from "./routes/market";
 
 export function createServer() {
   const app = express();
@@ -39,6 +40,9 @@ app.use("/api", (req, res, next) => {
   // InfoDaily routes
   app.get("/api/infodaily/", handleInfoDaily);
   app.get("/api/insights-mercado/", handleMarketInsights);
+
+  // Market routes
+  app.get("/api/mercado/destaques/gerais", handleDestaquesGerais);
 
   return app;
 }

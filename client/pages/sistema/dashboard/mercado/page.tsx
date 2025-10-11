@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, TrendingUp, TrendingDown, BarChart3, PieChart, DollarSign, Target, Search } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, BarChart3, PieChart, DollarSign, Target } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import MarketPremiumGuard from "@/components/MarketPremiumGuard";
 import { marketApi } from "@/services/api/market";
 
 export default function MercadoPage() {
   const navigate = useNavigate();
   const [tipoAtivo, setTipoAtivo] = useState<"acao" | "fii" | "todos">("todos");
-  const [currentView, setCurrentView] = useState<"destaques" | "analise">("destaques");
 
   const {
     data: marketResponse,
@@ -206,50 +206,8 @@ export default function MercadoPage() {
           </div>
         </div>
 
-        {/* Navegação horizontal entre Destaques e Análise */}
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8">
-            <button
-              onClick={() => setCurrentView("destaques")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                currentView === "destaques"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Destaques
-              </div>
-            </button>
-            <button
-              onClick={() => setCurrentView("analise")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                currentView === "analise"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Search className="h-4 w-4" />
-                Análise
-              </div>
-            </button>
-          </nav>
-        </div>
-
-        {/* Renderização condicional */}
-        {currentView === "analise" ? (
-          <div className="flex justify-center py-8">
-            <Button 
-              onClick={() => navigate('/dashboard/mercado/analise-ticker')}
-              className="text-lg px-8 py-4"
-            >
-              Ir para Análise de Ticker
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-6">
+        {/* Conteúdo principal com dados reais da API */}
+        <div className="space-y-6">
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
@@ -282,6 +240,9 @@ export default function MercadoPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Gráficos de Setores */}
+        <SetoresGraficos />
 
         <div className="flex gap-2">
           <Button
@@ -359,7 +320,7 @@ export default function MercadoPage() {
                             <div>
                               <div className="font-mono font-bold text-gray-900">{ativo.ticker}</div>
                               <div className="text-sm text-gray-600 truncate max-w-[120px] mb-1">{ativo.nome}</div>
-                              <div className="text-xs font-semibold text-gray-800">{formatCurrency(ativo.preco_atual)}</div>
+                              <div className="text-xs font-semibold text-gray-800">{formatCurrency(ativo.preco)}</div>
                               {ativo.p_vp && (
                                 <div className="text-xs text-blue-600 mt-1">P/VP: {ativo.p_vp.toFixed(2)}</div>
                               )}
@@ -414,7 +375,7 @@ export default function MercadoPage() {
                             <div>
                               <div className="font-mono font-bold text-gray-900">{ativo.ticker}</div>
                               <div className="text-sm text-gray-600 truncate max-w-[120px] mb-1">{ativo.nome}</div>
-                              <div className="text-xs font-semibold text-gray-800">{formatCurrency(ativo.preco_atual)}</div>
+                              <div className="text-xs font-semibold text-gray-800">{formatCurrency(ativo.preco)}</div>
                               {ativo.dy_anualizado && (
                                 <div className="text-xs text-green-600 mt-1">
                                   DY: {(ativo.dy_anualizado * 100).toFixed(2)}%
@@ -452,8 +413,335 @@ export default function MercadoPage() {
           </CardContent>
         </Card>
         </div>
-        )}
       </div>
     </MarketPremiumGuard>
+  );
+}
+
+// Componente para gráficos de setores
+function SetoresGraficos() {
+  const { data: marketData, isLoading, error } = useQuery({
+    queryKey: ['market-destaques-gerais'],
+    queryFn: marketApi.getDestaquesGerais,
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: false,
+    retry: 1,
+  });
+
+  // Dados mock para quando a API não estiver disponível
+  const mockData = {
+    success: true,
+    data: {
+      tabelas_para_graficos: {
+        tabela_acoes: [
+          {
+            setor: "Financeiro",
+            valor_milhoes: 973400.6,
+            percentual_categoria: 32.44,
+            total_ativos: 8
+          },
+          {
+            setor: "Materiais Básicos",
+            valor_milhoes: 936665.7,
+            percentual_categoria: 31.21,
+            total_ativos: 7
+          },
+          {
+            setor: "Industrial",
+            valor_milhoes: 438812.4,
+            percentual_categoria: 14.62,
+            total_ativos: 5
+          },
+          {
+            setor: "Energia Elétrica",
+            valor_milhoes: 359686.9,
+            percentual_categoria: 11.99,
+            total_ativos: 8
+          },
+          {
+            setor: "Consumo Não-Cíclico",
+            valor_milhoes: 292298.0,
+            percentual_categoria: 9.74,
+            total_ativos: 6
+          }
+        ],
+        tabela_fiis: [
+          {
+            segmento: "Shoppings",
+            valor_milhoes: 29.4,
+            percentual_categoria: 36.66,
+            total_ativos: 6
+          },
+          {
+            segmento: "Logística",
+            valor_milhoes: 27.8,
+            percentual_categoria: 34.66,
+            total_ativos: 6
+          },
+          {
+            segmento: "Lajes Corporativas",
+            valor_milhoes: 13.3,
+            percentual_categoria: 16.58,
+            total_ativos: 8
+          },
+          {
+            segmento: "FOFs",
+            valor_milhoes: 8.5,
+            percentual_categoria: 10.6,
+            total_ativos: 4
+          },
+          {
+            segmento: "Saúde/Hospitais",
+            valor_milhoes: 1.2,
+            percentual_categoria: 1.5,
+            total_ativos: 4
+          }
+        ]
+      }
+    }
+  };
+
+  // Usar dados da API se disponíveis, senão usar mock
+  const dataToUse = (marketData?.success && marketData?.data) ? marketData : mockData;
+
+  if (isLoading) {
+    return (
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 text-2xl">
+            <BarChart3 className="h-7 w-7" />
+            Análise por Setores
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-lg text-gray-600">Carregando dados do mercado...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const tabelaAcoes = dataToUse.data?.tabelas_para_graficos?.tabela_acoes || [];
+  const tabelaFiis = dataToUse.data?.tabelas_para_graficos?.tabela_fiis || [];
+
+  // Ordenar setores por valor (maior para menor)
+  const acoesSorted = [...tabelaAcoes].sort((a, b) => b.valor_milhoes - a.valor_milhoes);
+  const fiisSorted = [...tabelaFiis].sort((a, b) => b.valor_milhoes - a.valor_milhoes);
+
+  // Cores para os gráficos
+  const coresAcoes = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+  const coresFiis = ['#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'];
+
+  // Formatador de valores
+  const formatarValor = (valor: number) => {
+    if (valor >= 1000) {
+      return `R$ ${(valor / 1000).toFixed(1)}B`;
+    }
+    return `R$ ${valor.toFixed(0)}M`;
+  };
+
+  return (
+    <Card className="shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-3 text-2xl">
+          <BarChart3 className="h-7 w-7" />
+          Análise por Setores
+          {error && (
+            <Badge variant="secondary" className="ml-2 text-xs">
+              Dados de demonstração
+            </Badge>
+          )}
+        </CardTitle>
+        <p className="text-muted-foreground text-lg mt-2">
+          Distribuição de valor de mercado por setores e segmentos
+        </p>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* Gráfico de Ações por Setor */}
+          <div className="space-y-4">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-gray-800">Ações por Setor</h3>
+              <p className="text-sm text-gray-600">Valor de mercado em milhões de reais</p>
+            </div>
+            
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={acoesSorted}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 60,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="setor" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    fontSize={11}
+                    stroke="#666"
+                  />
+                  <YAxis 
+                    tickFormatter={formatarValor}
+                    fontSize={11}
+                    stroke="#666"
+                  />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [
+                      formatarValor(value),
+                      'Valor de Mercado'
+                    ]}
+                    labelFormatter={(label: string) => `Setor: ${label}`}
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '1px solid #ccc',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                  <Bar dataKey="valor_milhoes" radius={[4, 4, 0, 0]}>
+                    {acoesSorted.map((entry, index) => (
+                      <Cell key={`cell-acoes-${index}`} fill={coresAcoes[index % coresAcoes.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Estatísticas das Ações */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {acoesSorted.slice(0, 2).map((setor, index) => (
+                <div key={setor.setor} className="bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: coresAcoes[index] }}
+                    />
+                    <span className="font-medium text-sm">{setor.setor}</span>
+                  </div>
+                  <p className="text-lg font-bold text-gray-800">{formatarValor(setor.valor_milhoes)}</p>
+                  <p className="text-xs text-gray-600">{setor.percentual_categoria.toFixed(1)}% do total</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Gráfico de FIIs por Segmento */}
+          <div className="space-y-4">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-gray-800">FIIs por Segmento</h3>
+              <p className="text-sm text-gray-600">Valor de mercado em milhões de reais</p>
+            </div>
+            
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={fiisSorted}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 60,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="segmento" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    fontSize={11}
+                    stroke="#666"
+                  />
+                  <YAxis 
+                    tickFormatter={formatarValor}
+                    fontSize={11}
+                    stroke="#666"
+                  />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [
+                      formatarValor(value),
+                      'Valor de Mercado'
+                    ]}
+                    labelFormatter={(label: string) => `Segmento: ${label}`}
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '1px solid #ccc',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                  <Bar dataKey="valor_milhoes" radius={[4, 4, 0, 0]}>
+                    {fiisSorted.map((entry, index) => (
+                      <Cell key={`cell-fiis-${index}`} fill={coresFiis[index % coresFiis.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Estatísticas dos FIIs */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {fiisSorted.slice(0, 2).map((segmento, index) => (
+                <div key={segmento.segmento} className="bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: coresFiis[index] }}
+                    />
+                    <span className="font-medium text-sm">{segmento.segmento}</span>
+                  </div>
+                  <p className="text-lg font-bold text-gray-800">{formatarValor(segmento.valor_milhoes)}</p>
+                  <p className="text-xs text-gray-600">{segmento.percentual_categoria.toFixed(1)}% do total</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Resumo Total */}
+        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div>
+              <h4 className="font-semibold text-gray-800">Total Ações</h4>
+              <p className="text-2xl font-bold text-blue-600">
+                {formatarValor(acoesSorted.reduce((acc, curr) => acc + curr.valor_milhoes, 0))}
+              </p>
+              <p className="text-sm text-gray-600">
+                {acoesSorted.reduce((acc, curr) => acc + curr.total_ativos, 0)} ativos
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-800">Total FIIs</h4>
+              <p className="text-2xl font-bold text-green-600">
+                {formatarValor(fiisSorted.reduce((acc, curr) => acc + curr.valor_milhoes, 0))}
+              </p>
+              <p className="text-sm text-gray-600">
+                {fiisSorted.reduce((acc, curr) => acc + curr.total_ativos, 0)} ativos
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-800">Total Geral</h4>
+              <p className="text-2xl font-bold text-purple-600">
+                {formatarValor(
+                  acoesSorted.reduce((acc, curr) => acc + curr.valor_milhoes, 0) +
+                  fiisSorted.reduce((acc, curr) => acc + curr.valor_milhoes, 0)
+                )}
+              </p>
+              <p className="text-sm text-gray-600">
+                {acoesSorted.reduce((acc, curr) => acc + curr.total_ativos, 0) + 
+                 fiisSorted.reduce((acc, curr) => acc + curr.total_ativos, 0)} ativos
+              </p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

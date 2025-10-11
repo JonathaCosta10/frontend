@@ -114,9 +114,9 @@ export default function AnaliseTickerIndex() {
                           )}
                         </div>
                         <div className="text-right">
-                          {result.preco_atual && (
+                          {result.preco && (
                             <p className="font-semibold text-green-600">
-                              R$ {Number(result.preco_atual).toFixed(2)}
+                              R$ {Number(result.preco).toFixed(2)}
                             </p>
                           )}
                         </div>

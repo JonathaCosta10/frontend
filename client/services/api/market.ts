@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 export interface TickerData {
   ticker: string;
   nome: string;
-  preco_atual: number;
+  preco: number; // Campo correto conforme API
   variacao_diaria: number;
   variacao_semanal: number;
   tamanho_milhoes: number;
@@ -55,11 +55,15 @@ export interface TotaisConsolidados {
 export interface TabelaSetorData {
   setor: string;
   valor_milhoes: number;
+  valor_patrimonial_milhoes: number;
+  p_vp_medio: number;
   variacao_diaria: number;
   variacao_semanal: number;
   percentual_total: number;
   percentual_categoria: number;
   total_ativos: number;
+  fonte_calculo: string;
+  ativos_com_market_cap_real: number;
 }
 
 export interface TabelaSegmentoData {

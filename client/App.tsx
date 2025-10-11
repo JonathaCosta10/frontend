@@ -76,7 +76,6 @@ const FIIMarket = withOptimizedLazy(() => import("./pages/sistema/dashboard/merc
 const IndicadoresEconomicos = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
 const ListaDeDesejo = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
 const AnaliseTicker = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
-const FIIAnalise = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker/fii/index"));
 const AnaliseAcoesCompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-acoes-completa"));
 const AnaliseFIICompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-fii-completa"));
 const CalculadoraFinanceira = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));

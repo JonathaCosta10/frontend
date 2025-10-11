@@ -16,6 +16,7 @@ export interface TickerSearchResult {
   descricao: string; // conforme a documentação
   tipo_ativo: string; // conforme a documentação
   setor?: string;
+  preco?: number; // preço atual do ativo
 }
 
 export interface InvestmentAsset {

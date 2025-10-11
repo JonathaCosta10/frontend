@@ -3,12 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Search, 
   TrendingUp, 
   TrendingDown, 
   Building2, 
@@ -20,10 +16,9 @@ import {
   AlertTriangle,
   CheckCircle,
   Info,
-  Target,
   Users
 } from "lucide-react";
-import { analisarAtivoFII, buscarTickers } from "@/services/investmentService";
+import { analisarAtivoFII } from "@/services/investmentService";
 import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -54,53 +49,6 @@ export default function AnaliseFIICompleta() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedTicker, setSelectedTicker] = useState(searchParams.get('ticker') || '');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-
-  // Debounce search function
-  const debouncedSearch = useCallback(
-    async (term: string) => {
-      if (!term || term.length < 2) {
-        setSearchResults([]);
-        return;
-      }
-
-      setIsSearching(true);
-      try {
-        const results = await buscarTickers(term);
-        const fiiResults = results.filter((item: any) => 
-          item.tipo_ativo === 'FII' || item.tipo_ativo === 'fii'
-        );
-        setSearchResults(fiiResults);
-      } catch (error) {
-        console.error('Erro na busca:', error);
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    []
-  );
-
-  // Effect for auto-search with delay
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      debouncedSearch(searchTerm);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm, debouncedSearch]);
-
-  // Função para selecionar um FII
-  const selectTicker = (ticker: string) => {
-    setSelectedTicker(ticker);
-    setSearchTerm('');
-    setSearchResults([]);
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set('ticker', ticker);
-    navigate({ search: newSearchParams.toString() });
-  };
 
   // Query para análise do FII
   const {
@@ -301,100 +249,7 @@ export default function AnaliseFIICompleta() {
       <div>
         <h1 className="text-3xl font-bold">Análise Completa de FII</h1>
         <p className="text-muted-foreground">Análise fundamentalista detalhada de Fundos de Investimento Imobiliário</p>
-        {selectedTicker && (
-          <div className="mt-2 p-3 bg-green-50 rounded-lg">
-            <p className="text-sm text-green-800">
-              <strong>Ticker Ativo:</strong> {selectedTicker} | 
-              <strong>API:</strong> http://127.0.0.1:5000/api/investimentos/analise-ativo/fii/?ticker={selectedTicker}
-            </p>
-            <div className="mt-1 text-xs">
-              {isAnalysisLoading && (
-                <span className="text-blue-600">🔄 Carregando dados da API...</span>
-              )}
-              {analysisError && (
-                <span className="text-red-600">❌ Erro na API: {analysisError.message}</span>
-              )}
-              {analysisData && !isAnalysisLoading && (
-                <span className="text-green-600">✅ Dados carregados com sucesso!</span>
-              )}
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Campo de Busca */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Buscar FII para Análise
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <Input
-              placeholder="Digite o código do FII (ex: HGLG11, XPLG11, KNRI11)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
-            />
-            <Button onClick={() => debouncedSearch(searchTerm)} disabled={isSearching}>
-              {isSearching ? 'Buscando...' : 'Buscar'}
-            </Button>
-          </div>
-
-          {/* Botões de Teste */}
-          <div className="mt-4 flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => selectTicker('HGLG11')}
-            >
-              Testar HGLG11
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => selectTicker('XPLG11')}
-            >
-              Testar XPLG11
-            </Button>
-            {selectedTicker && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => refetchAnalysis()}
-              >
-                Recarregar Dados
-              </Button>
-            )}
-          </div>
-
-          {/* Resultados da Busca */}
-          {searchResults.length > 0 && (
-            <div className="mt-4 space-y-2">
-              <h4 className="font-semibold">FIIs encontrados:</h4>
-              <div className="grid gap-2 max-h-60 overflow-y-auto">
-                {searchResults.map((result, index) => (
-                  <div
-                    key={index}
-                    className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => selectTicker(result.ticker)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <span className="font-bold">{result.ticker}</span>
-                        <span className="ml-2 text-gray-600">{result.descricao}</span>
-                      </div>
-                      <Badge variant="secondary">{result.setor || 'FII'}</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Análise do FII */}
       {isAnalysisLoading && (
@@ -452,45 +307,73 @@ export default function AnaliseFIICompleta() {
             </CardContent>
           </Card>
 
-          {/* Recomendação e Score */}
+          {/* Insights de Análise */}
           {analysisData.insights && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Recomendação de Investimento
+                  <AlertTriangle className="h-5 w-5" />
+                  Análise Detalhada
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Badge variant={
-                        analysisData.insights.recomendacao?.includes('COMPRA') ? 'default' :
-                        analysisData.insights.recomendacao?.includes('VENDA') ? 'destructive' : 'secondary'
-                      } className="text-lg px-3 py-1">
-                        {analysisData.insights.recomendacao}
-                      </Badge>
-                    </div>
+                <div className="space-y-6">
+                  {/* Pontos Positivos e Pontos de Atenção lado a lado */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Pontos Positivos */}
+                    {analysisData.insights.pontos_positivos && analysisData.insights.pontos_positivos.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-3 flex items-center gap-2 text-green-700">
+                          <CheckCircle className="h-4 w-4" />
+                          Pontos Positivos
+                        </h4>
+                        <div className="grid gap-2">
+                          {analysisData.insights.pontos_positivos.map((ponto: string, index: number) => (
+                            <div key={index} className="flex items-start gap-2 p-2 bg-green-50 rounded-lg">
+                              <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm text-green-800">{ponto}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pontos de Atenção */}
+                    {analysisData.insights.pontos_atencao && analysisData.insights.pontos_atencao.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-3 flex items-center gap-2 text-yellow-700">
+                          <Info className="h-4 w-4" />
+                          Pontos de Atenção
+                        </h4>
+                        <div className="grid gap-2">
+                          {analysisData.insights.pontos_atencao.map((ponto: string, index: number) => (
+                            <div key={index} className="flex items-start gap-2 p-2 bg-yellow-50 rounded-lg">
+                              <Info className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm text-yellow-800">{ponto}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Alertas - abaixo dos outros dois */}
+                  {analysisData.insights.alertas && analysisData.insights.alertas.length > 0 && (
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Score Geral</p>
-                      <div className="flex items-center gap-2">
-                        <Progress value={analysisData.insights.score_detalhado?.score_percentual || 0} className="flex-1" />
-                        <span className="font-semibold">{formatPercentage(analysisData.insights.score_detalhado?.score_percentual)}</span>
+                      <h4 className="font-semibold mb-3 flex items-center gap-2 text-red-700">
+                        <AlertTriangle className="h-4 w-4" />
+                        Alertas Importantes
+                      </h4>
+                      <div className="grid gap-2">
+                        {analysisData.insights.alertas.map((alerta: string, index: number) => (
+                          <div key={index} className="flex items-start gap-2 p-2 bg-red-50 rounded-lg border border-red-200">
+                            <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm text-red-800 font-medium">{alerta}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-2">Pontos Positivos</h4>
-                    <ul className="space-y-1 text-sm">
-                      {analysisData.insights.pontos_positivos?.map((ponto: string, index: number) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span>{ponto}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -834,12 +717,29 @@ export default function AnaliseFIICompleta() {
             </TabsContent>
           </Tabs>
 
-          {/* Data da Análise */}
+          {/* Dados da Consulta */}
           <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground text-center">
-                Análise realizada em: {analysisData.data_analise}
-              </p>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Dados da Consulta
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Data da Análise</p>
+                  <p className="font-semibold">{analysisData.data_analise}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Ticker Analisado</p>
+                  <p className="font-semibold">{analysisData.ticker}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Status</p>
+                  <Badge variant="default">{analysisData.status}</Badge>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

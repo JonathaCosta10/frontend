@@ -71,7 +71,6 @@ const ListaDeDesejo = withOptimizedLazy(() => import("./pages/sistema/dashboard/
 const AnaliseTicker = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
 const AnaliseAcoesCompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-acoes-completa.tsx"));
 const AnaliseFIICompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-fii-completa.tsx"));
-const FIIAnalise = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker/fii"));
 const CalculadoraFinanceira = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
 
 // Crypto Pages
