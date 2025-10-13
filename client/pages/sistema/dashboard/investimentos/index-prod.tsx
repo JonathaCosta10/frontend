@@ -14,6 +14,7 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import GraficoAlocacaoTipo from "@/components/charts/GraficoAlocacaoTipo";
 import GraficoSetorialAcao from "@/components/charts/GraficoSetorialAcao";
 import GraficoDividendosFII from "@/components/charts/GraficoDividendosFII";
+import GraficoRentabilidadeGeral from "@/components/charts/GraficoRentabilidadeGeral";
 import InvestmentDividendPremiumGuard from "@/components/InvestmentDividendPremiumGuard";
 import { investmentsApi } from '@/services/api/investments';
 import type { AlocacaoTipoResponse } from '@/services/api/investments';
@@ -381,13 +382,13 @@ export default function Investimentos() {
                   <span>{t('dividends_history')}</span>
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {t('track_dividend_income')}
+                  Evolução da rentabilidade por tipo de ativo e análise de yield
                 </p>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <GraficoDividendosFII mes={mes} ano={ano} />
+            <GraficoRentabilidadeGeral tipo="linha" />
           </CardContent>
         </Card>
       </InvestmentDividendPremiumGuard>

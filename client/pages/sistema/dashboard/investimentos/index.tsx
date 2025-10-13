@@ -9,6 +9,7 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import PieChartWithLegend from "@/components/charts/PieChartWithLegend";
 import GraficoSetorialAcao from "@/components/charts/GraficoSetorialAcao";
 import GraficoDividendosFII from "@/components/charts/GraficoDividendosFII";
+import GraficoRentabilidadeGeral from "@/components/charts/GraficoRentabilidadeGeral";
 import InvestmentDividendPremiumGuard from "@/components/InvestmentDividendPremiumGuard";
 import { investmentsApi } from '@/services/api/investments';
 import type { AlocacaoTipoResponse } from '@/services/api/investments';
@@ -514,15 +515,11 @@ export default function Investimentos() {
               <span>{t('dividend_history')}</span>
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Evolução dos dividendos de ações e fundos imobiliários • {mes}/{ano}
+              Evolução da rentabilidade por tipo de ativo e análise de yield
             </p>
           </CardHeader>
           <CardContent>
-            <GraficoDividendosFII
-              mes={mes}
-              ano={ano}
-              tipoSelecionado="Fundos Imobiliários"
-            />
+            <GraficoRentabilidadeGeral tipo="linha" />
           </CardContent>
         </Card>
       </InvestmentDividendPremiumGuard>

@@ -273,6 +273,7 @@ export class ApiService {
     // Gerenciamento de timeout adaptativo - mais tempo para requisições importantes
     const timeoutDuration = isRefreshTokenRequest ? 30000 : 
                             endpoint.includes("/distribuicao_gastos") ? 25000 : 
+                            endpoint.includes("/rentabilidade-geral") ? 45000 : // Aumentando timeout para rentabilidade
                             endpoint.includes("/auth/") ? 20000 : 
                             endpoint.includes("/login") ? 30000 : 15000;
     

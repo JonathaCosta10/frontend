@@ -112,6 +112,7 @@ export const INVESTMENT_ROUTES = {
   analiseAtivo: "/api/investimentos/analise-ativo/",
   analiseAtivoFII: "/api/investimentos/analise-ativo/fii/",
   analiseAtivoAcoes: "/api/investimentos/analise-ativo/acoes/",
+  rentabilidadeGeral: "/api/investimentos/rentabilidade-geral/",
 };
 
 // Rotas de Market (Públicas)
