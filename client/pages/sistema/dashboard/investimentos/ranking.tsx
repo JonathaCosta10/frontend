@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Trophy, 
   TrendingUp, 
@@ -14,98 +15,279 @@ import {
   ArrowDownRight,
   Filter,
   Target,
-  Zap
+  Zap,
+  Loader2,
+  AlertTriangle,
+  DollarSign,
+  BarChart3,
+  Activity,
+  Shield,
+  Eye,
+  Info
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import InvestmentPremiumGuard from '@/components/InvestmentPremiumGuard';
-
-interface RankingItem {
-  posicao: number;
-  codigo: string;
-  nome: string;
-  tipo: string;
-  rentabilidade: number;
-  volume: number;
-  volatilidade: number;
-  dividendYield: number;
-  precoAtual: number;
-  variacao: number;
-  pontuacao: number;
-}
+import { 
+  getRanking, 
+  RankingResponse,
+  RankingItem
+} from '@/services/api/rankingService';
 
 export default function Ranking() {
   const { t, formatCurrency } = useTranslation();
-  const [criterio, setCriterio] = useState('rentabilidade');
-  const [categoria, setCategoria] = useState('todas');
-  const [periodo, setPeriodo] = useState('12m');
+  const [currentView, setCurrentView] = useState<string>('portfolio');
+  const [selectedAsset, setSelectedAsset] = useState<RankingItem | null>(null);
+  
+  // Estados para dados da API - sem dados mockados
+  const [rankingData, setRankingData] = useState<RankingItem[]>([]);
+  const [insights, setInsights] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Estados para filtros e ordenação
+  const [filterType, setFilterType] = useState('all');
+  const [sortBy, setSortBy] = useState('recomendacao');
 
-  const rankingData: RankingItem[] = [
-    {
-      posicao: 1,
-      codigo: 'VALE3',
-      nome: 'Vale S.A.',
-      tipo: t('stock'),
-      rentabilidade: 28.5,
-      volume: 1250000000,
-      volatilidade: 24.8,
-      dividendYield: 12.3,
-      precoAtual: 72.45,
-      variacao: 2.8,
-      pontuacao: 95
-    },
-    {
-      posicao: 2,
-      codigo: 'HGLG11',
-      nome: 'CSHG Logística',
-      tipo: 'FII',
-      rentabilidade: 22.1,
-      volume: 45000000,
-      volatilidade: 12.5,
-      dividendYield: 9.8,
-      precoAtual: 128.90,
-      variacao: 1.2,
-      pontuacao: 92
-    },
-    {
-      posicao: 3,
-      codigo: 'ITUB4',
-      nome: 'Itaú Unibanco',
-      tipo: t('stock'),
-      rentabilidade: 18.9,
-      volume: 890000000,
-      volatilidade: 18.2,
-      dividendYield: 8.5,
-      precoAtual: 32.15,
-      variacao: 0.8,
-      pontuacao: 88
-    },
-    {
-      posicao: 4,
-      codigo: 'MXRF11',
-      nome: 'Max Retail',
-      tipo: 'FII',
-      rentabilidade: 15.6,
-      volume: 28000000,
-      volatilidade: 14.1,
-      dividendYield: 8.9,
-      precoAtual: 10.85,
-      variacao: -0.5,
-      pontuacao: 85
-    },
-    {
-      posicao: 5,
-      codigo: 'PETR4',
-      nome: 'Petrobras',
-      tipo: t('stock'),
-      rentabilidade: 12.3,
-      volume: 2100000000,
-      volatilidade: 32.5,
-      dividendYield: 15.2,
-      precoAtual: 38.92,
-      variacao: -1.2,
-      pontuacao: 82
+  // Função para carregar dados do ranking
+  const loadRankingData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log("🏆 [Ranking] Carregando dados da API");
+      
+      // Carregar dados da API
+      const rankingResponse = await getRanking();
+
+      if (rankingResponse.success && rankingResponse.data) {
+        const data = rankingResponse.data;
+        setRankingData(data.ranking_completo || []);
+        setInsights(data.insights);
+        
+        console.log("✅ [Ranking] Dados carregados:", {
+          ranking: rankingResponse.data.ranking_completo?.length || 0,
+          insights: !!rankingResponse.data.insights
+        });
+      } else {
+        // Reset todos os dados em caso de erro
+        setRankingData([]);
+        setInsights(null);
+        console.warn("⚠️ [Ranking] Resposta da API não contém dados válidos");
+      }
+      
+    } catch (err) {
+      console.error("❌ [Ranking] Erro ao carregar dados:", err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar ranking');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  // Carregar dados quando o componente monta
+  useEffect(() => {
+    loadRankingData();
+  }, []);
+
+  // Mapeamento de setores específicos para FIIs conhecidos
+  const getFIISetor = (ticker: string): string | null => {
+    const fiiSetores: Record<string, string> = {
+      // Logística
+      'HSLG11': 'Logística',
+      'XPLG11': 'Logística',
+      'BTLG11': 'Logística',
+      'ALZR11': 'Logística',
+      'VILG11': 'Logística',
+      'RLOG11': 'Logística',
+      'LOG11': 'Logística',
+      'CXAG11': 'Logística',
+      
+      // Shopping Centers
+      'XPML11': 'Shopping Centers',
+      'HSML11': 'Shopping Centers',
+      'MALL11': 'Shopping Centers',
+      'VISC11': 'Shopping Centers',
+      'SEQR11': 'Shopping Centers',
+      'SPTW11': 'Shopping Centers',
+      'OUJP11': 'Shopping Centers',
+      
+      // Lajes Corporativas
+      'MXRF11': 'Lajes Corporativas',
+      'BCFF11': 'Lajes Corporativas',
+      'KNCR11': 'Lajes Corporativas',
+      'HGRE11': 'Lajes Corporativas',
+      'HCTR11': 'Lajes Corporativas',
+      'GGRC11': 'Lajes Corporativas',
+      'XPCI11': 'Lajes Corporativas',
+      'BRCO11': 'Lajes Corporativas',
+      'RECT11': 'Lajes Corporativas',
+      'EDGA11': 'Lajes Corporativas',
+      'TGAR11': 'Lajes Corporativas',
+      'GALZ11': 'Lajes Corporativas',
+      
+      // Híbrido
+      'HGRU11': 'Híbrido',
+      'HGBS11': 'Híbrido',
+      'URPR11': 'Híbrido',
+      'JSRE11': 'Híbrido',
+      'BPFF11': 'Híbrido',
+      'RBHG11': 'Híbrido',
+      
+      // Hospitalar
+      'VSLH11': 'Hospitalar',
+      'CARE11': 'Hospitalar',
+      
+      // Agronegócio
+      'RBRF11': 'Agronegócio',
+      'BTRA11': 'Agronegócio',
+      
+      // Papel e Celulose
+      'FIIP11': 'Papel e Celulose',
+      
+      // Residencial
+      'HGCR11': 'Residencial',
+      'RBRS11': 'Residencial',
+      'PVBI11': 'Residencial',
+      'KNRI11': 'Residencial',
+      
+      // Educação
+      'VINO11': 'Educação',
+      
+      // Hoteleiro
+      'HTMX11': 'Hoteleiro',
+      
+      // Outros
+      'XPPR11': 'Fundos de Papel',
+      'MFII11': 'Multissetorial'
+    };
+    
+    return fiiSetores[ticker] || null;
+  };
+
+  // Função para filtrar e ordenar dados
+  const getFilteredAndSortedData = () => {
+    let filteredData = [...rankingData];
+    
+    // Aplicar filtro por tipo
+    if (filterType !== 'all') {
+      filteredData = filteredData.filter(item => item.tipo === filterType);
+    }
+    
+    // Aplicar ordenação
+    switch (sortBy) {
+      case 'recomendacao':
+        filteredData.sort((a, b) => {
+          const scoreA = getScoreGrade(a.score?.percentual || 0).grade;
+          const scoreB = getScoreGrade(b.score?.percentual || 0).grade;
+          // Ordem: A, B, C, D, E
+          const order: { [key: string]: number } = { 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5 };
+          return (order[scoreA] || 6) - (order[scoreB] || 6);
+        });
+        break;
+      case 'rentabilidade':
+        filteredData.sort((a, b) => b.rentabilidade_percentual - a.rentabilidade_percentual);
+        break;
+      case 'score':
+        filteredData.sort((a, b) => (b.score?.percentual || 0) - (a.score?.percentual || 0));
+        break;
+      case 'ticker':
+        filteredData.sort((a, b) => a.ticker.localeCompare(b.ticker));
+        break;
+      default:
+        filteredData.sort((a, b) => a.posicao - b.posicao);
+    }
+    
+    return filteredData;
+  };
+
+  // Função para navegar para análise específica
+  const handleDetailsClick = (item: RankingItem) => {
+    let analysisUrl;
+    if (item.tipo === 'FII') {
+      analysisUrl = `/dashboard/mercado/analise-ticker/fii?ticker=${item.ticker}`;
+    } else {
+      analysisUrl = `/dashboard/mercado/analise-ticker-acoes?ticker=${item.ticker}`;
+    }
+    window.location.href = analysisUrl;
+  };
+
+  // Funções utilitárias para análise
+  const getPortfolioMetrics = () => {
+    if (!rankingData.length) return null;
+    
+    const totalInvestido = rankingData.reduce((sum, item) => sum + item.valor_investido, 0);
+    const totalAtual = rankingData.reduce((sum, item) => sum + item.valor_atual, 0);
+    const rentabilidadeTotal = ((totalAtual - totalInvestido) / totalInvestido) * 100;
+    const ativos = rankingData.length;
+    const ativosPositivos = rankingData.filter(item => item.rentabilidade_percentual > 0).length;
+    const ativosNegativos = ativos - ativosPositivos;
+    const melhorAtivo = rankingData.reduce((best, current) => 
+      current.rentabilidade_percentual > best.rentabilidade_percentual ? current : best
+    );
+    const piorAtivo = rankingData.reduce((worst, current) => 
+      current.rentabilidade_percentual < worst.rentabilidade_percentual ? current : worst
+    );
+    
+    // Aplicar mapeamento de setor aos melhores e piores ativos
+    const melhorAtivoComSetor = {
+      ...melhorAtivo,
+      setor: getFIISetor(melhorAtivo.ticker) || melhorAtivo.dados_mercado?.setor || melhorAtivo.setor || 'A definir'
+    };
+    const piorAtivoComSetor = {
+      ...piorAtivo,
+      setor: getFIISetor(piorAtivo.ticker) || piorAtivo.dados_mercado?.setor || piorAtivo.setor || 'A definir'
+    };
+    
+    return {
+      totalInvestido,
+      totalAtual,
+      rentabilidadeTotal,
+      lucroTotal: totalAtual - totalInvestido,
+      ativos,
+      ativosPositivos,
+      ativosNegativos,
+      melhorAtivo: melhorAtivoComSetor,
+      piorAtivo: piorAtivoComSetor,
+      volatillidadeMedia: rankingData.reduce((sum, item) => sum + item.volatilidade, 0) / ativos,
+      dividendYieldMedio: rankingData.reduce((sum, item) => sum + (item.dividend_yield?.percentual_anual || 0), 0) / ativos
+    };
+  };
+
+  const getAnalysisData = () => {
+    if (!rankingData.length) return { crescimento: [], dividendos: [], baixoRisco: [], oportunidades: [] };
+    
+    // Função para mapear setor corretamente
+    const mapItemWithSetor = (item: RankingItem) => {
+      const setorFII = getFIISetor(item.ticker);
+      const setor = setorFII || item.dados_mercado?.setor || item.setor || 'A definir';
+      return { ...item, setor };
+    };
+    
+    return {
+      crescimento: [...rankingData]
+        .map(mapItemWithSetor)
+        .sort((a, b) => b.rentabilidade_percentual - a.rentabilidade_percentual)
+        .slice(0, 5),
+      dividendos: [...rankingData]
+        .map(mapItemWithSetor)
+        .filter(item => item.dividend_yield?.percentual_anual && item.dividend_yield.percentual_anual > 0)
+        .sort((a, b) => (b.dividend_yield?.percentual_anual || 0) - (a.dividend_yield?.percentual_anual || 0))
+        .slice(0, 5),
+      baixoRisco: [...rankingData]
+        .map(mapItemWithSetor)
+        .sort((a, b) => a.volatilidade - b.volatilidade)
+        .slice(0, 5),
+      oportunidades: [...rankingData]
+        .map(mapItemWithSetor)
+        .filter(item => 
+          item.score?.classificacao === 'oportunidade_excelente' || 
+          item.score?.classificacao === 'oportunidade_boa' ||
+          (item.score?.recomendacao?.acao === 'comprar') ||
+          (item.oportunidade?.principal?.score && item.oportunidade.principal.score > 7)
+        )
+        .sort((a, b) => (b.score?.score_total || 0) - (a.score?.score_total || 0))
+        .slice(0, 10)
+    };
+  };
 
   const getMedalIcon = (posicao: number) => {
     if (posicao === 1) return <Trophy className="h-5 w-5 text-yellow-500" />;
@@ -131,273 +313,969 @@ export default function Ranking() {
     return 'bg-gray-500';
   };
 
-  const formatVolume = (volume: number) => {
-    if (volume >= 1000000000) return `${(volume / 1000000000).toFixed(1)}B`;
-    if (volume >= 1000000) return `${(volume / 1000000).toFixed(1)}M`;
-    return `${(volume / 1000).toFixed(1)}K`;
+  // Funções de formatação e utilidades
+  const formatMoney = (value: number) => {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+    return formatCurrency(value);
   };
 
-  const topPerformers = rankingData.slice(0, 3);
+  const getRecommendationColor = (recomendacao: string) => {
+    switch (recomendacao) {
+      case 'comprar': return 'bg-green-500';
+      case 'manter': return 'bg-blue-500';
+      case 'vender': return 'bg-red-500';
+      case 'nao_comprar': return 'bg-yellow-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getScoreGrade = (score: number) => {
+    if (score >= 80) return { grade: 'A', color: 'text-green-600', bg: 'bg-green-100' };
+    if (score >= 60) return { grade: 'B', color: 'text-blue-600', bg: 'bg-blue-100' };
+    if (score >= 40) return { grade: 'C', color: 'text-yellow-600', bg: 'bg-yellow-100' };
+    if (score >= 20) return { grade: 'D', color: 'text-orange-600', bg: 'bg-orange-100' };
+    return { grade: 'F', color: 'text-red-600', bg: 'bg-red-100' };
+  };
+
+  const getTrendIcon = (tendencia: string) => {
+    switch (tendencia) {
+      case 'alta': return <TrendingUp className="h-4 w-4 text-green-500" />;
+      case 'baixa': return <TrendingDown className="h-4 w-4 text-red-500" />;
+      default: return <Activity className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  // Função para renderizar estado de loading
+  const renderLoading = () => (
+    <div className="flex items-center justify-center py-12">
+      <div className="flex items-center space-x-2">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span className="text-lg">{t('loading')}...</span>
+      </div>
+    </div>
+  );
+
+  // Função para renderizar estado de erro
+  const renderError = () => (
+    <div className="flex items-center justify-center py-12">
+      <div className="text-center space-y-4">
+        <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-destructive">
+            {t('error_loading_data')}
+          </h3>
+          <p className="text-muted-foreground">{error}</p>
+          <Button 
+            onClick={loadRankingData}
+            variant="outline"
+            className="mt-4"
+          >
+            {t('try_again')}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const portfolioMetrics = getPortfolioMetrics();
+  const analysisData = getAnalysisData();
 
   return (
     <InvestmentPremiumGuard featureType="ranking">
-      <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">{t('asset_ranking')}</h1>
-          <p className="text-muted-foreground">
-            {t('discover_best_investments_criteria')}
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={criterio} onValueChange={setCriterio}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder={t('criteria')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="rentabilidade">{t('profitability')}</SelectItem>
-              <SelectItem value="dividendos">{t('dividend_yield')}</SelectItem>
-              <SelectItem value="volume">{t('volume')}</SelectItem>
-              <SelectItem value="pontuacao">{t('general_score')}</SelectItem>
-              <SelectItem value="volatilidade">{t('lower_risk')}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={categoria} onValueChange={setCategoria}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder={t('category')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">{t('all_categories')}</SelectItem>
-              <SelectItem value="acoes">{t('stocks_category')}</SelectItem>
-              <SelectItem value="fiis">{t('reits_category')}</SelectItem>
-              <SelectItem value="etfs">{t('etfs')}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={periodo} onValueChange={setPeriodo}>
-            <SelectTrigger className="w-24">
-              <SelectValue placeholder={t('period')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1m">1M</SelectItem>
-              <SelectItem value="3m">3M</SelectItem>
-              <SelectItem value="6m">6M</SelectItem>
-              <SelectItem value="12m">12M</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Cards de Top 3 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {topPerformers.map((item, index) => (
-          <Card key={item.codigo} className={`${index === 0 ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}`}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  {getMedalIcon(item.posicao)}
-                  <span className="font-bold text-lg">{item.posicao}º {t('place')}</span>
-                </div>
-                <Badge className={`${getScoreColor(item.pontuacao)} text-white`}>
-                  {item.pontuacao}{t('points')}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-bold text-lg">{item.codigo}</h3>
-                  <p className="text-sm text-muted-foreground">{item.nome}</p>
-                  <Badge variant="outline" className="mt-1">{item.tipo}</Badge>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">{t('profitability')}</p>
-                    <p className={`font-semibold ${getVariationColor(item.rentabilidade)}`}>
-                      {item.rentabilidade}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">D.Y.</p>
-                    <p className="font-semibold text-success">{item.dividendYield}%</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">{t('price')}</p>
-                    <p className="font-semibold">{formatCurrency(item.precoAtual)}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">{t('daily_variation')}</p>
-                    <div className="flex items-center space-x-1">
-                      {getVariationIcon(item.variacao)}
-                      <span className={`font-semibold text-xs ${getVariationColor(item.variacao)}`}>
-                        {item.variacao}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Insights do Ranking */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Zap className="h-5 w-5 text-warning" />
-            <span>{t('ranking_insights')}</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-              <div className="flex items-center space-x-2 mb-2">
-                <Star className="h-4 w-4 text-primary" />
-                <span className="font-medium text-primary">{t('month_highlight')}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {t('vale3_leads_commodities')}
-              </p>
-            </div>
-            
-            <div className="p-4 bg-success/10 rounded-lg border border-success/20">
-              <div className="flex items-center space-x-2 mb-2">
-                <Target className="h-4 w-4 text-success" />
-                <span className="font-medium text-success">{t('best_risk_return')}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {t('hglg11_good_profitability_low_volatility')}
-              </p>
-            </div>
-            
-            <div className="p-4 bg-warning/10 rounded-lg border border-warning/20">
-              <div className="flex items-center space-x-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-warning" />
-                <span className="font-medium text-warning">{t('opportunity')}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {t('fiis_yields_above_8_percent')}
-              </p>
-            </div>
+      <div className="w-full min-h-screen space-y-4 md:space-y-6 p-4 md:p-6">
+        {/* Header - Completamente responsivo */}
+        <div className="w-full flex flex-col space-y-2 md:space-y-0 md:flex-row md:justify-between md:items-center">
+          <div className="flex-1">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold break-words">
+              Análise Profissional de Investimentos
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
+              Dashboard completo com análise detalhada do seu portfólio
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Tabela Completa do Ranking */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Trophy className="h-5 w-5" />
-            <span>{t('complete_ranking')} - {criterio} ({periodo})</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('position')}</TableHead>
-                <TableHead>{t('asset')}</TableHead>
-                <TableHead>{t('type')}</TableHead>
-                <TableHead>{t('profitability')}</TableHead>
-                <TableHead>D.Y.</TableHead>
-                <TableHead>{t('volume')}</TableHead>
-                <TableHead>{t('volatility')}</TableHead>
-                <TableHead>{t('current_price')}</TableHead>
-                <TableHead>{t('variation')}</TableHead>
-                <TableHead>{t('score')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rankingData.map((item) => (
-                <TableRow key={item.codigo} className={item.posicao <= 3 ? 'bg-muted/50' : ''}>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {getMedalIcon(item.posicao)}
+        {/* Estados de Loading e Erro */}
+        {loading && renderLoading()}
+        {error && renderError()}
+
+        {/* Estado quando não há dados */}
+        {!loading && !error && rankingData.length === 0 && (
+          <div className="text-center py-12">
+            <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Nenhum dado disponível</h3>
+            <p className="text-muted-foreground">
+              Carregue seus dados de investimentos para ver a análise
+            </p>
+          </div>
+        )}
+
+        {/* Dashboard Principal */}
+        {!loading && !error && rankingData.length > 0 && portfolioMetrics && (
+          <>
+            {/* Resumo Executivo do Portfolio - Completamente responsivo */}
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+              <Card className="border-l-4 border-l-blue-600 min-h-0">
+                <CardContent className="p-3 md:p-4 lg:p-6">
+                  <div className="flex items-center space-x-2 md:space-x-3">
+                    <BarChart3 className="h-6 w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-blue-600 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs md:text-sm text-muted-foreground truncate">Valor Total Investido</p>
+                      <p className="text-lg md:text-xl lg:text-2xl font-bold truncate">{formatMoney(portfolioMetrics.totalInvestido)}</p>
                     </div>
-                  </TableCell>
-                  <TableCell>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-green-600 min-h-0">
+                <CardContent className="p-3 md:p-4 lg:p-6">
+                  <div className="flex items-center space-x-2 md:space-x-3">
+                    <DollarSign className="h-6 w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-green-600 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs md:text-sm text-muted-foreground truncate">Valor Atual</p>
+                      <p className="text-lg md:text-xl lg:text-2xl font-bold text-green-600 truncate">{formatMoney(portfolioMetrics.totalAtual)}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-purple-600 min-h-0">
+                <CardContent className="p-3 md:p-4 lg:p-6">
+                  <div className="flex items-center space-x-2 md:space-x-3">
+                    <TrendingUp className="h-6 w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-purple-600 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs md:text-sm text-muted-foreground truncate">Rentabilidade Total</p>
+                      <p className={`text-lg md:text-xl lg:text-2xl font-bold truncate ${portfolioMetrics.rentabilidadeTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {portfolioMetrics.rentabilidadeTotal.toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-orange-600 min-h-0">
+                <CardContent className="p-3 md:p-4 lg:p-6">
+                  <div className="flex items-center space-x-2 md:space-x-3">
+                    <Star className="h-6 w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-orange-600 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs md:text-sm text-muted-foreground truncate">Lucro/Prejuízo</p>
+                      <p className={`text-lg md:text-xl lg:text-2xl font-bold truncate ${portfolioMetrics.lucroTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(portfolioMetrics.lucroTotal)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Exposição Setorial e Insights */}
+            {insights && insights.exposicao_setorial && (
+              <Card className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <BarChart3 className="h-6 w-6 text-slate-600" />
+                    <span>Análise Setorial do Portfolio</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Object.entries(insights.exposicao_setorial).map(([setor, dados]: [string, any]) => (
+                      <div key={setor} className="p-4 bg-white dark:bg-gray-800 rounded-lg border">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Badge variant="secondary" className="text-xs">{setor}</Badge>
+                            <span className="text-lg font-bold text-blue-600">{dados.percentual.toFixed(1)}%</span>
+                          </div>
+                          <div className="text-sm space-y-1">
+                            <p className="text-muted-foreground">
+                              Valor: {formatCurrency(dados.valor_total)}
+                            </p>
+                            <p className="text-muted-foreground">
+                              Ativos: {dados.quantidade_ativos}
+                            </p>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {dados.ativos.map((ticker: string) => (
+                                <Badge key={ticker} variant="outline" className="text-xs">
+                                  {ticker}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Insights gerais */}
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="p-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-600">{insights.ativos_positivos}</p>
+                        <p className="text-sm text-muted-foreground">Ativos em Alta</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-red-600">{insights.ativos_negativos}</p>
+                        <p className="text-sm text-muted-foreground">Ativos em Baixa</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-yellow-600">{insights.oportunidades_total}</p>
+                        <p className="text-sm text-muted-foreground">Oportunidades</p>
+                      </div>
+                    </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Análise de Performance */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Melhor Performance */}
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-green-700 dark:text-green-300">
+                    <Trophy className="h-6 w-6" />
+                    <span>🏆 Melhor Performance</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{item.codigo}</p>
-                      <p className="text-xs text-muted-foreground">{item.nome}</p>
+                      <p className="text-2xl font-bold">{portfolioMetrics.melhorAtivo.ticker}</p>
+                      <Badge variant="outline">{portfolioMetrics.melhorAtivo.tipo}</Badge>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{item.tipo}</Badge>
-                  </TableCell>
-                  <TableCell className={getVariationColor(item.rentabilidade)}>
-                    <div className="flex items-center space-x-1">
-                      {getVariationIcon(item.rentabilidade)}
-                      <span className="font-semibold">{item.rentabilidade}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-success font-semibold">
-                    {item.dividendYield}%
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {formatVolume(item.volume)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={item.volatilidade < 15 ? 'default' : item.volatilidade < 25 ? 'secondary' : 'destructive'}>
-                      {item.volatilidade}%
+                    <Badge className="bg-green-600 text-white text-lg p-2">
+                      +{portfolioMetrics.melhorAtivo.rentabilidade_percentual.toFixed(1)}%
                     </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatCurrency(item.precoAtual)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      {getVariationIcon(item.variacao)}
-                      <span className={`text-sm ${getVariationColor(item.variacao)}`}>
-                        {item.variacao}%
-                      </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Valor Investido</p>
+                      <p className="font-semibold">{formatCurrency(portfolioMetrics.melhorAtivo.valor_investido)}</p>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Badge className={`${getScoreColor(item.pontuacao)} text-white`}>
-                        {item.pontuacao}
+                    <div>
+                      <p className="text-muted-foreground">Valor Atual</p>
+                      <p className="font-semibold text-green-600">{formatCurrency(portfolioMetrics.melhorAtivo.valor_atual)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Lucro</p>
+                      <p className="font-semibold text-green-600">+{formatCurrency(portfolioMetrics.melhorAtivo.rentabilidade_rs)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">D.Y. Anual</p>
+                      <p className="font-semibold">{portfolioMetrics.melhorAtivo.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pior Performance */}
+              <Card className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950 dark:to-pink-950 border-red-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-red-700 dark:text-red-300">
+                    <AlertTriangle className="h-6 w-6" />
+                    <span>⚠️ Necessita Atenção</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-2xl font-bold">{portfolioMetrics.piorAtivo.ticker}</p>
+                      <Badge variant="outline">{portfolioMetrics.piorAtivo.tipo}</Badge>
+                    </div>
+                    <Badge variant="destructive" className="text-lg p-2">
+                      {portfolioMetrics.piorAtivo.rentabilidade_percentual.toFixed(1)}%
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Valor Investido</p>
+                      <p className="font-semibold">{formatCurrency(portfolioMetrics.piorAtivo.valor_investido)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Valor Atual</p>
+                      <p className="font-semibold text-red-600">{formatCurrency(portfolioMetrics.piorAtivo.valor_atual)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Prejuízo</p>
+                      <p className="font-semibold text-red-600">{formatCurrency(portfolioMetrics.piorAtivo.rentabilidade_rs)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Recomendação</p>
+                      <Badge className={getRecommendationColor(portfolioMetrics.piorAtivo.score?.recomendacao?.acao || 'manter')}>
+                        {portfolioMetrics.piorAtivo.score?.recomendacao?.acao?.replace('_', ' ') || 'Analisar'}
                       </Badge>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-      {/* Filtros Avançados */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('custom_filters')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="justify-start">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              {t('highest_growth')}
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <TrendingDown className="h-4 w-4 mr-2" />
-              {t('lowest_volatility')}
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <Star className="h-4 w-4 mr-2" />
-              {t('highest_dividends')}
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <Target className="h-4 w-4 mr-2" />
-              {t('best_cost_benefit')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            {/* Análise Detalhada em Abas */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Activity className="h-6 w-6" />
+                  <span>Análise Detalhada por Categoria</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs value={currentView} onValueChange={setCurrentView} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 p-1">
+                    <TabsTrigger value="portfolio" className="text-xs sm:text-sm">Portfolio</TabsTrigger>
+                    <TabsTrigger value="crescimento" className="text-xs sm:text-sm">Crescimento</TabsTrigger>
+                    <TabsTrigger value="dividendos" className="text-xs sm:text-sm">Dividendos</TabsTrigger>
+                    <TabsTrigger value="risco" className="text-xs sm:text-sm">Baixo Risco</TabsTrigger>
+                    <TabsTrigger value="oportunidades" className="text-xs sm:text-sm">Oportunidades</TabsTrigger>
+                  </TabsList>
+
+                  {/* Visão Geral do Portfolio */}
+                  <TabsContent value="portfolio" className="mt-4 md:mt-6">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card>
+                          <CardContent className="p-4 text-center">
+                            <p className="text-3xl font-bold text-blue-600">{portfolioMetrics.ativos}</p>
+                            <p className="text-sm text-muted-foreground">Total de Ativos</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4 text-center">
+                            <p className="text-3xl font-bold text-green-600">{portfolioMetrics.ativosPositivos}</p>
+                            <p className="text-sm text-muted-foreground">Ativos em Alta</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4 text-center">
+                            <p className="text-3xl font-bold text-red-600">{portfolioMetrics.ativosNegativos}</p>
+                            <p className="text-sm text-muted-foreground">Ativos em Baixa</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Filtros e Controles */}
+                      <div className="space-y-4">
+                        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-semibold">Portfolio Completo - Análise Detalhada</h3>
+                            <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                              <span className="text-green-600 font-medium">
+                                💰 {getFilteredAndSortedData().filter(item => ['A', 'B'].includes(getScoreGrade(item.score?.percentual || 0).grade)).length} Comprar
+                              </span>
+                              <span className="text-orange-600 font-medium">
+                                ⚠️ {getFilteredAndSortedData().filter(item => getScoreGrade(item.score?.percentual || 0).grade === 'C').length} Observar
+                              </span>
+                              <span className="text-red-600 font-medium">
+                                🚫 {getFilteredAndSortedData().filter(item => ['D', 'E'].includes(getScoreGrade(item.score?.percentual || 0).grade)).length} Evitar
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <select 
+                              className="px-3 py-2 border rounded-md text-sm"
+                              value={filterType}
+                              onChange={(e) => setFilterType(e.target.value)}
+                            >
+                              <option value="all">Todos os Tipos</option>
+                              <option value="ACAO">Ações</option>
+                              <option value="FII">FIIs</option>
+                            </select>
+                            <select 
+                              className="px-3 py-2 border rounded-md text-sm"
+                              value={sortBy}
+                              onChange={(e) => setSortBy(e.target.value)}
+                            >
+                              <option value="recomendacao">Por Recomendação</option>
+                              <option value="rentabilidade">Por Rentabilidade</option>
+                              <option value="score">Por Score IA</option>
+                              <option value="ticker">Por Ticker</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <div className="overflow-x-auto">
+                            <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-xs md:text-sm">Rank</TableHead>
+                                <TableHead className="text-xs md:text-sm">Ativo</TableHead>
+                                <TableHead className="text-xs md:text-sm">Investido</TableHead>
+                                <TableHead className="text-xs md:text-sm">Valor Atual</TableHead>
+                                <TableHead className="text-xs md:text-sm">Rentabilidade</TableHead>
+                                <TableHead className="text-xs md:text-sm">D.Y. Anual</TableHead>
+                                <TableHead className="text-xs md:text-sm">Volatilidade</TableHead>
+                                <TableHead className="text-xs md:text-sm">Preço/Dist.</TableHead>
+                                <TableHead className="text-xs md:text-sm">Fundamentos</TableHead>
+                                <TableHead className="text-xs md:text-sm">Score IA</TableHead>
+                                <TableHead className="text-xs md:text-sm">Recomendação</TableHead>
+                                <TableHead className="text-xs md:text-sm">Ações</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {getFilteredAndSortedData().map((item) => {
+                                const scoreGrade = getScoreGrade(item.score?.percentual || 0);
+                                // Mapear setor corretamente da API - priorizar mapeamento específico de FIIs
+                                const setorFII = getFIISetor(item.ticker);
+                                const setor = setorFII || item.dados_mercado?.setor || item.setor || 'A definir';
+                                const itemWithSetor = { ...item, setor };
+                                return (
+                                  <TableRow key={item.ticker} className="hover:bg-muted/50">
+                                    <TableCell>
+                                      <div className="flex items-center space-x-2">
+                                        {getMedalIcon(item.posicao)}
+                                        <span className="font-medium">#{item.posicao}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="space-y-1">
+                                        <p className="font-bold text-lg">{item.ticker}</p>
+                                        <div className="flex items-center space-x-2">
+                                          <Badge variant="outline">{item.tipo}</Badge>
+                                          <Badge variant="secondary" className="text-xs">
+                                            {item.porte.descricao}
+                                          </Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                          {item.quantidade} cotas • Preço médio: {formatCurrency(item.preco_medio)}
+                                        </p>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-right">
+                                        <p className="font-semibold">{formatCurrency(item.valor_investido)}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {((item.valor_investido / portfolioMetrics.totalInvestido) * 100).toFixed(1)}% do total
+                                        </p>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-right">
+                                        <p className="text-xs text-muted-foreground mb-1">
+                                          Preço: {formatCurrency(item.preco_atual)}
+                                        </p>
+                                        <p className="font-semibold text-base">{formatCurrency(item.valor_atual)}</p>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-right">
+                                        <div className="flex items-center justify-end space-x-1">
+                                          {getVariationIcon(item.rentabilidade_percentual)}
+                                          <span className={`font-bold text-lg ${getVariationColor(item.rentabilidade_percentual)}`}>
+                                            {item.rentabilidade_percentual.toFixed(1)}%
+                                          </span>
+                                        </div>
+                                        <p className={`text-sm font-medium ${item.rentabilidade_rs >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          {formatCurrency(item.rentabilidade_rs)}
+                                        </p>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-center">
+                                        <p className="text-xs text-muted-foreground mb-1">
+                                          Mensal: {item.dividend_yield?.percentual_mensal?.toFixed(2) || '0.00'}%
+                                        </p>
+                                        <p className="font-semibold text-blue-600 text-base">
+                                          {item.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%
+                                        </p>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-center">
+                                        <Badge variant={item.volatilidade < 1.5 ? 'default' : item.volatilidade < 2.5 ? 'secondary' : 'destructive'}>
+                                          {item.volatilidade.toFixed(1)}%
+                                        </Badge>
+                                        <div className="flex items-center justify-center space-x-1 mt-1">
+                                          <span className="text-xs">30d:</span>
+                                          {getTrendIcon(item.tendencia_30_dias.tendencia)}
+                                          <span className={`text-xs ${getVariationColor(item.tendencia_30_dias.variacao_30d)}`}>
+                                            {item.tendencia_30_dias.variacao_30d.toFixed(1)}%
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-center space-y-1">
+                                        <div className="text-xs text-muted-foreground">
+                                          Min: {formatCurrency(item.minima_mensal)}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          Max: {formatCurrency(item.maxima_mensal)}
+                                        </div>
+                                        <Badge variant="outline" className="text-xs">
+                                          {item.distancia_minima_percentual >= 0 ? '+' : ''}{item.distancia_minima_percentual.toFixed(1)}%
+                                        </Badge>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-center space-y-1">
+                                        {item.pvp && (
+                                          <div className="text-xs">
+                                            <span className="text-muted-foreground">P/VP:</span> {item.pvp.toFixed(2)}
+                                          </div>
+                                        )}
+                                        {item.pe_ratio && (
+                                          <div className="text-xs">
+                                            <span className="text-muted-foreground">P/L:</span> {item.pe_ratio.toFixed(1)}
+                                          </div>
+                                        )}
+                                        {item.roe && (
+                                          <div className="text-xs">
+                                            <span className="text-muted-foreground">ROE:</span> {item.roe.toFixed(1)}%
+                                          </div>
+                                        )}
+                                        {itemWithSetor.setor && itemWithSetor.setor !== 'A definir' && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            {itemWithSetor.setor}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-center">
+                                        <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${scoreGrade.bg} ${scoreGrade.color} font-bold text-lg border-2 ${scoreGrade.grade === 'A' || scoreGrade.grade === 'B' ? 'border-yellow-400 shadow-md' : 'border-transparent'}`}>
+                                          {scoreGrade.grade}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {item.score?.percentual?.toFixed(0) || '0'}/100
+                                        </p>
+                                        {(scoreGrade.grade === 'A' || scoreGrade.grade === 'B') && (
+                                          <div className="text-xs font-medium text-green-600 mt-1">
+                                            💰 Comprar
+                                          </div>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="space-y-2">
+                                        <Badge className={getRecommendationColor(item.score?.recomendacao?.acao || 'manter')}>
+                                          {item.score?.recomendacao?.acao?.replace('_', ' ') || 'Analisar'}
+                                        </Badge>
+                                        {item.oportunidade?.principal && (
+                                          <div className="space-y-1">
+                                            <div className="text-xs text-muted-foreground max-w-40">
+                                              {item.oportunidade.principal.descricao}
+                                            </div>
+                                            <Badge variant="outline" className="text-xs">
+                                              Score: {item.oportunidade.principal.score.toFixed(1)}
+                                            </Badge>
+                                          </div>
+                                        )}
+                                        {item.score?.recomendacao?.motivo && (
+                                          <p className="text-xs text-blue-600 max-w-40 italic">
+                                            {item.score.recomendacao.motivo}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleDetailsClick(item)}
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                        Detalhes
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Análise de Crescimento */}
+                  <TabsContent value="crescimento" className="mt-4 md:mt-6">
+                    <div className="space-y-6">
+                      <div className="flex items-center space-x-2">
+                        <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-green-500" />
+                        <h3 className="text-lg md:text-xl font-semibold">Top 5 - Maior Crescimento</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+                        {analysisData.crescimento.map((item, index) => (
+                          <Card key={item.ticker} className="border-l-4 border-l-green-500 hover:shadow-lg transition-all">
+                            <CardContent className="p-6">
+                              <div className="flex items-center justify-between mb-4">
+                                <div>
+                                  <p className="text-2xl font-bold">{item.ticker}</p>
+                                  <Badge variant="outline">{item.tipo}</Badge>
+                                </div>
+                                <div className="text-center">
+                                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span className="text-green-600 font-bold">#{index + 1}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">Rentabilidade</span>
+                                  <span className="text-xl font-bold text-green-600">
+                                    +{item.rentabilidade_percentual.toFixed(1)}%
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">Lucro</span>
+                                  <span className="font-semibold text-green-600">
+                                    +{formatCurrency(item.rentabilidade_rs)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">Valor Atual</span>
+                                  <span className="font-semibold">
+                                    {formatCurrency(item.valor_atual)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">Volatilidade</span>
+                                  <Badge variant={item.volatilidade < 2 ? 'default' : 'secondary'}>
+                                    {item.volatilidade.toFixed(1)}%
+                                  </Badge>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Análise de Dividendos */}
+                  <TabsContent value="dividendos" className="mt-4 md:mt-6">
+                    <div className="space-y-6">
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="h-6 w-6 text-blue-500" />
+                        <h3 className="text-xl font-semibold">Top 5 - Maiores Dividend Yields</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {analysisData.dividendos.map((item, index) => (
+                          <Card key={item.ticker} className="border-l-4 border-l-blue-500 hover:shadow-lg transition-all">
+                            <CardContent className="p-6">
+                              <div className="flex items-center justify-between mb-4">
+                                <div>
+                                  <p className="text-2xl font-bold">{item.ticker}</p>
+                                  <Badge variant="outline">{item.tipo}</Badge>
+                                </div>
+                                <div className="text-center">
+                                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span className="text-blue-600 font-bold">#{index + 1}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">D.Y. Anual</span>
+                                  <span className="text-xl font-bold text-blue-600">
+                                    {item.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">D.Y. Mensal</span>
+                                  <span className="font-semibold">
+                                    {item.dividend_yield?.percentual_mensal?.toFixed(2) || '0.00'}%
+                                  </span>
+                                </div>
+                                {item.dividend_yield?.valor_mensal_estimado ? (
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Pagamento Mensal</span>
+                                    <span className="font-semibold text-blue-600">
+                                      {formatCurrency(item.dividend_yield.valor_mensal_estimado)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Estimativa Mensal</span>
+                                    <span className="font-semibold text-blue-600">
+                                      {formatCurrency((item.valor_atual * (item.dividend_yield?.percentual_mensal || 0)) / 100)}
+                                    </span>
+                                  </div>
+                                )}
+                                {item.dividend_yield?.valor_anual_estimado && (
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Pagamento Anual</span>
+                                    <span className="font-semibold text-green-600">
+                                      {formatCurrency(item.dividend_yield.valor_anual_estimado)}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">Rentabilidade</span>
+                                  <span className={`font-semibold ${getVariationColor(item.rentabilidade_percentual)}`}>
+                                    {item.rentabilidade_percentual.toFixed(1)}%
+                                  </span>
+                                </div>
+                                
+                                {/* Informações específicas de FIIs */}
+                                {item.tipo_ativo === 'FII' && (
+                                  <div className="pt-2 border-t space-y-2">
+                                    <div className="text-xs font-medium text-gray-700">
+                                      Informações do FII
+                                    </div>
+                                    {item.ultimo_pagamento && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-muted-foreground">Último Pagamento</span>
+                                        <span className="text-xs font-medium">
+                                          {formatCurrency(item.ultimo_pagamento)} ({new Date(item.data_ultimo_pagamento).toLocaleDateString('pt-BR')})
+                                        </span>
+                                      </div>
+                                    )}
+                                    {item.frequencia_pagamento && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-muted-foreground">Frequência</span>
+                                        <span className="text-xs font-medium">{item.frequencia_pagamento}</span>
+                                      </div>
+                                    )}
+                                    {item.patrimonioLiquido && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-muted-foreground">Patrimônio Líquido</span>
+                                        <span className="text-xs font-medium">{formatCurrency(item.patrimonioLiquido)}</span>
+                                      </div>
+                                    )}
+                                    {item.numeroCotas && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-muted-foreground">Número de Cotas</span>
+                                        <span className="text-xs font-medium">{item.numeroCotas.toLocaleString('pt-BR')}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {item.dividend_yield?.fonte && (
+                                  <div className="text-xs text-muted-foreground pt-2 border-t">
+                                    Fonte: {item.dividend_yield.fonte}
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Análise de Baixo Risco */}
+                  <TabsContent value="risco" className="mt-4 md:mt-6">
+                    <div className="space-y-6">
+                      <div className="flex items-center space-x-2">
+                        <Shield className="h-6 w-6 text-purple-500" />
+                        <h3 className="text-xl font-semibold">Top 5 - Menor Volatilidade (Baixo Risco)</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {analysisData.baixoRisco.map((item, index) => (
+                          <Card key={item.ticker} className="border-l-4 border-l-purple-500 hover:shadow-lg transition-all">
+                            <CardContent className="p-6">
+                              <div className="flex items-center justify-between mb-4">
+                                <div>
+                                  <p className="text-2xl font-bold">{item.ticker}</p>
+                                  <Badge variant="outline">{item.tipo}</Badge>
+                                </div>
+                                <div className="text-center">
+                                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <span className="text-purple-600 font-bold">#{index + 1}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">Volatilidade</span>
+                                  <Badge className="bg-purple-500 text-white">
+                                    {item.volatilidade.toFixed(1)}%
+                                  </Badge>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">Rentabilidade</span>
+                                  <span className={`font-semibold ${getVariationColor(item.rentabilidade_percentual)}`}>
+                                    {item.rentabilidade_percentual.toFixed(1)}%
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">Valor Atual</span>
+                                  <span className="font-semibold">
+                                    {formatCurrency(item.valor_atual)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-muted-foreground">D.Y. Anual</span>
+                                  <span className="font-semibold text-blue-600">
+                                    {item.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Análise de Oportunidades */}
+                  <TabsContent value="oportunidades" className="mt-4 md:mt-6">
+                    <div className="space-y-6">
+                      <div className="flex items-center space-x-2">
+                        <Target className="h-6 w-6 text-yellow-500" />
+                        <h3 className="text-xl font-semibold">Oportunidades Identificadas pela IA</h3>
+                      </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {analysisData.oportunidades.map((item) => (
+                          <Card key={item.ticker} className="border-l-4 border-l-yellow-500 hover:shadow-lg transition-all">
+                            <CardContent className="p-6">
+                              <div className="flex items-center justify-between mb-4">
+                                <div>
+                                  <p className="text-2xl font-bold">{item.ticker}</p>
+                                  <div className="flex items-center space-x-2 mt-1">
+                                    <Badge variant="outline">{item.tipo}</Badge>
+                                    <Badge className={getRecommendationColor(item.score?.recomendacao?.acao || 'manter')}>
+                                      {item.score?.recomendacao?.acao?.replace('_', ' ') || 'Analisar'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <span className="text-yellow-600 font-bold text-sm">
+                                      {item.oportunidade.principal.score.toFixed(0)}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">Score IA</p>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-4">
+                                <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200">
+                                  <p className="font-medium text-yellow-800 dark:text-yellow-200 text-sm">
+                                    💡 {item.oportunidade.principal.descricao}
+                                  </p>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p className="text-muted-foreground">Rentabilidade</p>
+                                    <p className={`font-semibold ${getVariationColor(item.rentabilidade_percentual)}`}>
+                                      {item.rentabilidade_percentual.toFixed(1)}%
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Valor Atual</p>
+                                    <p className="font-semibold">{formatCurrency(item.valor_atual)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Oportunidades</p>
+                                    <p className="font-semibold">{item.oportunidade.total}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Score Geral</p>
+                                    <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${getScoreGrade(item.score?.percentual || 0).bg} ${getScoreGrade(item.score?.percentual || 0).color}`}>
+                                      {getScoreGrade(item.score?.percentual || 0).grade}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Tendências e Análise Técnica */}
+                                {(item.tendencias || item.dados_mercado) && (
+                                  <div className="pt-3 border-t space-y-3">
+                                    <h4 className="text-sm font-medium text-gray-700">Análise de Tendências</h4>
+                                    
+                                    {item.tendencias && (
+                                      <div className="grid grid-cols-3 gap-2 text-xs">
+                                        {item.tendencias.ultimos_7_dias && (
+                                          <div className="text-center p-2 bg-gray-50 rounded">
+                                            <p className="text-muted-foreground">7 dias</p>
+                                            <p className={`font-semibold ${getVariationColor(item.tendencias.ultimos_7_dias.percentual_variacao)}`}>
+                                              {item.tendencias.ultimos_7_dias.percentual_variacao.toFixed(1)}%
+                                            </p>
+                                          </div>
+                                        )}
+                                        {item.tendencias.ultimos_14_dias && (
+                                          <div className="text-center p-2 bg-gray-50 rounded">
+                                            <p className="text-muted-foreground">14 dias</p>
+                                            <p className={`font-semibold ${getVariationColor(item.tendencias.ultimos_14_dias.percentual_variacao)}`}>
+                                              {item.tendencias.ultimos_14_dias.percentual_variacao.toFixed(1)}%
+                                            </p>
+                                          </div>
+                                        )}
+                                        {item.tendencias.ultimos_30_dias && (
+                                          <div className="text-center p-2 bg-gray-50 rounded">
+                                            <p className="text-muted-foreground">30 dias</p>
+                                            <p className={`font-semibold ${getVariationColor(item.tendencias.ultimos_30_dias.percentual_variacao)}`}>
+                                              {item.tendencias.ultimos_30_dias.percentual_variacao.toFixed(1)}%
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {item.dados_mercado && (
+                                      <div className="grid grid-cols-2 gap-3 text-xs">
+                                        {item.dados_mercado.preco_minimo && (
+                                          <div>
+                                            <p className="text-muted-foreground">Preço Mín. (52s)</p>
+                                            <p className="font-semibold text-red-600">{formatCurrency(item.dados_mercado.preco_minimo.valor)}</p>
+                                          </div>
+                                        )}
+                                        {item.dados_mercado.preco_maximo && (
+                                          <div>
+                                            <p className="text-muted-foreground">Preço Máx. (52s)</p>
+                                            <p className="font-semibold text-green-600">{formatCurrency(item.dados_mercado.preco_maximo.valor)}</p>
+                                          </div>
+                                        )}
+                                        {item.dados_mercado.volatilidade && (
+                                          <div>
+                                            <p className="text-muted-foreground">Volatilidade</p>
+                                            <p className="font-semibold">{item.dados_mercado.volatilidade.toFixed(1)}%</p>
+                                          </div>
+                                        )}
+                                        {item.dados_mercado.volume_medio && (
+                                          <div>
+                                            <p className="text-muted-foreground">Volume Médio</p>
+                                            <p className="font-semibold">{formatCurrency(item.dados_mercado.volume_medio)}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {item.score?.recomendacao?.sugestao && (
+                                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
+                                    <p className="text-blue-800 dark:text-blue-200 text-sm">
+                                      💼 <strong>Sugestão:</strong> {item.score.recomendacao.sugestao}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {item.oportunidade.todas.slice(1).length > 0 && (
+                                  <details className="mt-3">
+                                    <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
+                                      Ver todas as oportunidades ({item.oportunidade.todas.length - 1} adicionais)
+                                    </summary>
+                                    <div className="mt-2 space-y-2">
+                                      {item.oportunidade.todas.slice(1).map((opp, idx) => (
+                                        <div key={idx} className="p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm">
+                                          <p>{opp.descricao}</p>
+                                          <p className="text-xs text-muted-foreground mt-1">Score: {opp.score.toFixed(1)}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </details>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
     </InvestmentPremiumGuard>
   );
