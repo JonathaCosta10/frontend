@@ -130,7 +130,6 @@ export default function AcaoAnaliseDetalhada() {
           <div>
             <h1 className="text-3xl font-bold">Análise de Ação: {ticker?.toUpperCase()}</h1>
             <p className="text-muted-foreground">Análise fundamentalista detalhada da ação</p>
-            <p className="text-xs text-blue-600 mt-1">API: http://127.0.0.1:5000/api/investimentos/analise-ativo/acoes/?ticker={ticker}</p>
           </div>
         </div>
 

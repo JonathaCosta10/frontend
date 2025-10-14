@@ -77,8 +77,7 @@ export default function AcaoAnalise() {
   } = useQuery({
     queryKey: ['acao-analysis', selectedTicker],
     queryFn: () => {
-      console.log('🚀 Chamando API de Ações para:', selectedTicker);
-      console.log('📡 URL completa:', `http://127.0.0.1:5000/api/investimentos/analise-ativo/acoes/?ticker=${selectedTicker}`);
+
       console.log('🔍 Iniciando chamada da API...');
       return analisarAtivoAcoes(selectedTicker);
     },
@@ -132,25 +131,6 @@ export default function AcaoAnalise() {
         <div>
           <h1 className="text-2xl font-bold">Análise de Ações</h1>
           <p className="text-muted-foreground">Análise especializada em ações da bolsa brasileira</p>
-          {selectedTicker && (
-            <div className="mt-2 p-2 bg-blue-50 rounded">
-              <p className="text-sm text-blue-800">
-                <strong>Ticker Ativo:</strong> {selectedTicker} | 
-                <strong>API:</strong> http://127.0.0.1:5000/api/investimentos/analise-ativo/acoes/?ticker={selectedTicker}
-              </p>
-              <div className="mt-1 text-xs">
-                {isAnalysisLoading && (
-                  <span className="text-blue-600">🔄 Carregando dados da API...</span>
-                )}
-                {analysisError && (
-                  <span className="text-red-600">❌ Erro na API: {analysisError.message}</span>
-                )}
-                {analysisData && !isAnalysisLoading && (
-                  <span className="text-green-600">✅ Dados carregados com sucesso!</span>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Campo de Busca */}
@@ -182,7 +162,7 @@ export default function AcaoAnalise() {
                 size="sm" 
                 onClick={() => {
                   setSelectedTicker('PETR4');
-                  console.log('🧪 Teste manual: Selecionando PETR4');
+
                 }}
               >
                 Testar PETR4
@@ -192,7 +172,7 @@ export default function AcaoAnalise() {
                 size="sm" 
                 onClick={() => {
                   setSelectedTicker('VALE3');
-                  console.log('🧪 Teste manual: Selecionando VALE3');
+
                 }}
               >
                 Testar VALE3
@@ -202,7 +182,7 @@ export default function AcaoAnalise() {
                   variant="outline" 
                   size="sm" 
                   onClick={() => {
-                    console.log('🔄 Forçando atualização dos dados...');
+
                     refetchAnalysis();
                   }}
                 >
@@ -235,14 +215,7 @@ export default function AcaoAnalise() {
               </div>
             )}
 
-            {/* Ação Selecionada */}
-            {selectedTicker && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Ação Selecionada:</strong> {selectedTicker.toUpperCase()}
-                </p>
-              </div>
-            )}
+
           </CardContent>
         </Card>
 

@@ -246,25 +246,7 @@ export default function AnaliseAcoesCompleta() {
       <div>
         <h1 className="text-3xl font-bold">Análise Completa de Ações</h1>
         <p className="text-muted-foreground">Análise fundamentalista detalhada com dados da CVM</p>
-        {selectedTicker && (
-          <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Ticker Ativo:</strong> {selectedTicker} | 
-              <strong>API:</strong> http://127.0.0.1:5000/api/investimentos/analise-ativo/acoes/?ticker={selectedTicker}
-            </p>
-            <div className="mt-1 text-xs">
-              {isAnalysisLoading && (
-                <span className="text-blue-600">🔄 Carregando dados da API...</span>
-              )}
-              {analysisError && (
-                <span className="text-red-600">❌ Erro na API: {analysisError.message}</span>
-              )}
-              {analysisData && !isAnalysisLoading && (
-                <span className="text-green-600">✅ Dados carregados com sucesso!</span>
-              )}
-            </div>
-          </div>
-        )}
+
       </div>
 
       {/* Campo de Busca */}
