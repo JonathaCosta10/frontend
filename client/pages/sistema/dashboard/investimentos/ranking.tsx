@@ -467,29 +467,57 @@ export default function Ranking() {
   return (
     <TooltipProvider>
       <InvestmentPremiumGuard featureType="ranking">
-        <div className="w-full min-h-screen space-y-4 md:space-y-6 p-4 md:p-6">
+        <div className="w-full min-h-screen overflow-hidden space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-3 md:p-4 lg:p-6">
         {/* Header - Completamente responsivo */}
-        <div className="w-full flex flex-col space-y-2 md:space-y-0 md:flex-row md:justify-between md:items-center">
-          <div className="flex-1">
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold break-words">
+        <div className="w-full flex flex-col space-y-2 md:space-y-0 md:flex-row md:justify-between md:items-start lg:items-center">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold break-words leading-tight">
               Análise Profissional de Investimentos
             </h1>
-            <p className="text-sm md:text-base text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1 break-words">
               Dashboard completo com análise detalhada do seu portfólio
             </p>
           </div>
         </div>
 
         {/* Estados de Loading e Erro */}
-        {loading && renderLoading()}
-        {error && renderError()}
+        {loading && (
+          <div className="flex items-center justify-center py-8 sm:py-12">
+            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
+              <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+              <span className="text-sm sm:text-base lg:text-lg">{t('loading')}...</span>
+            </div>
+          </div>
+        )}
+        
+        {error && (
+          <div className="flex items-center justify-center py-8 sm:py-12 px-4">
+            <div className="text-center space-y-3 sm:space-y-4 max-w-md w-full">
+              <AlertTriangle className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-destructive mx-auto" />
+              <div className="space-y-2">
+                <h3 className="text-base sm:text-lg font-semibold text-destructive">
+                  {t('error_loading_data')}
+                </h3>
+                <p className="text-sm text-muted-foreground break-words">{error}</p>
+                <Button 
+                  onClick={loadRankingData}
+                  variant="outline"
+                  className="mt-4"
+                  size="sm"
+                >
+                  {t('try_again')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Estado quando não há dados */}
         {!loading && !error && rankingData.length === 0 && (
-          <div className="text-center py-12">
-            <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum dado disponível</h3>
-            <p className="text-muted-foreground">
+          <div className="text-center py-8 sm:py-12 px-4">
+            <Trophy className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold mb-2">Nenhum dado disponível</h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto break-words">
               Carregue seus dados de investimentos para ver a análise
             </p>
           </div>
@@ -499,38 +527,38 @@ export default function Ranking() {
         {!loading && !error && rankingData.length > 0 && portfolioMetrics && (
           <>
             {/* Resumo Executivo do Portfolio - Completamente responsivo */}
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
               <Card className="border-l-4 border-l-blue-600 min-h-0">
-                <CardContent className="p-3 md:p-4 lg:p-6">
+                <CardContent className="p-2 sm:p-3 md:p-4 lg:p-6">
                   <div className="flex items-center space-x-2 md:space-x-3">
-                    <BarChart3 className="h-6 w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-blue-600 flex-shrink-0" />
+                    <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-blue-600 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs md:text-sm text-muted-foreground truncate">Valor Total Investido</p>
-                      <p className="text-lg md:text-xl lg:text-2xl font-bold truncate">{formatMoney(portfolioMetrics.totalInvestido)}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Valor Total Investido</p>
+                      <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold truncate">{formatMoney(portfolioMetrics.totalInvestido)}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-l-4 border-l-green-600 min-h-0">
-                <CardContent className="p-3 md:p-4 lg:p-6">
+                <CardContent className="p-2 sm:p-3 md:p-4 lg:p-6">
                   <div className="flex items-center space-x-2 md:space-x-3">
-                    <DollarSign className="h-6 w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-green-600 flex-shrink-0" />
+                    <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-green-600 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs md:text-sm text-muted-foreground truncate">Valor Atual</p>
-                      <p className="text-lg md:text-xl lg:text-2xl font-bold text-green-600 truncate">{formatMoney(portfolioMetrics.totalAtual)}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Valor Atual</p>
+                      <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-green-600 truncate">{formatMoney(portfolioMetrics.totalAtual)}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-l-4 border-l-purple-600 min-h-0">
-                <CardContent className="p-3 md:p-4 lg:p-6">
+                <CardContent className="p-2 sm:p-3 md:p-4 lg:p-6">
                   <div className="flex items-center space-x-2 md:space-x-3">
-                    <TrendingUp className="h-6 w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-purple-600 flex-shrink-0" />
+                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-purple-600 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs md:text-sm text-muted-foreground truncate">Rentabilidade Total</p>
-                      <p className={`text-lg md:text-xl lg:text-2xl font-bold truncate ${portfolioMetrics.rentabilidadeTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Rentabilidade Total</p>
+                      <p className={`text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold truncate ${portfolioMetrics.rentabilidadeTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {portfolioMetrics.rentabilidadeTotal.toFixed(1)}%
                       </p>
                     </div>
@@ -539,12 +567,12 @@ export default function Ranking() {
               </Card>
 
               <Card className="border-l-4 border-l-orange-600 min-h-0">
-                <CardContent className="p-3 md:p-4 lg:p-6">
+                <CardContent className="p-2 sm:p-3 md:p-4 lg:p-6">
                   <div className="flex items-center space-x-2 md:space-x-3">
-                    <Star className="h-6 w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-orange-600 flex-shrink-0" />
+                    <Star className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 lg:h-10 lg:w-10 text-orange-600 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs md:text-sm text-muted-foreground truncate">Lucro/Prejuízo</p>
-                      <p className={`text-lg md:text-xl lg:text-2xl font-bold truncate ${portfolioMetrics.lucroTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Lucro/Prejuízo</p>
+                      <p className={`text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold truncate ${portfolioMetrics.lucroTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(portfolioMetrics.lucroTotal)}
                       </p>
                     </div>
@@ -556,23 +584,23 @@ export default function Ranking() {
             {/* Exposição Setorial e Insights */}
             {insights && insights.exposicao_setorial && (
               <Card className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <BarChart3 className="h-6 w-6 text-slate-600" />
+                <CardHeader className="p-3 sm:p-4 md:p-6">
+                  <CardTitle className="flex items-center space-x-2 text-sm sm:text-base md:text-lg">
+                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-slate-600 flex-shrink-0" />
                     <span>Análise Setorial do Portfolio</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <CardContent className="p-3 sm:p-4 md:p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                     {Object.entries(insights.exposicao_setorial).map(([setor, dados]: [string, any]) => (
-                      <div key={setor} className="p-4 bg-white dark:bg-gray-800 rounded-lg border">
+                      <div key={setor} className="p-3 sm:p-4 bg-white dark:bg-gray-800 rounded-lg border">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <Badge variant="secondary" className="text-xs">{setor}</Badge>
-                            <span className="text-lg font-bold text-blue-600">{dados.percentual.toFixed(1)}%</span>
+                            <Badge variant="secondary" className="text-xs truncate max-w-24 sm:max-w-none">{setor}</Badge>
+                            <span className="text-sm sm:text-base lg:text-lg font-bold text-blue-600">{dados.percentual.toFixed(1)}%</span>
                           </div>
-                          <div className="text-sm space-y-1">
-                            <p className="text-muted-foreground">
+                          <div className="text-xs sm:text-sm space-y-1">
+                            <p className="text-muted-foreground truncate">
                               Valor: {formatCurrency(dados.valor_total)}
                             </p>
                             <p className="text-muted-foreground">
@@ -592,23 +620,23 @@ export default function Ranking() {
                   </div>
                   
                   {/* Insights gerais */}
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="p-4">
+                  <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <Card className="p-3 sm:p-4">
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-green-600">{insights.ativos_positivos}</p>
-                        <p className="text-sm text-muted-foreground">Ativos em Alta</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{insights.ativos_positivos}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Ativos em Alta</p>
                       </div>
                     </Card>
-                    <Card className="p-4">
+                    <Card className="p-3 sm:p-4">
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-red-600">{insights.ativos_negativos}</p>
-                        <p className="text-sm text-muted-foreground">Ativos em Baixa</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold text-red-600">{insights.ativos_negativos}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Ativos em Baixa</p>
                       </div>
                     </Card>
-                    <Card className="p-4">
+                    <Card className="p-3 sm:p-4">
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-yellow-600">{insights.oportunidades_total}</p>
-                        <p className="text-sm text-muted-foreground">Oportunidades</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold text-yellow-600">{insights.oportunidades_total}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Oportunidades</p>
                       </div>
                     </Card>
                   </div>
@@ -617,41 +645,41 @@ export default function Ranking() {
             )}
 
             {/* Análise de Performance */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
               {/* Melhor Performance */}
               <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-green-700 dark:text-green-300">
-                    <Trophy className="h-6 w-6" />
+                <CardHeader className="p-3 sm:p-4 md:p-6">
+                  <CardTitle className="flex items-center space-x-2 text-green-700 dark:text-green-300 text-sm sm:text-base">
+                    <Trophy className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 flex-shrink-0" />
                     <span>🏆 Melhor Performance</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{portfolioMetrics.melhorAtivo.ticker}</p>
-                      <Badge variant="outline">{portfolioMetrics.melhorAtivo.tipo}</Badge>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">{portfolioMetrics.melhorAtivo.ticker}</p>
+                      <Badge variant="outline" className="mt-1">{portfolioMetrics.melhorAtivo.tipo}</Badge>
                     </div>
-                    <Badge className="bg-green-600 text-white text-lg p-2">
+                    <Badge className="bg-green-600 text-white text-sm sm:text-base lg:text-lg p-1 sm:p-2 ml-2">
                       +{portfolioMetrics.melhorAtivo.rentabilidade_percentual.toFixed(1)}%
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                     <div>
                       <p className="text-muted-foreground">Valor Investido</p>
-                      <p className="font-semibold">{formatCurrency(portfolioMetrics.melhorAtivo.valor_investido)}</p>
+                      <p className="font-semibold text-xs sm:text-sm truncate">{formatCurrency(portfolioMetrics.melhorAtivo.valor_investido)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Valor Atual</p>
-                      <p className="font-semibold text-green-600">{formatCurrency(portfolioMetrics.melhorAtivo.valor_atual)}</p>
+                      <p className="font-semibold text-green-600 text-xs sm:text-sm truncate">{formatCurrency(portfolioMetrics.melhorAtivo.valor_atual)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Lucro</p>
-                      <p className="font-semibold text-green-600">+{formatCurrency(portfolioMetrics.melhorAtivo.rentabilidade_rs)}</p>
+                      <p className="font-semibold text-green-600 text-xs sm:text-sm truncate">+{formatCurrency(portfolioMetrics.melhorAtivo.rentabilidade_rs)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">D.Y. Anual</p>
-                      <p className="font-semibold">{portfolioMetrics.melhorAtivo.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%</p>
+                      <p className="font-semibold text-xs sm:text-sm">{portfolioMetrics.melhorAtivo.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%</p>
                     </div>
                   </div>
                 </CardContent>
@@ -659,34 +687,34 @@ export default function Ranking() {
 
               {/* Pior Performance */}
               <Card className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950 dark:to-pink-950 border-red-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-red-700 dark:text-red-300">
-                    <AlertTriangle className="h-6 w-6" />
+                <CardHeader className="p-3 sm:p-4 md:p-6">
+                  <CardTitle className="flex items-center space-x-2 text-red-700 dark:text-red-300 text-sm sm:text-base">
+                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 flex-shrink-0" />
                     <span>📉 Maior Oscilação Negativa</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{portfolioMetrics.piorAtivo.ticker}</p>
-                      <Badge variant="outline">{portfolioMetrics.piorAtivo.tipo}</Badge>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">{portfolioMetrics.piorAtivo.ticker}</p>
+                      <Badge variant="outline" className="mt-1">{portfolioMetrics.piorAtivo.tipo}</Badge>
                     </div>
-                    <Badge variant="destructive" className="text-lg p-2">
+                    <Badge variant="destructive" className="text-sm sm:text-base lg:text-lg p-1 sm:p-2 ml-2">
                       {portfolioMetrics.piorAtivo.rentabilidade_percentual.toFixed(1)}%
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                     <div>
                       <p className="text-muted-foreground">Valor Investido</p>
-                      <p className="font-semibold">{formatCurrency(portfolioMetrics.piorAtivo.valor_investido)}</p>
+                      <p className="font-semibold text-xs sm:text-sm truncate">{formatCurrency(portfolioMetrics.piorAtivo.valor_investido)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Valor Atual</p>
-                      <p className="font-semibold text-red-600">{formatCurrency(portfolioMetrics.piorAtivo.valor_atual)}</p>
+                      <p className="font-semibold text-red-600 text-xs sm:text-sm truncate">{formatCurrency(portfolioMetrics.piorAtivo.valor_atual)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Prejuízo</p>
-                      <p className="font-semibold text-red-600">{formatCurrency(portfolioMetrics.piorAtivo.rentabilidade_rs)}</p>
+                      <p className="font-semibold text-red-600 text-xs sm:text-sm truncate">{formatCurrency(portfolioMetrics.piorAtivo.rentabilidade_rs)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Risco</p>
@@ -707,52 +735,52 @@ export default function Ranking() {
 
             {/* Análise Detalhada em Abas */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Activity className="h-6 w-6" />
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="flex items-center space-x-2 text-sm sm:text-base md:text-lg">
+                  <Activity className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 flex-shrink-0" />
                   <span>Análise Detalhada por Categoria</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-4 md:p-6">
                 <Tabs value={currentView} onValueChange={setCurrentView} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 p-1">
-                    <TabsTrigger value="portfolio" className="text-xs sm:text-sm">Portfolio</TabsTrigger>
-                    <TabsTrigger value="crescimento" className="text-xs sm:text-sm">Crescimento</TabsTrigger>
-                    <TabsTrigger value="dividendos" className="text-xs sm:text-sm">Dividendos</TabsTrigger>
-                    <TabsTrigger value="risco" className="text-xs sm:text-sm">Baixo Risco</TabsTrigger>
-                    <TabsTrigger value="oportunidades" className="text-xs sm:text-sm">Oportunidades</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 p-1 h-auto">
+                    <TabsTrigger value="portfolio" className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2">Portfolio</TabsTrigger>
+                    <TabsTrigger value="crescimento" className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2">Crescimento</TabsTrigger>
+                    <TabsTrigger value="dividendos" className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2">Dividendos</TabsTrigger>
+                    <TabsTrigger value="risco" className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2">Baixo Risco</TabsTrigger>
+                    <TabsTrigger value="oportunidades" className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2">Oportunidades</TabsTrigger>
                   </TabsList>
 
                   {/* Visão Geral do Portfolio */}
-                  <TabsContent value="portfolio" className="mt-4 md:mt-6">
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <TabsContent value="portfolio" className="mt-3 sm:mt-4 md:mt-6">
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                         <Card>
-                          <CardContent className="p-4 text-center">
-                            <p className="text-3xl font-bold text-blue-600">{portfolioMetrics.ativos}</p>
-                            <p className="text-sm text-muted-foreground">Total de Ativos</p>
+                          <CardContent className="p-3 sm:p-4 text-center">
+                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">{portfolioMetrics.ativos}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">Total de Ativos</p>
                           </CardContent>
                         </Card>
                         <Card>
-                          <CardContent className="p-4 text-center">
-                            <p className="text-3xl font-bold text-green-600">{portfolioMetrics.ativosPositivos}</p>
-                            <p className="text-sm text-muted-foreground">Ativos em Alta</p>
+                          <CardContent className="p-3 sm:p-4 text-center">
+                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">{portfolioMetrics.ativosPositivos}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">Ativos em Alta</p>
                           </CardContent>
                         </Card>
                         <Card>
-                          <CardContent className="p-4 text-center">
-                            <p className="text-3xl font-bold text-red-600">{portfolioMetrics.ativosNegativos}</p>
-                            <p className="text-sm text-muted-foreground">Ativos em Baixa</p>
+                          <CardContent className="p-3 sm:p-4 text-center">
+                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-red-600">{portfolioMetrics.ativosNegativos}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">Ativos em Baixa</p>
                           </CardContent>
                         </Card>
                       </div>
 
                       {/* Filtros e Controles */}
-                      <div className="space-y-4">
-                        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                          <div>
-                            <h3 className="text-lg font-semibold">Portfolio Completo - Análise Detalhada</h3>
-                            <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                      <div className="space-y-3 sm:space-y-4">
+                        <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row gap-2 sm:gap-4 items-start sm:items-center justify-between">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-base sm:text-lg font-semibold">Portfolio Completo - Análise Detalhada</h3>
+                            <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mt-1">
                               <span className="text-green-600 font-medium">
                                 💰 {getFilteredAndSortedData().filter(item => ['A', 'B'].includes(getScoreGrade(item.score?.percentual || 0).grade)).length} Comprar
                               </span>
@@ -764,9 +792,9 @@ export default function Ranking() {
                               </span>
                             </div>
                           </div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                             <select 
-                              className="px-3 py-2 border rounded-md text-sm"
+                              className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-2 border rounded-md text-xs sm:text-sm min-w-28"
                               value={filterType}
                               onChange={(e) => setFilterType(e.target.value)}
                             >
@@ -775,7 +803,7 @@ export default function Ranking() {
                               <option value="FII">Fundos Imobiliários</option>
                             </select>
                             <select 
-                              className="px-3 py-2 border rounded-md text-sm"
+                              className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-2 border rounded-md text-xs sm:text-sm min-w-32"
                               value={sortBy}
                               onChange={(e) => setSortBy(e.target.value)}
                             >
@@ -786,25 +814,193 @@ export default function Ranking() {
                             </select>
                           </div>
                         </div>
-                        <div className="overflow-x-auto rounded-lg border">
-                            <Table className="min-w-full">
+                        
+                        {/* Tabela responsiva */}
+                        <div className="w-full">
+                          {/* Versão mobile - cards */}
+                          <div className="block sm:hidden space-y-3">
+                            {getFilteredAndSortedData().map((item) => {
+                              const scoreGrade = getScoreGrade(item.score?.percentual || 0);
+                              const setorFII = getFIISetor(item.ticker);
+                              const setor = setorFII || item.dados_mercado?.setor || item.setor || 'A definir';
+                              return (
+                                <Card key={item.ticker} className="p-3">
+                                  <div className="space-y-3">
+                                    {/* Header do card */}
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-2">
+                                        {getMedalIcon(item.posicao)}
+                                        <div>
+                                          <p className="font-bold text-lg">{item.ticker}</p>
+                                          <Badge variant="outline" className="text-xs">{getTipoFriendlyName(item.tipo)}</Badge>
+                                        </div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full ${scoreGrade.bg} ${scoreGrade.color} font-bold text-sm border-2 ${scoreGrade.grade === 'A' || scoreGrade.grade === 'B' ? 'border-yellow-400' : 'border-transparent'}`}>
+                                          {scoreGrade.grade}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {item.score?.percentual?.toFixed(0) || '0'}/100
+                                        </p>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Métricas principais */}
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Rentabilidade</p>
+                                        <div className="flex items-center space-x-1">
+                                          {getVariationIcon(item.rentabilidade_percentual)}
+                                          <span className={`font-bold ${getVariationColor(item.rentabilidade_percentual)}`}>
+                                            {item.rentabilidade_percentual.toFixed(1)}%
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Valor Atual</p>
+                                        <p className="font-semibold truncate">{formatCurrency(item.valor_atual)}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">D.Y. Anual</p>
+                                        <p className="font-semibold text-blue-600">
+                                          {item.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Volatilidade</p>
+                                        <Badge variant={item.volatilidade < 1.5 ? 'default' : item.volatilidade < 2.5 ? 'secondary' : 'destructive'} className="text-xs">
+                                          {item.volatilidade.toFixed(1)}%
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Recomendação e ações */}
+                                    <div className="flex items-center justify-between pt-2 border-t">
+                                      <div>
+                                        {item.score?.recomendacao ? (
+                                          <RecommendationBadge 
+                                            recomendacao={item.score.recomendacao}
+                                            getRecommendationColor={getRecommendationColor}
+                                            className="text-xs"
+                                          />
+                                        ) : (
+                                          <Badge className={`${getRecommendationColor('manter')} text-xs`}>
+                                            Analisar
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleDetailsClick(item)}
+                                        className="text-xs px-2 py-1"
+                                      >
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        Ver
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                          
+                          {/* Versão tablet - cards em grid */}
+                          <div className="hidden sm:block lg:hidden">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {getFilteredAndSortedData().map((item) => {
+                                const scoreGrade = getScoreGrade(item.score?.percentual || 0);
+                                const setorFII = getFIISetor(item.ticker);
+                                const setor = setorFII || item.dados_mercado?.setor || item.setor || 'A definir';
+                                
+                                return (
+                                  <Card key={item.ticker} className="hover:shadow-lg transition-all">
+                                    <CardContent className="p-4">
+                                      <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center space-x-2">
+                                          {getMedalIcon(item.posicao)}
+                                          <div>
+                                            <h3 className="font-bold text-lg">{item.ticker}</h3>
+                                            <Badge variant="outline" className="text-xs">{getTipoFriendlyName(item.tipo)}</Badge>
+                                          </div>
+                                        </div>
+                                        <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full ${scoreGrade.bg} ${scoreGrade.color} font-bold border-2`}>
+                                          {scoreGrade.grade}
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                          <p className="text-muted-foreground">Preço Atual</p>
+                                          <p className="font-semibold">{formatCurrency(item.preco_atual)}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-muted-foreground">Rentabilidade</p>
+                                          <p className={`font-bold ${getVariationColor(item.rentabilidade_percentual)}`}>
+                                            {item.rentabilidade_percentual.toFixed(1)}%
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-muted-foreground">D.Y. Anual</p>
+                                          <p className="font-semibold text-blue-600">
+                                            {item.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-muted-foreground">Valor Atual</p>
+                                          <p className="font-semibold">{formatCurrency(item.valor_atual)}</p>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="flex items-center justify-between mt-4">
+                                        {item.score?.recomendacao ? (
+                                          <RecommendationBadge 
+                                            recomendacao={item.score.recomendacao}
+                                            getRecommendationColor={getRecommendationColor}
+                                            className="text-xs"
+                                          />
+                                        ) : (
+                                          <Badge className={`${getRecommendationColor('manter')} text-xs`}>
+                                            Analisar
+                                          </Badge>
+                                        )}
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleDetailsClick(item)}
+                                          className="text-xs"
+                                        >
+                                          <Eye className="h-4 w-4 mr-1" />
+                                          Detalhes
+                                        </Button>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          
+                          {/* Versão desktop - tabela */}
+                          <div className="hidden lg:block rounded-lg border">
+                            <Table className="w-full table-fixed">
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="text-xs px-2 py-2 min-w-[50px]">Rank</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">Ativo</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">Porte</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[90px]">Preço</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[100px]">Rentabilidade</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[90px]">Valor Atual</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">D.Y. Anual</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[90px]">Volatilidade</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">% Carteira</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[100px]">Preço/Dist.</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[100px]">Fundamentos</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">Score IA</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[120px]">Recomendação</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[90px]">Total Investido</TableHead>
-                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">Ações</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[50px]">Rank</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[80px]">Ativo</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[70px]">Porte</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[80px]">Preço</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[90px]">Rentab.</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[80px]">Valor</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[70px]">D.Y.</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[80px]">Volat.</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[70px]">% Cart.</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[80px]">P/Dist.</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[80px]">Fund.</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[70px]">Score</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[100px]">Recom.</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[80px]">Invest.</TableHead>
+                                <TableHead className="text-xs px-1 py-2 w-[60px]">Ações</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -816,15 +1012,15 @@ export default function Ranking() {
                                 const itemWithSetor = { ...item, setor };
                                 return (
                                   <TableRow key={item.ticker} className="hover:bg-muted/50">
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="flex items-center space-x-1">
                                         {getMedalIcon(item.posicao)}
-                                        <span className="text-xs md:text-sm font-medium">#{item.posicao}</span>
+                                        <span className="text-xs font-medium">#{item.posicao}</span>
                                       </div>
                                     </TableCell>
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="space-y-1">
-                                        <p className="font-bold text-sm md:text-lg">{item.ticker}</p>
+                                        <p className="font-bold text-xs truncate">{item.ticker}</p>
                                         <div className="flex items-center space-x-1">
                                           <Badge variant="outline" className="text-xs">{getTipoFriendlyName(item.tipo)}</Badge>
                                         </div>
@@ -834,55 +1030,55 @@ export default function Ranking() {
                                       </div>
                                     </TableCell>
                                     {/* Nova coluna do Porte */}
-                                    <TableCell className="px-2 py-2">
-                                      <Badge variant="secondary" className="text-xs">
+                                    <TableCell className="px-1 py-1">
+                                      <Badge variant="secondary" className="text-xs truncate">
                                         {item.porte.descricao}
                                       </Badge>
                                     </TableCell>
                                     {/* Nova coluna do Preço */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="text-right">
-                                        <p className="font-semibold text-sm">{formatCurrency(item.preco_atual)}</p>
-                                        <p className="text-xs text-muted-foreground">
+                                        <p className="font-semibold text-xs truncate">{formatCurrency(item.preco_atual)}</p>
+                                        <p className="text-xs text-muted-foreground truncate">
                                           Médio: {formatCurrency(item.preco_medio)}
                                         </p>
                                       </div>
                                     </TableCell>
                                     {/* Rentabilidade */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="text-right">
                                         <div className="flex items-center justify-end space-x-1">
                                           {getVariationIcon(item.rentabilidade_percentual)}
-                                          <span className={`font-bold text-lg ${getVariationColor(item.rentabilidade_percentual)}`}>
+                                          <span className={`font-bold text-xs ${getVariationColor(item.rentabilidade_percentual)}`}>
                                             {item.rentabilidade_percentual.toFixed(1)}%
                                           </span>
                                         </div>
-                                        <p className={`text-sm font-medium ${item.rentabilidade_rs >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        <p className={`text-xs font-medium ${item.rentabilidade_rs >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                           {formatCurrency(item.rentabilidade_rs)}
                                         </p>
                                       </div>
                                     </TableCell>
                                     {/* Valor Atual */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="text-right">
-                                        <p className="font-semibold text-base">{formatCurrency(item.valor_atual)}</p>
+                                        <p className="font-semibold text-xs truncate">{formatCurrency(item.valor_atual)}</p>
                                       </div>
                                     </TableCell>
                                     {/* D.Y. Anual */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="text-center">
-                                        <p className="text-xs text-muted-foreground mb-1">
-                                          Mensal: {item.dividend_yield?.percentual_mensal?.toFixed(2) || '0.00'}%
+                                        <p className="text-xs text-muted-foreground mb-1 truncate">
+                                          M: {item.dividend_yield?.percentual_mensal?.toFixed(2) || '0.00'}%
                                         </p>
-                                        <p className="font-semibold text-blue-600 text-base">
+                                        <p className="font-semibold text-blue-600 text-xs truncate">
                                           {item.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%
                                         </p>
                                       </div>
                                     </TableCell>
                                     {/* Volatilidade */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="text-center">
-                                        <Badge variant={item.volatilidade < 1.5 ? 'default' : item.volatilidade < 2.5 ? 'secondary' : 'destructive'}>
+                                        <Badge variant={item.volatilidade < 1.5 ? 'default' : item.volatilidade < 2.5 ? 'secondary' : 'destructive'} className="text-xs">
                                           {item.volatilidade.toFixed(1)}%
                                         </Badge>
                                         <div className="flex items-center justify-center space-x-1 mt-1">
@@ -895,20 +1091,20 @@ export default function Ranking() {
                                       </div>
                                     </TableCell>
                                     {/* % Carteira */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="text-center">
-                                        <p className="text-sm font-semibold">
+                                        <p className="text-xs font-semibold truncate">
                                           {((item.valor_investido / portfolioMetrics.totalInvestido) * 100).toFixed(1)}%
                                         </p>
                                       </div>
                                     </TableCell>
                                     {/* Preço/Dist. */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="text-center space-y-1">
-                                        <div className="text-xs text-muted-foreground">
+                                        <div className="text-xs text-muted-foreground truncate">
                                           Min: {formatCurrency(item.minima_mensal)}
                                         </div>
-                                        <div className="text-xs text-muted-foreground">
+                                        <div className="text-xs text-muted-foreground truncate">
                                           Max: {formatCurrency(item.maxima_mensal)}
                                         </div>
                                         <Badge variant="outline" className="text-xs">
@@ -917,43 +1113,43 @@ export default function Ranking() {
                                       </div>
                                     </TableCell>
                                     {/* Fundamentos */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="text-center space-y-1">
                                         {item.pvp && (
-                                          <div className="text-xs">
+                                          <div className="text-xs truncate">
                                             <span className="text-muted-foreground">P/VP:</span> {item.pvp.toFixed(2)}
                                           </div>
                                         )}
                                         {item.pe_ratio && (
-                                          <div className="text-xs">
+                                          <div className="text-xs truncate">
                                             <span className="text-muted-foreground">P/L:</span> {item.pe_ratio.toFixed(1)}
                                           </div>
                                         )}
                                         {item.roe && (
-                                          <div className="text-xs">
+                                          <div className="text-xs truncate">
                                             <span className="text-muted-foreground">ROE:</span> {item.roe.toFixed(1)}%
                                           </div>
                                         )}
                                         {itemWithSetor.setor && itemWithSetor.setor !== 'A definir' && (
-                                          <Badge variant="secondary" className="text-xs">
+                                          <Badge variant="secondary" className="text-xs truncate">
                                             {itemWithSetor.setor}
                                           </Badge>
                                         )}
                                       </div>
                                     </TableCell>
                                     {/* Score IA */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="text-center">
-                                        <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${scoreGrade.bg} ${scoreGrade.color} font-bold text-lg border-2 ${scoreGrade.grade === 'A' || scoreGrade.grade === 'B' ? 'border-yellow-400 shadow-md' : 'border-transparent'}`}>
+                                        <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${scoreGrade.bg} ${scoreGrade.color} font-bold text-xs border-2 ${scoreGrade.grade === 'A' || scoreGrade.grade === 'B' ? 'border-yellow-400 shadow-md' : 'border-transparent'}`}>
                                           {scoreGrade.grade}
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-1">
+                                        <p className="text-xs text-muted-foreground mt-1 truncate">
                                           {item.score?.percentual?.toFixed(0) || '0'}/100
                                         </p>
                                       </div>
                                     </TableCell>
                                     {/* Recomendação */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="flex justify-center">
                                         {item.score?.recomendacao ? (
                                           <RecommendationBadge 
@@ -969,20 +1165,20 @@ export default function Ranking() {
                                       </div>
                                     </TableCell>
                                     {/* Total Investido */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <div className="text-right">
-                                        <p className="text-sm font-semibold">{formatCurrency(item.valor_investido)}</p>
+                                        <p className="text-xs font-semibold truncate">{formatCurrency(item.valor_investido)}</p>
                                       </div>
                                     </TableCell>
                                     {/* Ações */}
-                                    <TableCell className="px-2 py-2">
+                                    <TableCell className="px-1 py-1">
                                       <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleDetailsClick(item)}
+                                        className="text-xs p-1 h-8"
                                       >
-                                        <Eye className="h-4 w-4" />
-                                        Detalhes
+                                        <Eye className="h-3 w-3" />
                                       </Button>
                                     </TableCell>
                                   </TableRow>
@@ -990,55 +1186,56 @@ export default function Ranking() {
                               })}
                             </TableBody>
                             </Table>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </TabsContent>
 
                   {/* Análise de Crescimento */}
-                  <TabsContent value="crescimento" className="mt-4 md:mt-6">
-                    <div className="space-y-6">
+                  <TabsContent value="crescimento" className="mt-3 sm:mt-4 md:mt-6">
+                    <div className="space-y-4 sm:space-y-6">
                       <div className="flex items-center space-x-2">
-                        <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-green-500" />
-                        <h3 className="text-lg md:text-xl font-semibold">Top 5 - Maior Crescimento</h3>
+                        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-green-500 flex-shrink-0" />
+                        <h3 className="text-base sm:text-lg md:text-xl font-semibold">Top 5 - Maior Crescimento</h3>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                         {analysisData.crescimento.map((item, index) => (
                           <Card key={item.ticker} className="border-l-4 border-l-green-500 hover:shadow-lg transition-all">
-                            <CardContent className="p-6">
+                            <CardContent className="p-4 sm:p-6">
                               <div className="flex items-center justify-between mb-4">
-                                <div>
-                                  <p className="text-2xl font-bold">{item.ticker}</p>
-                                  <Badge variant="outline">{item.tipo}</Badge>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">{item.ticker}</p>
+                                  <Badge variant="outline" className="text-xs mt-1">{item.tipo}</Badge>
                                 </div>
-                                <div className="text-center">
-                                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                    <span className="text-green-600 font-bold">#{index + 1}</span>
+                                <div className="text-center ml-2">
+                                  <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span className="text-green-600 font-bold text-xs sm:text-sm">#{index + 1}</span>
                                   </div>
                                 </div>
                               </div>
-                              <div className="space-y-3">
+                              <div className="space-y-2 sm:space-y-3">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">Rentabilidade</span>
-                                  <span className="text-xl font-bold text-green-600">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">Rentabilidade</span>
+                                  <span className="text-base sm:text-lg lg:text-xl font-bold text-green-600">
                                     +{item.rentabilidade_percentual.toFixed(1)}%
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">Lucro</span>
-                                  <span className="font-semibold text-green-600">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">Lucro</span>
+                                  <span className="font-semibold text-green-600 text-xs sm:text-sm truncate">
                                     +{formatCurrency(item.rentabilidade_rs)}
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">Valor Atual</span>
-                                  <span className="font-semibold">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">Valor Atual</span>
+                                  <span className="font-semibold text-xs sm:text-sm truncate">
                                     {formatCurrency(item.valor_atual)}
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">Volatilidade</span>
-                                  <Badge variant={item.volatilidade < 2 ? 'default' : 'secondary'}>
+                                  <span className="text-xs sm:text-sm text-muted-foreground">Volatilidade</span>
+                                  <Badge variant={item.volatilidade < 2 ? 'default' : 'secondary'} className="text-xs">
                                     {item.volatilidade.toFixed(1)}%
                                   </Badge>
                                 </div>
@@ -1051,66 +1248,66 @@ export default function Ranking() {
                   </TabsContent>
 
                   {/* Análise de Dividendos */}
-                  <TabsContent value="dividendos" className="mt-4 md:mt-6">
-                    <div className="space-y-6">
+                  <TabsContent value="dividendos" className="mt-3 sm:mt-4 md:mt-6">
+                    <div className="space-y-4 sm:space-y-6">
                       <div className="flex items-center space-x-2">
-                        <DollarSign className="h-6 w-6 text-blue-500" />
-                        <h3 className="text-xl font-semibold">Top 5 - Maiores Dividend Yields</h3>
+                        <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-500 flex-shrink-0" />
+                        <h3 className="text-base sm:text-lg md:text-xl font-semibold">Top 5 - Maiores Dividend Yields</h3>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                         {analysisData.dividendos.map((item, index) => (
                           <Card key={item.ticker} className="border-l-4 border-l-blue-500 hover:shadow-lg transition-all">
-                            <CardContent className="p-6">
+                            <CardContent className="p-4 sm:p-6">
                               <div className="flex items-center justify-between mb-4">
-                                <div>
-                                  <p className="text-2xl font-bold">{item.ticker}</p>
-                                  <Badge variant="outline">{item.tipo}</Badge>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">{item.ticker}</p>
+                                  <Badge variant="outline" className="text-xs mt-1">{item.tipo}</Badge>
                                 </div>
-                                <div className="text-center">
-                                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <span className="text-blue-600 font-bold">#{index + 1}</span>
+                                <div className="text-center ml-2">
+                                  <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span className="text-blue-600 font-bold text-xs sm:text-sm">#{index + 1}</span>
                                   </div>
                                 </div>
                               </div>
-                              <div className="space-y-3">
+                              <div className="space-y-2 sm:space-y-3">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">D.Y. Anual</span>
-                                  <span className="text-xl font-bold text-blue-600">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">D.Y. Anual</span>
+                                  <span className="text-base sm:text-lg lg:text-xl font-bold text-blue-600">
                                     {item.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">D.Y. Mensal</span>
-                                  <span className="font-semibold">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">D.Y. Mensal</span>
+                                  <span className="font-semibold text-xs sm:text-sm">
                                     {item.dividend_yield?.percentual_mensal?.toFixed(2) || '0.00'}%
                                   </span>
                                 </div>
                                 {item.dividend_yield?.valor_mensal_estimado ? (
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">Pagamento Mensal</span>
-                                    <span className="font-semibold text-blue-600">
+                                    <span className="text-xs sm:text-sm text-muted-foreground">Pagamento Mensal</span>
+                                    <span className="font-semibold text-blue-600 text-xs sm:text-sm truncate">
                                       {formatCurrency(item.dividend_yield.valor_mensal_estimado)}
                                     </span>
                                   </div>
                                 ) : (
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">Estimativa Mensal</span>
-                                    <span className="font-semibold text-blue-600">
+                                    <span className="text-xs sm:text-sm text-muted-foreground">Estimativa Mensal</span>
+                                    <span className="font-semibold text-blue-600 text-xs sm:text-sm truncate">
                                       {formatCurrency((item.valor_atual * (item.dividend_yield?.percentual_mensal || 0)) / 100)}
                                     </span>
                                   </div>
                                 )}
                                 {item.dividend_yield?.valor_anual_estimado && (
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">Pagamento Anual</span>
-                                    <span className="font-semibold text-green-600">
+                                    <span className="text-xs sm:text-sm text-muted-foreground">Pagamento Anual</span>
+                                    <span className="font-semibold text-green-600 text-xs sm:text-sm truncate">
                                       {formatCurrency(item.dividend_yield.valor_anual_estimado)}
                                     </span>
                                   </div>
                                 )}
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">Rentabilidade</span>
-                                  <span className={`font-semibold ${getVariationColor(item.rentabilidade_percentual)}`}>
+                                  <span className="text-xs sm:text-sm text-muted-foreground">Rentabilidade</span>
+                                  <span className={`font-semibold text-xs sm:text-sm ${getVariationColor(item.rentabilidade_percentual)}`}>
                                     {item.rentabilidade_percentual.toFixed(1)}%
                                   </span>
                                 </div>
@@ -1124,7 +1321,7 @@ export default function Ranking() {
                                     {item.dividend_yield && (
                                       <div className="flex justify-between items-center">
                                         <span className="text-xs text-muted-foreground">Rendimento Mensal</span>
-                                        <span className="text-xs font-medium">
+                                        <span className="text-xs font-medium truncate">
                                           {formatCurrency(item.dividend_yield.valor_mensal_estimado || 0)}
                                         </span>
                                       </div>
@@ -1138,20 +1335,20 @@ export default function Ranking() {
                                     {item.patrimonio_liquido_estimado && (
                                       <div className="flex justify-between items-center">
                                         <span className="text-xs text-muted-foreground">Patrimônio Líquido</span>
-                                        <span className="text-xs font-medium">{formatCurrency(item.patrimonio_liquido_estimado)}</span>
+                                        <span className="text-xs font-medium truncate">{formatCurrency(item.patrimonio_liquido_estimado)}</span>
                                       </div>
                                     )}
                                     {item.valor_mercado_estimado && (
                                       <div className="flex justify-between items-center">
                                         <span className="text-xs text-muted-foreground">Valor de Mercado</span>
-                                        <span className="text-xs font-medium">{formatCurrency(item.valor_mercado_estimado)}</span>
+                                        <span className="text-xs font-medium truncate">{formatCurrency(item.valor_mercado_estimado)}</span>
                                       </div>
                                     )}
                                   </div>
                                 )}
                                 
                                 {item.dividend_yield?.fonte && (
-                                  <div className="text-xs text-muted-foreground pt-2 border-t">
+                                  <div className="text-xs text-muted-foreground pt-2 border-t truncate">
                                     Fonte: {item.dividend_yield.fonte}
                                   </div>
                                 )}
@@ -1164,49 +1361,49 @@ export default function Ranking() {
                   </TabsContent>
 
                   {/* Análise de Baixo Risco */}
-                  <TabsContent value="risco" className="mt-4 md:mt-6">
-                    <div className="space-y-6">
+                  <TabsContent value="risco" className="mt-3 sm:mt-4 md:mt-6">
+                    <div className="space-y-4 sm:space-y-6">
                       <div className="flex items-center space-x-2">
-                        <Shield className="h-6 w-6 text-purple-500" />
-                        <h3 className="text-xl font-semibold">Top 5 - Menor Volatilidade (Baixo Risco)</h3>
+                        <Shield className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-purple-500 flex-shrink-0" />
+                        <h3 className="text-base sm:text-lg md:text-xl font-semibold">Top 5 - Menor Volatilidade (Baixo Risco)</h3>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                         {analysisData.baixoRisco.map((item, index) => (
                           <Card key={item.ticker} className="border-l-4 border-l-purple-500 hover:shadow-lg transition-all">
-                            <CardContent className="p-6">
+                            <CardContent className="p-4 sm:p-6">
                               <div className="flex items-center justify-between mb-4">
-                                <div>
-                                  <p className="text-2xl font-bold">{item.ticker}</p>
-                                  <Badge variant="outline">{item.tipo}</Badge>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">{item.ticker}</p>
+                                  <Badge variant="outline" className="text-xs mt-1">{item.tipo}</Badge>
                                 </div>
-                                <div className="text-center">
-                                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                                    <span className="text-purple-600 font-bold">#{index + 1}</span>
+                                <div className="text-center ml-2">
+                                  <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span className="text-purple-600 font-bold text-xs sm:text-sm">#{index + 1}</span>
                                   </div>
                                 </div>
                               </div>
-                              <div className="space-y-3">
+                              <div className="space-y-2 sm:space-y-3">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">Volatilidade</span>
-                                  <Badge className="bg-purple-500 text-white">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">Volatilidade</span>
+                                  <Badge className="bg-purple-500 text-white text-xs">
                                     {item.volatilidade.toFixed(1)}%
                                   </Badge>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">Rentabilidade</span>
-                                  <span className={`font-semibold ${getVariationColor(item.rentabilidade_percentual)}`}>
+                                  <span className="text-xs sm:text-sm text-muted-foreground">Rentabilidade</span>
+                                  <span className={`font-semibold text-xs sm:text-sm ${getVariationColor(item.rentabilidade_percentual)}`}>
                                     {item.rentabilidade_percentual.toFixed(1)}%
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">Valor Atual</span>
-                                  <span className="font-semibold">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">Valor Atual</span>
+                                  <span className="font-semibold text-xs sm:text-sm truncate">
                                     {formatCurrency(item.valor_atual)}
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">D.Y. Anual</span>
-                                  <span className="font-semibold text-blue-600">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">D.Y. Anual</span>
+                                  <span className="font-semibold text-blue-600 text-xs sm:text-sm">
                                     {item.dividend_yield?.percentual_anual?.toFixed(1) || '0.0'}%
                                   </span>
                                 </div>
