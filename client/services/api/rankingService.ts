@@ -11,6 +11,7 @@ const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
 
 // Interface completa para item do ranking baseada na resposta real da API
 export interface RankingItem {
+  setor: string;
   ticker: string;
   tipo: string;
   quantidade: number;
@@ -40,6 +41,9 @@ export interface RankingItem {
   
   // Dados de mercado do ativo
   dados_mercado: {
+    preco_minimo: any;
+    preco_maximo: any;
+    volume_medio: any;
     preco_atual: number;
     volatilidade: number;
     tipo_ativo: string;
@@ -61,6 +65,19 @@ export interface RankingItem {
     variacao_30d: number;
   };
   
+  // Campos de compatibilidade para o frontend
+  tendencias?: {
+    ultimos_7_dias?: {
+      percentual_variacao: number;
+    };
+    ultimos_14_dias?: {
+      percentual_variacao: number;
+    };
+    ultimos_30_dias?: {
+      percentual_variacao: number;
+    };
+  };
+  
   // Análise técnica
   minima_mensal: number;
   maxima_mensal: number;
@@ -75,6 +92,12 @@ export interface RankingItem {
   pe_ratio?: number;
   roe?: number;
   data_fundamentals?: string;
+  valor_mercado_estimado?: number;
+  patrimonio_liquido_estimado?: number;
+  preco_cota_atual?: number;
+  categoria_fii?: string;
+  fonte?: string;
+  data_referencia?: string;
   // Porte da empresa
   porte: {
     codigo: string;
@@ -99,6 +122,8 @@ export interface RankingItem {
   
   // Dividendos
   dividend_yield: {
+    valor_mensal_estimado: any;
+    valor_anual_estimado: any;
     percentual_mensal: number;
     percentual_anual: number;
     fonte: string;
@@ -114,13 +139,47 @@ export interface RankingItem {
     recomendacao: {
       acao: string;
       motivo: string;
-      sugestao: string;
+      justificativa: string;
+      insight: string;
+      risco: string;
+      sugestao?: string; // Campo legacy, pode não estar presente
     };
     detalhamento: {
-      oportunidade_preco_pontos: number;
-      dividend_yield_pontos: number;
-      volatilidade_pontos: number;
-      distancia_minima_pontos: number;
+      oportunidade_preco: {
+        pontos: number;
+        rentabilidade: number;
+        nivel: string;
+      };
+      pvp_favoravel: {
+        pontos: number;
+        pvp: number;
+        nivel: string;
+      };
+      diversificacao_setorial: {
+        pontos: number;
+        exposicao_atual: number;
+        setor: string;
+        nivel: string;
+      };
+      posicionamento_tecnico: {
+        pontos: number;
+        distancia_maxima: number;
+        volatilidade: number;
+        posicao: string;
+      };
+    };
+    insights: string[];
+    criterios_atendidos: {
+      preco_favoravel: boolean;
+      pvp_favoravel: boolean;
+      diversificacao_ok: boolean;
+      posicao_tecnica_ok: boolean;
+    };
+    recomendacao_legacy?: {
+      acao: string;
+      motivo: string;
+      sugestao: string;
+      insight: string;
     };
   };
   
@@ -128,6 +187,7 @@ export interface RankingItem {
   posicao: number;
   ranking: string;
   score_custo_beneficio?: number;
+  exposicao_setor_carteira?: number;
   
   // Campos normalizados para compatibilidade com a UI
   codigo?: string;

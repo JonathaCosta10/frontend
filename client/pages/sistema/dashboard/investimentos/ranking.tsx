@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { 
   Trophy, 
   TrendingUp, 
@@ -32,6 +33,79 @@ import {
   RankingResponse,
   RankingItem
 } from '@/services/api/rankingService';
+
+// Componente para Badge da Recomendação com Tooltip
+interface RecommendationBadgeProps {
+  recomendacao: {
+    acao: string;
+    motivo?: string;
+    justificativa?: string;
+    insight?: string;
+    risco?: string;
+  };
+  getRecommendationColor: (acao: string) => string;
+  className?: string;
+}
+
+const RecommendationBadge: React.FC<RecommendationBadgeProps> = ({ 
+  recomendacao, 
+  getRecommendationColor, 
+  className = "" 
+}) => {
+  const formatAction = (action: string) => {
+    if (!action) return '';
+    return action.toLowerCase() === 'comprar' ? 'Comprar' :
+           action.toLowerCase() === 'vender' ? 'Vender' :
+           action.toLowerCase() === 'manter' ? 'Manter' :
+           action.toLowerCase() === 'observar' ? 'Observar' :
+           action.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  return (
+    <Tooltip delayDuration={100}>
+      <TooltipTrigger asChild>
+        <Badge className={`cursor-pointer hover:opacity-90 ${getRecommendationColor(recomendacao.acao)} ${className}`}>
+          {formatAction(recomendacao.acao)}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-sm p-4 z-50" sideOffset={5}>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold text-sm">
+              {formatAction(recomendacao.acao)}
+            </span>
+            {recomendacao.risco && (
+              <Badge variant="secondary" className="text-xs px-2 py-1">
+                {recomendacao.risco}
+              </Badge>
+            )}
+          </div>
+          
+          {recomendacao.motivo && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">📋 Motivo:</p>
+              <p className="text-sm leading-relaxed">{recomendacao.motivo}</p>
+            </div>
+          )}
+          
+          {recomendacao.justificativa && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">⚖️ Justificativa:</p>
+              <p className="text-sm leading-relaxed">{recomendacao.justificativa}</p>
+            </div>
+          )}
+          
+          {recomendacao.insight && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">💡 Insight:</p>
+              <p className="text-sm leading-relaxed">{recomendacao.insight}</p>
+            </div>
+          )}
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 export default function Ranking() {
   const { t, formatCurrency } = useTranslation();
@@ -87,6 +161,15 @@ export default function Ranking() {
   useEffect(() => {
     loadRankingData();
   }, []);
+
+  // Função para mapear tipos de forma amigável
+  const getTipoFriendlyName = (tipo: string): string => {
+    const mapeamento: Record<string, string> = {
+      'ACAO': 'Ação',
+      'FII': 'Fundo Imobiliário'
+    };
+    return mapeamento[tipo] || tipo;
+  };
 
   // Mapeamento de setores específicos para FIIs conhecidos
   const getFIISetor = (ticker: string): string | null => {
@@ -382,8 +465,9 @@ export default function Ranking() {
   const analysisData = getAnalysisData();
 
   return (
-    <InvestmentPremiumGuard featureType="ranking">
-      <div className="w-full min-h-screen space-y-4 md:space-y-6 p-4 md:p-6">
+    <TooltipProvider>
+      <InvestmentPremiumGuard featureType="ranking">
+        <div className="w-full min-h-screen space-y-4 md:space-y-6 p-4 md:p-6">
         {/* Header - Completamente responsivo */}
         <div className="w-full flex flex-col space-y-2 md:space-y-0 md:flex-row md:justify-between md:items-center">
           <div className="flex-1">
@@ -578,7 +662,7 @@ export default function Ranking() {
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-red-700 dark:text-red-300">
                     <AlertTriangle className="h-6 w-6" />
-                    <span>⚠️ Necessita Atenção</span>
+                    <span>📉 Maior Oscilação Negativa</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -605,10 +689,16 @@ export default function Ranking() {
                       <p className="font-semibold text-red-600">{formatCurrency(portfolioMetrics.piorAtivo.rentabilidade_rs)}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Recomendação</p>
-                      <Badge className={getRecommendationColor(portfolioMetrics.piorAtivo.score?.recomendacao?.acao || 'manter')}>
-                        {portfolioMetrics.piorAtivo.score?.recomendacao?.acao?.replace('_', ' ') || 'Analisar'}
-                      </Badge>
+                      <p className="text-muted-foreground">Risco</p>
+                      {portfolioMetrics.piorAtivo.score?.recomendacao?.risco ? (
+                        <Badge variant="outline" className="text-xs">
+                          {portfolioMetrics.piorAtivo.score.recomendacao.risco}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">
+                          Não informado
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -682,7 +772,7 @@ export default function Ranking() {
                             >
                               <option value="all">Todos os Tipos</option>
                               <option value="ACAO">Ações</option>
-                              <option value="FII">FIIs</option>
+                              <option value="FII">Fundos Imobiliários</option>
                             </select>
                             <select 
                               className="px-3 py-2 border rounded-md text-sm"
@@ -696,23 +786,25 @@ export default function Ranking() {
                             </select>
                           </div>
                         </div>
-                        <div className="overflow-x-auto">
-                          <div className="overflow-x-auto">
-                            <Table>
+                        <div className="overflow-x-auto rounded-lg border">
+                            <Table className="min-w-full">
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="text-xs md:text-sm">Rank</TableHead>
-                                <TableHead className="text-xs md:text-sm">Ativo</TableHead>
-                                <TableHead className="text-xs md:text-sm">Investido</TableHead>
-                                <TableHead className="text-xs md:text-sm">Valor Atual</TableHead>
-                                <TableHead className="text-xs md:text-sm">Rentabilidade</TableHead>
-                                <TableHead className="text-xs md:text-sm">D.Y. Anual</TableHead>
-                                <TableHead className="text-xs md:text-sm">Volatilidade</TableHead>
-                                <TableHead className="text-xs md:text-sm">Preço/Dist.</TableHead>
-                                <TableHead className="text-xs md:text-sm">Fundamentos</TableHead>
-                                <TableHead className="text-xs md:text-sm">Score IA</TableHead>
-                                <TableHead className="text-xs md:text-sm">Recomendação</TableHead>
-                                <TableHead className="text-xs md:text-sm">Ações</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[50px]">Rank</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">Ativo</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">Porte</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[90px]">Preço</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[100px]">Rentabilidade</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[90px]">Valor Atual</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">D.Y. Anual</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[90px]">Volatilidade</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">% Carteira</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[100px]">Preço/Dist.</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[100px]">Fundamentos</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">Score IA</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[120px]">Recomendação</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[90px]">Total Investido</TableHead>
+                                <TableHead className="text-xs px-2 py-2 min-w-[80px]">Ações</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -724,43 +816,40 @@ export default function Ranking() {
                                 const itemWithSetor = { ...item, setor };
                                 return (
                                   <TableRow key={item.ticker} className="hover:bg-muted/50">
-                                    <TableCell>
-                                      <div className="flex items-center space-x-2">
+                                    <TableCell className="px-2 py-2">
+                                      <div className="flex items-center space-x-1">
                                         {getMedalIcon(item.posicao)}
-                                        <span className="font-medium">#{item.posicao}</span>
+                                        <span className="text-xs md:text-sm font-medium">#{item.posicao}</span>
                                       </div>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="px-2 py-2">
                                       <div className="space-y-1">
-                                        <p className="font-bold text-lg">{item.ticker}</p>
-                                        <div className="flex items-center space-x-2">
-                                          <Badge variant="outline">{item.tipo}</Badge>
-                                          <Badge variant="secondary" className="text-xs">
-                                            {item.porte.descricao}
-                                          </Badge>
+                                        <p className="font-bold text-sm md:text-lg">{item.ticker}</p>
+                                        <div className="flex items-center space-x-1">
+                                          <Badge variant="outline" className="text-xs">{getTipoFriendlyName(item.tipo)}</Badge>
                                         </div>
-                                        <p className="text-xs text-muted-foreground">
-                                          {item.quantidade} cotas • Preço médio: {formatCurrency(item.preco_medio)}
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          {item.quantidade} cotas
                                         </p>
                                       </div>
                                     </TableCell>
-                                    <TableCell>
+                                    {/* Nova coluna do Porte */}
+                                    <TableCell className="px-2 py-2">
+                                      <Badge variant="secondary" className="text-xs">
+                                        {item.porte.descricao}
+                                      </Badge>
+                                    </TableCell>
+                                    {/* Nova coluna do Preço */}
+                                    <TableCell className="px-2 py-2">
                                       <div className="text-right">
-                                        <p className="font-semibold">{formatCurrency(item.valor_investido)}</p>
+                                        <p className="font-semibold text-sm">{formatCurrency(item.preco_atual)}</p>
                                         <p className="text-xs text-muted-foreground">
-                                          {((item.valor_investido / portfolioMetrics.totalInvestido) * 100).toFixed(1)}% do total
+                                          Médio: {formatCurrency(item.preco_medio)}
                                         </p>
                                       </div>
                                     </TableCell>
-                                    <TableCell>
-                                      <div className="text-right">
-                                        <p className="text-xs text-muted-foreground mb-1">
-                                          Preço: {formatCurrency(item.preco_atual)}
-                                        </p>
-                                        <p className="font-semibold text-base">{formatCurrency(item.valor_atual)}</p>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>
+                                    {/* Rentabilidade */}
+                                    <TableCell className="px-2 py-2">
                                       <div className="text-right">
                                         <div className="flex items-center justify-end space-x-1">
                                           {getVariationIcon(item.rentabilidade_percentual)}
@@ -773,7 +862,14 @@ export default function Ranking() {
                                         </p>
                                       </div>
                                     </TableCell>
-                                    <TableCell>
+                                    {/* Valor Atual */}
+                                    <TableCell className="px-2 py-2">
+                                      <div className="text-right">
+                                        <p className="font-semibold text-base">{formatCurrency(item.valor_atual)}</p>
+                                      </div>
+                                    </TableCell>
+                                    {/* D.Y. Anual */}
+                                    <TableCell className="px-2 py-2">
                                       <div className="text-center">
                                         <p className="text-xs text-muted-foreground mb-1">
                                           Mensal: {item.dividend_yield?.percentual_mensal?.toFixed(2) || '0.00'}%
@@ -783,7 +879,8 @@ export default function Ranking() {
                                         </p>
                                       </div>
                                     </TableCell>
-                                    <TableCell>
+                                    {/* Volatilidade */}
+                                    <TableCell className="px-2 py-2">
                                       <div className="text-center">
                                         <Badge variant={item.volatilidade < 1.5 ? 'default' : item.volatilidade < 2.5 ? 'secondary' : 'destructive'}>
                                           {item.volatilidade.toFixed(1)}%
@@ -797,7 +894,16 @@ export default function Ranking() {
                                         </div>
                                       </div>
                                     </TableCell>
-                                    <TableCell>
+                                    {/* % Carteira */}
+                                    <TableCell className="px-2 py-2">
+                                      <div className="text-center">
+                                        <p className="text-sm font-semibold">
+                                          {((item.valor_investido / portfolioMetrics.totalInvestido) * 100).toFixed(1)}%
+                                        </p>
+                                      </div>
+                                    </TableCell>
+                                    {/* Preço/Dist. */}
+                                    <TableCell className="px-2 py-2">
                                       <div className="text-center space-y-1">
                                         <div className="text-xs text-muted-foreground">
                                           Min: {formatCurrency(item.minima_mensal)}
@@ -810,7 +916,8 @@ export default function Ranking() {
                                         </Badge>
                                       </div>
                                     </TableCell>
-                                    <TableCell>
+                                    {/* Fundamentos */}
+                                    <TableCell className="px-2 py-2">
                                       <div className="text-center space-y-1">
                                         {item.pvp && (
                                           <div className="text-xs">
@@ -834,7 +941,8 @@ export default function Ranking() {
                                         )}
                                       </div>
                                     </TableCell>
-                                    <TableCell>
+                                    {/* Score IA */}
+                                    <TableCell className="px-2 py-2">
                                       <div className="text-center">
                                         <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${scoreGrade.bg} ${scoreGrade.color} font-bold text-lg border-2 ${scoreGrade.grade === 'A' || scoreGrade.grade === 'B' ? 'border-yellow-400 shadow-md' : 'border-transparent'}`}>
                                           {scoreGrade.grade}
@@ -842,36 +950,32 @@ export default function Ranking() {
                                         <p className="text-xs text-muted-foreground mt-1">
                                           {item.score?.percentual?.toFixed(0) || '0'}/100
                                         </p>
-                                        {(scoreGrade.grade === 'A' || scoreGrade.grade === 'B') && (
-                                          <div className="text-xs font-medium text-green-600 mt-1">
-                                            💰 Comprar
-                                          </div>
+                                      </div>
+                                    </TableCell>
+                                    {/* Recomendação */}
+                                    <TableCell className="px-2 py-2">
+                                      <div className="flex justify-center">
+                                        {item.score?.recomendacao ? (
+                                          <RecommendationBadge 
+                                            recomendacao={item.score.recomendacao}
+                                            getRecommendationColor={getRecommendationColor}
+                                            className="text-xs"
+                                          />
+                                        ) : (
+                                          <Badge className={`${getRecommendationColor('manter')} text-xs`}>
+                                            Analisar
+                                          </Badge>
                                         )}
                                       </div>
                                     </TableCell>
-                                    <TableCell>
-                                      <div className="space-y-2">
-                                        <Badge className={getRecommendationColor(item.score?.recomendacao?.acao || 'manter')}>
-                                          {item.score?.recomendacao?.acao?.replace('_', ' ') || 'Analisar'}
-                                        </Badge>
-                                        {item.oportunidade?.principal && (
-                                          <div className="space-y-1">
-                                            <div className="text-xs text-muted-foreground max-w-40">
-                                              {item.oportunidade.principal.descricao}
-                                            </div>
-                                            <Badge variant="outline" className="text-xs">
-                                              Score: {item.oportunidade.principal.score.toFixed(1)}
-                                            </Badge>
-                                          </div>
-                                        )}
-                                        {item.score?.recomendacao?.motivo && (
-                                          <p className="text-xs text-blue-600 max-w-40 italic">
-                                            {item.score.recomendacao.motivo}
-                                          </p>
-                                        )}
+                                    {/* Total Investido */}
+                                    <TableCell className="px-2 py-2">
+                                      <div className="text-right">
+                                        <p className="text-sm font-semibold">{formatCurrency(item.valor_investido)}</p>
                                       </div>
                                     </TableCell>
-                                    <TableCell>
+                                    {/* Ações */}
+                                    <TableCell className="px-2 py-2">
                                       <Button
                                         variant="outline"
                                         size="sm"
@@ -886,7 +990,6 @@ export default function Ranking() {
                               })}
                             </TableBody>
                             </Table>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -1013,35 +1116,35 @@ export default function Ranking() {
                                 </div>
                                 
                                 {/* Informações específicas de FIIs */}
-                                {item.tipo_ativo === 'FII' && (
+                                {item.tipo === 'FII' && (
                                   <div className="pt-2 border-t space-y-2">
                                     <div className="text-xs font-medium text-gray-700">
                                       Informações do FII
                                     </div>
-                                    {item.ultimo_pagamento && (
+                                    {item.dividend_yield && (
                                       <div className="flex justify-between items-center">
-                                        <span className="text-xs text-muted-foreground">Último Pagamento</span>
+                                        <span className="text-xs text-muted-foreground">Rendimento Mensal</span>
                                         <span className="text-xs font-medium">
-                                          {formatCurrency(item.ultimo_pagamento)} ({new Date(item.data_ultimo_pagamento).toLocaleDateString('pt-BR')})
+                                          {formatCurrency(item.dividend_yield.valor_mensal_estimado || 0)}
                                         </span>
                                       </div>
                                     )}
-                                    {item.frequencia_pagamento && (
+                                    {item.dividend_yield && (
                                       <div className="flex justify-between items-center">
-                                        <span className="text-xs text-muted-foreground">Frequência</span>
-                                        <span className="text-xs font-medium">{item.frequencia_pagamento}</span>
+                                        <span className="text-xs text-muted-foreground">Yield Mensal</span>
+                                        <span className="text-xs font-medium">{item.dividend_yield.percentual_mensal?.toFixed(2)}%</span>
                                       </div>
                                     )}
-                                    {item.patrimonioLiquido && (
+                                    {item.patrimonio_liquido_estimado && (
                                       <div className="flex justify-between items-center">
                                         <span className="text-xs text-muted-foreground">Patrimônio Líquido</span>
-                                        <span className="text-xs font-medium">{formatCurrency(item.patrimonioLiquido)}</span>
+                                        <span className="text-xs font-medium">{formatCurrency(item.patrimonio_liquido_estimado)}</span>
                                       </div>
                                     )}
-                                    {item.numeroCotas && (
+                                    {item.valor_mercado_estimado && (
                                       <div className="flex justify-between items-center">
-                                        <span className="text-xs text-muted-foreground">Número de Cotas</span>
-                                        <span className="text-xs font-medium">{item.numeroCotas.toLocaleString('pt-BR')}</span>
+                                        <span className="text-xs text-muted-foreground">Valor de Mercado</span>
+                                        <span className="text-xs font-medium">{formatCurrency(item.valor_mercado_estimado)}</span>
                                       </div>
                                     )}
                                   </div>
@@ -1117,23 +1220,31 @@ export default function Ranking() {
 
                   {/* Análise de Oportunidades */}
                   <TabsContent value="oportunidades" className="mt-4 md:mt-6">
-                    <div className="space-y-6">
+                    <div className="space-y-4 md:space-y-6">
                       <div className="flex items-center space-x-2">
-                        <Target className="h-6 w-6 text-yellow-500" />
-                        <h3 className="text-xl font-semibold">Oportunidades Identificadas pela IA</h3>
+                        <Target className="h-5 w-5 md:h-6 md:w-6 text-yellow-500" />
+                        <h3 className="text-lg md:text-xl font-semibold">Oportunidades Identificadas pela IA</h3>
                       </div>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                         {analysisData.oportunidades.map((item) => (
                           <Card key={item.ticker} className="border-l-4 border-l-yellow-500 hover:shadow-lg transition-all">
-                            <CardContent className="p-6">
-                              <div className="flex items-center justify-between mb-4">
-                                <div>
-                                  <p className="text-2xl font-bold">{item.ticker}</p>
-                                  <div className="flex items-center space-x-2 mt-1">
-                                    <Badge variant="outline">{item.tipo}</Badge>
-                                    <Badge className={getRecommendationColor(item.score?.recomendacao?.acao || 'manter')}>
-                                      {item.score?.recomendacao?.acao?.replace('_', ' ') || 'Analisar'}
-                                    </Badge>
+                            <CardContent className="p-4 md:p-6">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xl md:text-2xl font-bold truncate">{item.ticker}</p>
+                                  <div className="flex flex-wrap items-center gap-1 md:gap-2 mt-2">
+                                    <Badge variant="outline" className="text-xs">{item.tipo}</Badge>
+                                    {item.score?.recomendacao ? (
+                                      <RecommendationBadge 
+                                        recomendacao={item.score.recomendacao}
+                                        getRecommendationColor={getRecommendationColor}
+                                        className="text-xs"
+                                      />
+                                    ) : (
+                                      <Badge className={`text-xs ${getRecommendationColor('manter')}`}>
+                                        Analisar
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="text-center">
@@ -1146,64 +1257,96 @@ export default function Ranking() {
                                 </div>
                               </div>
                               
-                              <div className="space-y-4">
-                                <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200">
-                                  <p className="font-medium text-yellow-800 dark:text-yellow-200 text-sm">
-                                    💡 {item.oportunidade.principal.descricao}
-                                  </p>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div className="space-y-3 md:space-y-4">
+                                {/* Métricas Principais */}
+                                <div className="grid grid-cols-2 gap-3 md:gap-4 text-sm">
                                   <div>
-                                    <p className="text-muted-foreground">Rentabilidade</p>
-                                    <p className={`font-semibold ${getVariationColor(item.rentabilidade_percentual)}`}>
+                                    <p className="text-xs md:text-sm text-muted-foreground">Rentabilidade</p>
+                                    <p className={`text-sm md:text-base font-semibold ${getVariationColor(item.rentabilidade_percentual)}`}>
                                       {item.rentabilidade_percentual.toFixed(1)}%
                                     </p>
                                   </div>
                                   <div>
-                                    <p className="text-muted-foreground">Valor Atual</p>
-                                    <p className="font-semibold">{formatCurrency(item.valor_atual)}</p>
+                                    <p className="text-xs md:text-sm text-muted-foreground">Valor Atual</p>
+                                    <p className="text-sm md:text-base font-semibold truncate">{formatCurrency(item.valor_atual)}</p>
                                   </div>
                                   <div>
-                                    <p className="text-muted-foreground">Oportunidades</p>
-                                    <p className="font-semibold">{item.oportunidade.total}</p>
+                                    <p className="text-xs md:text-sm text-muted-foreground">Oportunidades</p>
+                                    <p className="text-sm md:text-base font-semibold">{item.oportunidade.total}</p>
                                   </div>
                                   <div>
-                                    <p className="text-muted-foreground">Score Geral</p>
-                                    <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${getScoreGrade(item.score?.percentual || 0).bg} ${getScoreGrade(item.score?.percentual || 0).color}`}>
+                                    <p className="text-xs md:text-sm text-muted-foreground">Score Geral</p>
+                                    <div className={`inline-flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full text-xs font-bold ${getScoreGrade(item.score?.percentual || 0).bg} ${getScoreGrade(item.score?.percentual || 0).color}`}>
                                       {getScoreGrade(item.score?.percentual || 0).grade}
                                     </div>
                                   </div>
                                 </div>
                                 
+                                {/* Detalhamento do Score IA */}
+                                {item.score?.detalhamento && (
+                                  <div className="pt-3 border-t">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-2">Critérios de Avaliação</h4>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                      {item.score.detalhamento.oportunidade_preco && (
+                                        <div className="p-2 bg-gray-50 rounded">
+                                          <p className="text-muted-foreground">Oportunidade de Preço</p>
+                                          <p className="font-semibold">{item.score.detalhamento.oportunidade_preco.pontos} pts</p>
+                                          <p className="text-xs text-muted-foreground">{item.score.detalhamento.oportunidade_preco.nivel}</p>
+                                        </div>
+                                      )}
+                                      {item.score.detalhamento.pvp_favoravel && (
+                                        <div className="p-2 bg-gray-50 rounded">
+                                          <p className="text-muted-foreground">P/VP</p>
+                                          <p className="font-semibold">{item.score.detalhamento.pvp_favoravel.pontos} pts</p>
+                                          <p className="text-xs text-muted-foreground">P/VP: {item.score.detalhamento.pvp_favoravel.pvp}</p>
+                                        </div>
+                                      )}
+                                      {item.score.detalhamento.diversificacao_setorial && (
+                                        <div className="p-2 bg-gray-50 rounded">
+                                          <p className="text-muted-foreground">Diversificação</p>
+                                          <p className="font-semibold">{item.score.detalhamento.diversificacao_setorial.pontos} pts</p>
+                                          <p className="text-xs text-muted-foreground">{item.score.detalhamento.diversificacao_setorial.nivel}</p>
+                                        </div>
+                                      )}
+                                      {item.score.detalhamento.posicionamento_tecnico && (
+                                        <div className="p-2 bg-gray-50 rounded">
+                                          <p className="text-muted-foreground">Posição Técnica</p>
+                                          <p className="font-semibold">{item.score.detalhamento.posicionamento_tecnico.pontos} pts</p>
+                                          <p className="text-xs text-muted-foreground">{item.score.detalhamento.posicionamento_tecnico.posicao}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                
                                 {/* Tendências e Análise Técnica */}
-                                {(item.tendencias || item.dados_mercado) && (
+                                {(item.tendencia_7_dias || item.tendencia_14_dias || item.tendencia_30_dias || item.dados_mercado) && (
                                   <div className="pt-3 border-t space-y-3">
-                                    <h4 className="text-sm font-medium text-gray-700">Análise de Tendências</h4>
+                                    <h4 className="text-xs md:text-sm font-medium text-gray-700">Análise de Tendências</h4>
                                     
-                                    {item.tendencias && (
-                                      <div className="grid grid-cols-3 gap-2 text-xs">
-                                        {item.tendencias.ultimos_7_dias && (
-                                          <div className="text-center p-2 bg-gray-50 rounded">
-                                            <p className="text-muted-foreground">7 dias</p>
-                                            <p className={`font-semibold ${getVariationColor(item.tendencias.ultimos_7_dias.percentual_variacao)}`}>
-                                              {item.tendencias.ultimos_7_dias.percentual_variacao.toFixed(1)}%
+                                    {(item.tendencia_7_dias || item.tendencia_14_dias || item.tendencia_30_dias) && (
+                                      <div className="grid grid-cols-3 gap-1 md:gap-2 text-xs">
+                                        {item.tendencia_7_dias && (
+                                          <div className="text-center p-1 md:p-2 bg-gray-50 rounded">
+                                            <p className="text-muted-foreground text-xs">7d</p>
+                                            <p className={`text-xs md:text-sm font-semibold ${getVariationColor(item.tendencia_7_dias.variacao_7d)}`}>
+                                              {item.tendencia_7_dias.variacao_7d.toFixed(1)}%
                                             </p>
                                           </div>
                                         )}
-                                        {item.tendencias.ultimos_14_dias && (
-                                          <div className="text-center p-2 bg-gray-50 rounded">
-                                            <p className="text-muted-foreground">14 dias</p>
-                                            <p className={`font-semibold ${getVariationColor(item.tendencias.ultimos_14_dias.percentual_variacao)}`}>
-                                              {item.tendencias.ultimos_14_dias.percentual_variacao.toFixed(1)}%
+                                        {item.tendencia_14_dias && (
+                                          <div className="text-center p-1 md:p-2 bg-gray-50 rounded">
+                                            <p className="text-muted-foreground text-xs">14d</p>
+                                            <p className={`text-xs md:text-sm font-semibold ${getVariationColor(item.tendencia_14_dias.variacao_14d)}`}>
+                                              {item.tendencia_14_dias.variacao_14d.toFixed(1)}%
                                             </p>
                                           </div>
                                         )}
-                                        {item.tendencias.ultimos_30_dias && (
-                                          <div className="text-center p-2 bg-gray-50 rounded">
-                                            <p className="text-muted-foreground">30 dias</p>
-                                            <p className={`font-semibold ${getVariationColor(item.tendencias.ultimos_30_dias.percentual_variacao)}`}>
-                                              {item.tendencias.ultimos_30_dias.percentual_variacao.toFixed(1)}%
+                                        {item.tendencia_30_dias && (
+                                          <div className="text-center p-1 md:p-2 bg-gray-50 rounded">
+                                            <p className="text-muted-foreground text-xs">30d</p>
+                                            <p className={`text-xs md:text-sm font-semibold ${getVariationColor(item.tendencia_30_dias.variacao_30d)}`}>
+                                              {item.tendencia_30_dias.variacao_30d.toFixed(1)}%
                                             </p>
                                           </div>
                                         )}
@@ -1211,29 +1354,29 @@ export default function Ranking() {
                                     )}
                                     
                                     {item.dados_mercado && (
-                                      <div className="grid grid-cols-2 gap-3 text-xs">
+                                      <div className="grid grid-cols-2 gap-2 md:gap-3 text-xs">
                                         {item.dados_mercado.preco_minimo && (
                                           <div>
-                                            <p className="text-muted-foreground">Preço Mín. (52s)</p>
-                                            <p className="font-semibold text-red-600">{formatCurrency(item.dados_mercado.preco_minimo.valor)}</p>
+                                            <p className="text-muted-foreground text-xs">Preço Mín.</p>
+                                            <p className="text-xs md:text-sm font-semibold text-red-600 truncate">{formatCurrency(item.dados_mercado.preco_minimo.valor)}</p>
                                           </div>
                                         )}
                                         {item.dados_mercado.preco_maximo && (
                                           <div>
-                                            <p className="text-muted-foreground">Preço Máx. (52s)</p>
-                                            <p className="font-semibold text-green-600">{formatCurrency(item.dados_mercado.preco_maximo.valor)}</p>
+                                            <p className="text-muted-foreground text-xs">Preço Máx.</p>
+                                            <p className="text-xs md:text-sm font-semibold text-green-600 truncate">{formatCurrency(item.dados_mercado.preco_maximo.valor)}</p>
                                           </div>
                                         )}
                                         {item.dados_mercado.volatilidade && (
                                           <div>
-                                            <p className="text-muted-foreground">Volatilidade</p>
-                                            <p className="font-semibold">{item.dados_mercado.volatilidade.toFixed(1)}%</p>
+                                            <p className="text-muted-foreground text-xs">Volatilidade</p>
+                                            <p className="text-xs md:text-sm font-semibold">{item.dados_mercado.volatilidade.toFixed(1)}%</p>
                                           </div>
                                         )}
                                         {item.dados_mercado.volume_medio && (
                                           <div>
-                                            <p className="text-muted-foreground">Volume Médio</p>
-                                            <p className="font-semibold">{formatCurrency(item.dados_mercado.volume_medio)}</p>
+                                            <p className="text-muted-foreground text-xs">Volume</p>
+                                            <p className="text-xs md:text-sm font-semibold truncate">{formatCurrency(item.dados_mercado.volume_medio)}</p>
                                           </div>
                                         )}
                                       </div>
@@ -1241,29 +1384,6 @@ export default function Ranking() {
                                   </div>
                                 )}
 
-                                {item.score?.recomendacao?.sugestao && (
-                                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
-                                    <p className="text-blue-800 dark:text-blue-200 text-sm">
-                                      💼 <strong>Sugestão:</strong> {item.score.recomendacao.sugestao}
-                                    </p>
-                                  </div>
-                                )}
-                                
-                                {item.oportunidade.todas.slice(1).length > 0 && (
-                                  <details className="mt-3">
-                                    <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
-                                      Ver todas as oportunidades ({item.oportunidade.todas.length - 1} adicionais)
-                                    </summary>
-                                    <div className="mt-2 space-y-2">
-                                      {item.oportunidade.todas.slice(1).map((opp, idx) => (
-                                        <div key={idx} className="p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm">
-                                          <p>{opp.descricao}</p>
-                                          <p className="text-xs text-muted-foreground mt-1">Score: {opp.score.toFixed(1)}</p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </details>
-                                )}
                               </div>
                             </CardContent>
                           </Card>
@@ -1278,5 +1398,6 @@ export default function Ranking() {
         )}
       </div>
     </InvestmentPremiumGuard>
+    </TooltipProvider>
   );
 }
