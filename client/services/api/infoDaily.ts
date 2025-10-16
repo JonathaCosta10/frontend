@@ -3,7 +3,7 @@
  * Serviço para buscar dados de índices e insights de mercado
  */
 
-import { api } from "@/lib/api";
+import { api } from '@/lib/api';
 import { isDevelopment } from "@/config/development";
 
 // Helper para simular delay de API em desenvolvimento ou produção (para dados mock)

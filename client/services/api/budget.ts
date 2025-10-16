@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { api } from '@/lib/api';
 import { isDevelopment, secureLog } from "@/config/development";
 
 // Helper para simular delay de API em desenvolvimento

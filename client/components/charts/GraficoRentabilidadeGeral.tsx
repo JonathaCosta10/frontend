@@ -3,10 +3,10 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Loader2, TrendingUp, TrendingDown, Info } from "lucide-react";
 import { investmentsApi, RentabilidadeGeralResponse, EvolucaoMensal } from '@/services/api/investments';
 import { usePrivacy } from '@/contexts/PrivacyContext';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface GraficoRentabilidadeGeralProps {
   tipo?: 'linha' | 'barra';

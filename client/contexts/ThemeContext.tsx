@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { userPreferences } from '@/lib/cookies';
+import { userPreferences } from '../lib/cookies';
 
 export type Theme = 'light' | 'dark' | 'system';
 

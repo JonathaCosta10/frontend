@@ -6,7 +6,7 @@
  * listagem e exclusão de registros.
  */
 
-import { api } from "@/lib/api";
+import { api } from '@/lib/api';
 import { developmentConfig, simulateApiDelay } from "@/config/development";
 
 // ============= INTERFACES BASE =============

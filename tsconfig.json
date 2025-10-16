@@ -29,6 +29,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./client/*"],
+      "@/core/*": ["./client/core/*"],
+      "@/features/*": ["./client/features/*"],
+      "@/shared/*": ["./client/shared/*"],
+      "@/testing/*": ["./client/testing/*"],
       "@shared/*": ["./shared/*"]
     }
   },

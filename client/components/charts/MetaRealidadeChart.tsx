@@ -1,11 +1,11 @@
 import React from "react";
 import { budgetApi, DistribuicaoGastosResponse } from "@/services/api/budget";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Target, AlertTriangle, TrendingUp, TrendingDown, Eye, EyeOff } from "lucide-react";
-import { useApiData } from "@/hooks/useApiData";
-import { useTranslation } from "@/contexts/TranslationContext";
-import { usePrivacy } from "@/contexts/PrivacyContext";
+import { useApiData } from '@/shared/hooks/useApiData';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { usePrivacy } from '@/contexts/PrivacyContext';
 
 interface MetaRealidadeChartProps {
   mes: number;

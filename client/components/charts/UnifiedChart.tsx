@@ -15,7 +15,7 @@ import {
 } from 'chart.js';
 import { EyeOff } from 'lucide-react';
 import ChartContainer from './ChartContainer';
-import { useChart, UseChartOptions, ChartConfig } from '@/hooks/useChart';
+import { useChart, UseChartOptions, ChartConfig } from '@/shared/hooks/useChart';
 import { usePrivacy } from '@/contexts/PrivacyContext';
 
 // Register all Chart.js components

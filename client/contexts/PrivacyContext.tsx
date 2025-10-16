@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth } from '@/core/auth/AuthContext';
 
 interface PrivacyContextType {
   hideValues: boolean;

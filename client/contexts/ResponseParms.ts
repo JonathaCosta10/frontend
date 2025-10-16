@@ -3,8 +3,8 @@
  * Design Pattern: Logs detalhados (V1) e padrão de segurança (V2)
  */
 
-import { localStorageManager } from "../lib/localStorage";
-import { eventEmitter, EVENTS } from "../lib/eventEmitter";
+import { localStorageManager } from '@/lib/localStorage';
+import { eventEmitter, EVENTS } from '@/lib/eventEmitter';
 
 // Interface para resposta da API
 export interface ApiResponse {

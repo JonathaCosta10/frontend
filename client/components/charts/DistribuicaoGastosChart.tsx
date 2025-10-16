@@ -1,7 +1,7 @@
 import React from "react";
 import { budgetApi, DistribuicaoGastosResponse } from "@/services/api/budget";
-import { Progress } from "@/components/ui/progress";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -11,9 +11,9 @@ import {
   DoughnutController,
 } from 'chart.js';
 import { CreditCard, TrendingDown, Info, EyeOff } from "lucide-react";
-import { useBudgetCache } from "@/hooks/useApiCache";
-import { useTranslation } from "@/contexts/TranslationContext";
-import { usePrivacy } from "@/contexts/PrivacyContext";
+import { useBudgetCache } from '@/shared/hooks/useApiCache';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { usePrivacy } from '@/contexts/PrivacyContext';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, ChartTooltip, Legend, DoughnutController);

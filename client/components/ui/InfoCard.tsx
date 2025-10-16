@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Info, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn  } from '@/lib/utils';
 import { getVariationColor } from '@/utils/fii-formatters';
 
 interface InfoCardProps {

@@ -1,6 +1,6 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { useTranslation } from "@/contexts/TranslationContext";
+import { Card, CardContent } from '@/components/ui/card';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { formatPercentage } from "@/utils/formatters";
 

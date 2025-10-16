@@ -3,7 +3,7 @@
  * Design Pattern: Centralização de headers por tipo de página/requisição
  */
 
-import { createHeaders, shouldIncludeApiKey, getApiKey } from "@/lib/apiKeyUtils";
+import { createHeaders, shouldIncludeApiKey, getApiKey } from '@/lib/apiKeyUtils';
 
 export interface HeaderModel {
   [key: string]: string;

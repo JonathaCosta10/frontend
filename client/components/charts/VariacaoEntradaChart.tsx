@@ -1,6 +1,6 @@
 import React from "react";
 import { budgetApi, VariacaoEntrada } from "@/services/api/budget";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -14,9 +14,9 @@ import {
   Filler,
 } from 'chart.js';
 import { TrendingUp, TrendingDown, DollarSign, EyeOff } from "lucide-react";
-import { useBudgetCache } from "@/hooks/useApiCache";
-import { useTranslation } from "@/contexts/TranslationContext";
-import { usePrivacy } from "@/contexts/PrivacyContext";
+import { useBudgetCache } from '@/shared/hooks/useApiCache';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { usePrivacy } from '@/contexts/PrivacyContext';
 
 // Register Chart.js components
 ChartJS.register(

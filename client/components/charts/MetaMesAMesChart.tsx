@@ -1,7 +1,7 @@
 import React from "react";
 import UnifiedChart from "./UnifiedChart";
-import { chartConfigs } from "@/hooks/useChart";
-import { useLocale } from "@/hooks/useLocale";
+import { chartConfigs } from '@/shared/hooks/useChart';
+import { useLocale } from '@/shared/hooks/useLocale';
 
 interface MetaMesAMesChartProps {
   mes: number;

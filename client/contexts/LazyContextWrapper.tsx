@@ -4,9 +4,9 @@
 
 import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as Sonner } from '@/components/ui/sonner';
 
 // Lazy contexts
 const AuthProvider = React.lazy(() => 

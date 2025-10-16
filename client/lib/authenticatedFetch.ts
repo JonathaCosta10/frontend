@@ -4,8 +4,8 @@
  * o erro "Token malformado: faltam campos session_id, device_fingerprint"
  */
 
-import { localStorageManager } from "@/lib/localStorage";
-import { createHeaders } from "@/lib/apiKeyUtils";
+import { localStorageManager } from '@/lib/localStorage';
+import { createHeaders } from '@/lib/apiKeyUtils';
 
 interface AuthenticatedFetchOptions extends RequestInit {
   includeAuth?: boolean;

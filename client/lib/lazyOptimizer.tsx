@@ -83,9 +83,9 @@ export const withOptimizedLazy = <T extends ComponentType<any>>(
 export const preloadCriticalRoutes = () => {
   // Preload das rotas mais acessadas após um delay
   setTimeout(() => {
-    import("../pages/sistema/dashboard/orcamento/index").catch(() => {});
-    import("../pages/sistema/dashboard/investimentos/index").catch(() => {});
-    import("../pages/sistema/dashboard/mercado/index").catch(() => {});
+    import("@/features/budget/pages/orcamento/index").catch(() => {});
+    import("@/features/investments/pages/investimentos/index").catch(() => {});
+    import("@/features/market/pages/mercado/index").catch(() => {});
   }, 2000);
 };
 

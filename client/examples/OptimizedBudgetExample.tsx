@@ -15,9 +15,9 @@
  */
 
 import React from 'react';
-import { useBudgetData } from '../hooks/useBudgetData';
-import { useTutorialManager } from '../hooks/useTutorialManager';
-import BudgetLayout from '../components/BudgetLayout';
+import { useBudgetData } from '@/shared/hooks/useBudgetData';
+import { useTutorialManager } from '@/shared/hooks/useTutorialManager';
+import BudgetLayout from '@/features/budget/components/BudgetLayout';
 
 // Exemplo de página de orçamento otimizada
 export default function OptimizedBudgetPage() {

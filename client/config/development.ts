@@ -7,7 +7,7 @@
  */
 
 // Importar configuração centralizada
-import { config, UrlBuilder } from '../../environments/config';
+import { config, UrlBuilder } from '../../config/environments/config';
 
 // Re-exportar detecções de ambiente usando o sistema central e detecção de URL
 export const isDevelopment = config.mode === 'development' && 

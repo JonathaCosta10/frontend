@@ -1,6 +1,6 @@
 import { getHeaders, HeaderModel } from "./Headers";
 import { getRoute } from "./Rotas";
-import { localStorageManager } from "../lib/localStorage";
+import { localStorageManager } from '@/lib/localStorage';
 import { responseParms, ApiResponse } from "./ResponseParms";
 
 interface RequestData {

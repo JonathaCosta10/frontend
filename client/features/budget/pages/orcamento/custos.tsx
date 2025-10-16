@@ -1,0 +1,641 @@
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Plus,
+  TrendingDown,
+  AlertCircle,
+  Home,
+  Car,
+  DollarSign,
+  Waves,
+  GraduationCap,
+  Coffee,
+  Trash2,
+  Target,
+  Bell,
+  EyeOff,
+} from "lucide-react";
+import { useAuth } from "@/core/auth/AuthContext";
+import { useTranslation } from '../../../../contexts/TranslationContext';
+import { usePrivacy } from '../../../../contexts/PrivacyContext';
+import { budgetApi } from "@/services/api/budget";
+import { useToast } from '@/components/ui/use-toast';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useMonthYear } from '@/shared/hooks/useMonthYear';
+
+interface Custo {
+  id: number;
+  descricao: string;
+  valor_mensal: number;
+  categoria: string;
+  flag: boolean;
+  mes: number;
+  ano: number;
+}
+
+interface TotalPorCategoria {
+  categoria: string;
+  total: number;
+  percentual: number;
+}
+
+interface ResumoGastos {
+  total_gastos: number;
+  total_com_replicacao: number;
+  total_sem_replicacao: number;
+  periodo: {
+    mes: string;
+    ano: string;
+  };
+}
+
+interface FormData {
+  descricao: string;
+  valor_mensal: string;
+}
+
+// Cores para o gráfico de pizza - paleta mais vibrante e variada para custos
+const COLORS = [
+  "#dc2626", // vermelho
+  "#2563eb", // azul
+  "#ea580c", // laranja
+  "#16a34a", // verde
+  "#9333ea", // roxo
+  "#0891b2", // ciano
+  "#ca8a04", // amarelo
+  "#db2777", // rosa
+];
+
+export default function Custos() {
+  const { isAuthenticated } = useAuth();
+  const { t, formatCurrency } = useTranslation();
+  const { formatValue, shouldHideCharts } = usePrivacy();
+  const { toast } = useToast();
+  const [custos, setCustos] = useState<Custo[]>([]);
+  const [totaisPorCategoria, setTotaisPorCategoria] = useState<TotalPorCategoria[]>([]);
+  const [resumoGastos, setResumoGastos] = useState<ResumoGastos | null>(null);
+  const [currentCategoria, setCurrentCategoria] = useState("Custo Fixo");
+  const [formData, setFormData] = useState<FormData>({
+    descricao: "",
+    valor_mensal: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const { mes, ano } = useMonthYear();
+
+  // Função para preparar dados do gráfico
+  const prepararDadosGrafico = () => {
+    if (!totaisPorCategoria || totaisPorCategoria.length === 0) {
+      return [];
+    }
+
+    const total = totaisPorCategoria.reduce((sum, item) => sum + item.total, 0);
+    
+    return totaisPorCategoria.map((item, index) => ({
+      name: getCategoriaLabel(item.categoria),
+      value: item.total,
+      percentage: ((item.total / total) * 100).toFixed(2),
+      color: COLORS[index % COLORS.length],
+    }));
+  };
+
+  // Mês e ano são obtidos do hook useMonthYear
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      atualizarCustos();
+    }
+  }, [currentCategoria, mes, ano, isAuthenticated]);
+
+  // Função para atualizar os custos via API
+  const atualizarCustos = async () => {
+    setLoading(true);
+
+    try {
+      const response = await budgetApi.getMaioresGastos(
+        currentCategoria,
+        mes,
+        ano,
+      );
+      setCustos(response.maiores_gastos || []);
+      setTotaisPorCategoria(response.totais_por_categoria || []);
+      setResumoGastos(response.resumo || null);
+    } catch (error) {
+      console.error("Erro ao obter os maiores custos:", error);
+      setCustos([]);
+      setTotaisPorCategoria([]);
+      setResumoGastos(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para cadastrar um custo
+  const cadastrarCusto = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Erro",
+        description: t("authentication_required_cost"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.descricao || !formData.valor_mensal) {
+      toast({
+        title: "Erro",
+        description: t("fill_description_monthly_value"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const data = {
+      categoria: currentCategoria,
+      descricao: formData.descricao,
+      valor_mensal: parseFloat(formData.valor_mensal),
+      flag: false,
+      mes: parseInt(mes),
+      ano: parseInt(ano),
+    };
+
+    try {
+      await budgetApi.cadastrarGasto(data);
+      toast({
+        title: "Sucesso!",
+        description: "Custo cadastrado com sucesso.",
+        variant: "default",
+        duration: 3000,
+      });
+      setFormData({
+        descricao: "",
+        valor_mensal: "",
+      });
+      atualizarCustos();
+    } catch (error) {
+      console.error("Erro ao cadastrar custo:", error);
+      toast({
+        title: "Erro",
+        description: t("cost_registration_error"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Função para excluir um custo
+  const excluirCusto = async (id: number) => {
+    if (window.confirm(t("confirm_delete_cost"))) {
+      try {
+        await budgetApi.excluirGasto(id);
+        atualizarCustos();
+        toast({
+          title: "Sucesso!",
+          description: "Custo excluído com sucesso.",
+          variant: "default",
+          duration: 3000,
+        });
+      } catch (error) {
+        console.error("Erro ao excluir custo:", error);
+        toast({
+          title: "Erro",
+          description: t("cost_deletion_error"),
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  // Função para atualizar flag de repetição
+  const atualizarFlagCusto = async (id: number, novaFlag: boolean) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Erro",
+        description: t("authentication_required"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const dadosAtualizados = {
+      flag: novaFlag,
+    };
+
+    try {
+      await budgetApi.atualizarFlagCusto(id, dadosAtualizados);
+      atualizarCustos();
+    } catch (error) {
+      console.error("Erro ao atualizar flag do custo:", error);
+      toast({
+        title: "Erro",
+        description: `${t("flag_update_error")}: ${error.response?.data?.detail || t("unexpected_error")}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Função para limpar o formulário
+  const limparFormulario = () => {
+    setFormData({
+      descricao: "",
+      valor_mensal: "",
+    });
+  };
+
+  // Função para repetir o último valor
+  const repetirUltimoValor = () => {
+    if (custos.length > 0) {
+      const ultimoCusto = custos[custos.length - 1];
+      setFormData({
+        ...formData,
+        valor_mensal: ultimoCusto.valor_mensal.toString(),
+      });
+    }
+  };
+
+  // Função para mostrar o formulário de uma categoria específica
+  const showForm = (categoria: string) => {
+    setCurrentCategoria(categoria);
+    limparFormulario();
+  };
+
+  // Função para formatar valores monetários
+  const formatarValor = (valor: number) => {
+    return formatValue(valor);
+  };
+
+  // Função para obter o ícone da categoria
+  const getCategoriaIcon = (categoria: string) => {
+    switch (categoria) {
+      case "Custo Fixo":
+        return <Home className="h-4 w-4" />;
+      case "Conforto":
+        return <Waves className="h-4 w-4" />;
+      case "Metas":
+        return <Car className="h-4 w-4" />;
+      case "Prazeres":
+        return <Coffee className="h-4 w-4" />;
+      case "Liberdade Financeira":
+        return <DollarSign className="h-4 w-4" />;
+      case "Conhecimento":
+        return <GraduationCap className="h-4 w-4" />;
+      default:
+        return <Home className="h-4 w-4" />;
+    }
+  };
+
+  // Função para obter o label da categoria
+  const getCategoriaLabel = (categoria: string) => {
+    switch (categoria) {
+      case "Custo Fixo":
+        return t("fixed_cost");
+      case "Conforto":
+        return t("comfort");
+      case "Metas":
+        return t("goals");
+      case "Prazeres":
+        return t("pleasures");
+      case "Liberdade Financeira":
+        return t("freedom");
+      case "Conhecimento":
+        return t("knowledge");
+      default:
+        return categoria;
+    }
+  };
+
+  // Calcular totais usando os dados do resumo da API
+  const totalCustos = resumoGastos?.total_gastos || 0;
+  const totalFixos = resumoGastos?.total_com_replicacao || 0;
+  const totalVariaveis = resumoGastos?.total_sem_replicacao || 0;
+  const activeCosts = totaisPorCategoria.length;
+
+  return (
+    <div className="space-y-6">
+      {/* Cards de Resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t("total_costs")}
+            </CardTitle>
+            <TrendingDown className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">
+              {formatarValor(totalCustos)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {activeCosts} {t("active_costs")}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t("fixed_costs")}
+            </CardTitle>
+            <AlertCircle className="h-4 w-4 text-warning" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatarValor(totalFixos)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("monthly_commitment")}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t("variable_costs")}
+            </CardTitle>
+            <Waves className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {formatarValor(totalVariaveis)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("flexible_expenses")}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t("current_category")}
+            </CardTitle>
+            {getCategoriaIcon(currentCategoria)}
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold">
+              {getCategoriaLabel(currentCategoria)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("active_filter")}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabela de Custos */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <TrendingDown className="h-5 w-5" />
+            <span>
+              {t("costs")} - {getCategoriaLabel(currentCategoria)}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("description")}</TableHead>
+                <TableHead>{t("monthly_value")}</TableHead>
+                <TableHead className="text-center">{t("fixed")}</TableHead>
+                <TableHead>{t("actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">
+                    <div className="py-8">
+                      <p className="text-muted-foreground">
+                        {t("loading_costs")}
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : custos.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">
+                    <div className="py-8">
+                      <p className="text-destructive">
+                        {t("no_costs_registered_for_user")}
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                custos.map((custo) => (
+                  <TableRow key={custo.id}>
+                    <TableCell className="font-medium">
+                      {custo.descricao}
+                    </TableCell>
+                    <TableCell className="text-destructive font-semibold">
+                      {formatarValor(custo.valor_mensal)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => atualizarFlagCusto(custo.id, !custo.flag)}
+                          className={`p-2 transition-colors ${
+                            custo.flag 
+                              ? "text-red-600 hover:text-red-700" 
+                              : "text-gray-400 hover:text-red-500"
+                          }`}
+                          title={custo.flag ? t("fixed") : t("variable")}
+                        >
+                          <Bell
+                            className={`h-5 w-5 ${custo.flag ? "fill-current" : ""}`}
+                          />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => excluirCusto(custo.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Layout lado a lado: Gráfico à esquerda e Cadastro à direita */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Seção do Gráfico */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Target className="h-5 w-5 text-red-600" />
+              <span>{t("distribution_by_category")}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {shouldHideCharts() ? (
+              <div className="h-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <div className="text-center space-y-2">
+                  <EyeOff className="h-8 w-8 text-gray-400 mx-auto" />
+                  <p className="text-gray-500 text-sm">Gráfico oculto</p>
+                </div>
+              </div>
+            ) : totaisPorCategoria && totaisPorCategoria.length > 0 ? (
+              <div className="w-full h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={prepararDadosGrafico()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percentage }) => `${name}: ${percentage}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {prepararDadosGrafico().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: any) => [shouldHideCharts() ? 'R$ ****' : formatCurrency(value), 'Valor']}
+                      labelFormatter={(label) => `Categoria: ${label}`}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
+                <p>Nenhum dado disponível para exibir o gráfico</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Seção de Cadastro */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              {getCategoriaIcon(currentCategoria)}
+              <span>
+                {t("register_new_cost")}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Botões de Categoria */}
+            <div className="flex justify-center flex-wrap gap-1">
+              {[
+                { key: "Custo Fixo", icon: Home, label: t("fixed_cost") },
+                { key: "Conforto", icon: Waves, label: t("comfort") },
+                { key: "Metas", icon: Car, label: t("goals") },
+                { key: "Prazeres", icon: Coffee, label: t("pleasures") },
+                {
+                  key: "Liberdade Financeira",
+                  icon: DollarSign,
+                  label: t("freedom"),
+                },
+                {
+                  key: "Conhecimento",
+                  icon: GraduationCap,
+                  label: t("knowledge"),
+                },
+              ].map(({ key, icon: Icon, label }) => (
+                <Button
+                  key={key}
+                  variant={currentCategoria === key ? "default" : "outline"}
+                  onClick={() => showForm(key)}
+                  className="flex items-center space-x-1 text-xs px-2 py-1"
+                  size="sm"
+                >
+                  <Icon className="h-3 w-3" />
+                  <span className="hidden sm:inline">{label}</span>
+                </Button>
+              ))}
+            </div>
+
+            {/* Formulário Compacto */}
+            <div className="space-y-2">
+              <div>
+                <Label htmlFor="descricao" className="text-xs">{t("description")} *</Label>
+                <Input
+                  id="descricao"
+                  value={formData.descricao}
+                  onChange={(e) =>
+                    setFormData({ ...formData, descricao: e.target.value })
+                  }
+                  placeholder={t("cost_description_placeholder")}
+                  className="h-8"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="valor_mensal" className="text-xs">{t("monthly_value")} *</Label>
+                <Input
+                  id="valor_mensal"
+                  type="number"
+                  value={formData.valor_mensal}
+                  onChange={(e) =>
+                    setFormData({ ...formData, valor_mensal: e.target.value })
+                  }
+                  placeholder="450.00"
+                  className="h-8"
+                />
+              </div>
+            </div>
+
+            {/* Botões de Ação */}
+            <div className="flex space-x-2">
+              <Button
+                onClick={cadastrarCusto}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-700 text-white h-8 text-sm"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Cadastrar
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={repetirUltimoValor}
+                size="sm"
+                className="text-xs px-2 py-1"
+                disabled={custos.length === 0}
+              >
+                Repetir Último
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={limparFormulario}
+                size="sm"
+                className="text-xs px-2 py-1"
+              >
+                {t("clear")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

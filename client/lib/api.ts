@@ -694,7 +694,7 @@ export class ApiService {
         }
 
         // Processar resposta completa através do ResponseParms
-        const { responseParms } = await import('../contexts/ResponseParms');
+        const { responseParms } = await import('@/contexts/ResponseParms');
         console.log("🔄 Processando refresh token através do ResponseParms");
         
         // Simular estrutura de resposta da API para processamento

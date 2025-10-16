@@ -7,15 +7,18 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { TranslationProvider } from "./contexts/TranslationContext";
-import { PrivacyProvider } from "./contexts/PrivacyContext";
-import { ThemeProvider } from "./contexts/ThemeContext";
+import { AuthProvider } from "@/core/auth/AuthContext";
+import { TranslationProvider } from './contexts/TranslationContext';
+import { PrivacyProvider } from './contexts/PrivacyContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import ProtectedRoute from "@/core/auth/guards/ProtectedRoute";
+import { OptimizedSuspense, withOptimizedLazy } from "@/core/performance/components/OptimizedSuspense";
+
 // TODO: Implementar LazyContextProviders para reduzir entry chunk
-// import { LazyContextProviders } from "./contexts/LazyContexts";
-import ProtectedRoute from "./components/ProtectedRoute";
-const DashboardLayout = withOptimizedLazy(() => import("./components/DashboardLayout"), { preload: true });
-import { OptimizedSuspense, withOptimizedLazy } from "./components/OptimizedSuspense";
+// import { LazyContextProviders } from './contexts/LazyContexts';
+
+// Dashboard Layout
+const DashboardLayout = withOptimizedLazy(() => import("@/features/dashboard/components/DashboardLayout"), { preload: true });
 
 // Loading component optimizado
 const LoadingSpinner = React.memo(() => (
@@ -26,82 +29,118 @@ const LoadingSpinner = React.memo(() => (
 LoadingSpinner.displayName = "LoadingSpinner";
 
 // Public Pages - Convert all to lazy loading to reduce entry chunk
-const Index = withOptimizedLazy(() => import("./pages/HomePublicPages/Index"), { preload: true });
-const Home = withOptimizedLazy(() => import("./pages/HomePublicPages/Home"));
-const Demo = withOptimizedLazy(() => import("./pages/HomePublicPages/Demo"));
-const PublicMarket = withOptimizedLazy(() => import("./pages/HomePublicPages/PublicMarket"));
-const MarketPage = withOptimizedLazy(() => import("./pages/MarketPage"));
-const PublicMarketPage = withOptimizedLazy(() => import("./pages/HomePublicPages/Market"));
-const CriptoMarket = withOptimizedLazy(() => import("./pages/HomePublicPages/CriptoMarket"));
-const LoginRequired = withOptimizedLazy(() => import("./pages/HomePublicPages/LoginRequired"));
-const Whitepaper = withOptimizedLazy(() => import("./pages/HomePublicPages/Documents/Whitepaper"));
-const About = withOptimizedLazy(() => import("./pages/HomePublicPages/About"));
-const PrivacyPolicy = withOptimizedLazy(() => import("./pages/HomePublicPages/PrivacyPolicy"));
-const Terms = withOptimizedLazy(() => import("./pages/HomePublicPages/Terms"));
-const Login = withOptimizedLazy(() => import("./pages/HomePublicPages/Login"), { preload: true });
-const Signup = withOptimizedLazy(() => import("./pages/HomePublicPages/Signup"), { preload: true });
-const ForgotPassword = withOptimizedLazy(() => import("./pages/HomePublicPages/ForgotPassword"));
-const PasswordResetSent = withOptimizedLazy(() => import("./pages/HomePublicPages/PasswordResetSent"));
-const VerifyResetCode = withOptimizedLazy(() => import("./pages/HomePublicPages/VerifyResetCode"));
-const ResetPassword = withOptimizedLazy(() => import("./pages/HomePublicPages/ResetPassword"));
+const Index = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/Index"), { preload: true });
+const Home = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/Home"));
+const Demo = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/Demo"));
+const PublicMarket = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/PublicMarket"));
+const MarketPage = withOptimizedLazy(() => import("@/features/market/pages/MarketPage"));
+const PublicMarketPage = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/Market"));
+const CriptoMarket = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/CriptoMarket"));
+const LoginRequired = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/LoginRequired"));
+const Whitepaper = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/Documents/Whitepaper"));
+const About = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/About"));
+const PrivacyPolicy = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/PrivacyPolicy"));
+const Terms = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/Terms"));
+const Login = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/Login"), { preload: true });
+const Signup = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/Signup"), { preload: true });
+const ForgotPassword = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/ForgotPassword"));
+const PasswordResetSent = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/PasswordResetSent"));
+const VerifyResetCode = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/VerifyResetCode"));
+const ResetPassword = withOptimizedLazy(() => import("@/features/public/pages/HomePublicPages/ResetPassword"));
 
 // Error Pages - also convert to lazy
-const NotFound = withOptimizedLazy(() => import("./pages/ErrosTratamento/NotFound"));
-const AuthenticationError = withOptimizedLazy(() => import("./pages/ErrosTratamento/AuthenticationError"));
-const LoginError = withOptimizedLazy(() => import("./pages/ErrosTratamento/LoginError"));
+const NotFound = withOptimizedLazy(() => import("@/features/errors/pages/ErrosTratamento/NotFound"));
+const AuthenticationError = withOptimizedLazy(() => import("@/features/errors/pages/ErrosTratamento/AuthenticationError"));
+const LoginError = withOptimizedLazy(() => import("@/features/errors/pages/ErrosTratamento/LoginError"));
 
 // Auth Pages - also convert to lazy
-const TwoFactorEmailSetup = withOptimizedLazy(() => import("./pages/PagesAuth/TwoFactorEmailSetup"));
-const Pagamento = withOptimizedLazy(() => import("./pages/Pagamento"));
+const TwoFactorEmailSetup = withOptimizedLazy(() => import("@/core/auth/pages/TwoFactorEmailSetup"));
+
+// Orcamento Pages - Budget Feature
+const BudgetCustos = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/custos"), { preload: true });
+const BudgetEntradas = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/entradas"), { preload: true });
+const BudgetDividas = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/dividas"));
+const BudgetMetas = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/metas"));
+const BudgetIndex = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/index"));
+
+// Investimentos Pages - Investment Feature  
+const InvestmentIndex = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/index"), { preload: true });
+const InvestmentCadastro = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/cadastro"));
+const InvestmentPatrimonio = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/patrimonio"));
+const InvestmentComparativos = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/comparativos"));
+const InvestmentRanking = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/ranking"));
+
+// Crypto Pages - Crypto Feature
+const CryptoIndex = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/index"));
+const CryptoCadastro = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/cadastro"));
+const CryptoPortfolio = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/portfolio"));
+const CryptoMercado = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/mercado"));
+const CryptoDashboard = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/DashboardCripto"));
+const CriptoAnalise = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/AnaliseCripto"));
+
+// Market Pages - Market Feature
+const MercadoIndex = withOptimizedLazy(() => import("@/features/market/pages/mercado/index"));
+const MercadoCalculadora = withOptimizedLazy(() => import("@/features/market/pages/mercado/calculadora-financeira"));
+const MercadoIndicadores = withOptimizedLazy(() => import("@/features/market/pages/mercado/indicadores-economicos"));
+const MercadoListaDesejo = withOptimizedLazy(() => import("@/features/market/pages/mercado/lista-de-desejo"));
+
+// Training Pages - Dashboard Feature
+const Training = withOptimizedLazy(() => import("@/features/dashboard/pages/treinamentos/Training"));
+const FundosInvestimentos = withOptimizedLazy(() => import("@/features/dashboard/pages/treinamentos/fundos-investimentos"));
+const RendaFixa = withOptimizedLazy(() => import("@/features/dashboard/pages/treinamentos/renda-fixa"));
+const Acoes = withOptimizedLazy(() => import("@/features/dashboard/pages/treinamentos/acoes"));
+const Macroeconomia = withOptimizedLazy(() => import("@/features/dashboard/pages/treinamentos/macroeconomia"));
+
+// Dashboard Pages - Dashboard Feature
+const InfoDiaria = withOptimizedLazy(() => import("@/features/dashboard/pages/info-diaria"), { retryAttempts: 2 });
+const Perfil = withOptimizedLazy(() => import("@/features/dashboard/pages/perfil"));
+const Configuracoes = withOptimizedLazy(() => import("@/features/dashboard/pages/configuracoes"));
+const Suporte = withOptimizedLazy(() => import("@/features/dashboard/pages/suporte"));
+const RiskAssessment = withOptimizedLazy(() => import("@/features/dashboard/pages/risk-assessment"));
+const ChangePassword = withOptimizedLazy(() => import("@/features/dashboard/pages/change-password"));
+const PaymentOptions = withOptimizedLazy(() => import("@/features/dashboard/pages/payment-options"));
+
+// Payment Page - Payments Feature
+const Pagamento = withOptimizedLazy(() => import("@/features/payments/pages/Pagamento"));
+
+// Profile Pages - Profile Feature
+const DadosPessoais = withOptimizedLazy(() => import("@/features/profile/pages/DadosPessoais/Configuracoes"));
+
+// Auth Components
+const AuthCallback = withOptimizedLazy(() => import('@/core/auth/components/AuthCallback'));
 
 // Lazy loaded system pages - Budget (com preload)
-const Budget = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/Budget"), { preload: true });
-const BudgetOverview = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/index"));
-const Entradas = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/entradas"));
-const Custos = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/custos"));
-const Dividas = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/dividas"));
-const Metas = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/metas"));
+const Budget = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/Budget"), { preload: true });
+const BudgetOverview = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/index"));
+const Entradas = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/entradas"));
+const Custos = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/custos"));
+const Dividas = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/dividas"));
+const Metas = withOptimizedLazy(() => import("@/features/budget/pages/orcamento/metas"));
 
 // Lazy loaded system pages - Investments (com preload para Investment principal)
-const Investment = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/Investment"), { preload: true });
-const Investimentos = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/index"));
-const Comparativos = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/comparativos"));
-const Cadastro = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/cadastro"));
-const Ranking = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/ranking"));
-const Patrimonio = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/patrimonio"));
+const Investment = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/Investment"), { preload: true });
+const Investimentos = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/index"));
+const Comparativos = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/comparativos"));
+const Cadastro = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/cadastro"));
+const Ranking = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/ranking"));
+const Patrimonio = withOptimizedLazy(() => import("@/features/investments/pages/investimentos/patrimonio"));
 
 // Lazy loaded system pages - Market (sem preload - usuário precisa navegar primeiro)
-const Market = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/Market"));
-const FIIMarket = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/page"));
-const IndicadoresEconomicos = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
-const ListaDeDesejo = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
-const AnaliseTicker = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
-const AnaliseAcoesCompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-acoes-completa"));
-const AnaliseFIICompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-fii-completa"));
-const CalculadoraFinanceira = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
+const Market = withOptimizedLazy(() => import("@/features/market/pages/mercado/Market"));
+const FIIMarket = withOptimizedLazy(() => import("@/features/market/pages/mercado/page"));
+const IndicadoresEconomicos = withOptimizedLazy(() => import("@/features/market/pages/mercado/indicadores-economicos"));
+const ListaDeDesejo = withOptimizedLazy(() => import("@/features/market/pages/mercado/lista-de-desejo"));
+const AnaliseTicker = withOptimizedLazy(() => import("@/features/market/pages/mercado/analise-ticker"));
+const AnaliseAcoesCompleta = withOptimizedLazy(() => import("@/features/market/pages/mercado/analise-acoes-completa"));
+const AnaliseFIICompleta = withOptimizedLazy(() => import("@/features/market/pages/mercado/analise-fii-completa"));
+const CalculadoraFinanceira = withOptimizedLazy(() => import("@/features/market/pages/mercado/calculadora-financeira"));
 
 // Lazy loaded system pages - Crypto (sem preload)
-const DashboardCripto = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/DashboardCripto"));
-const CriptoDashboard = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/index"));
-const MercadoCripto = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/mercado"));
-const CriptoPortfolio = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/portfolio"));
-const CriptoCadastro = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/cadastro"));
-
-// Lazy loaded system pages - Training (sem preload)
-const Training = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/Training"));
-const FundosInvestimentos = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/fundos-investimentos"));
-const RendaFixa = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/renda-fixa"));
-const Acoes = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/acoes"));
-const Macroeconomia = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/macroeconomia"));
-
-// Lazy loaded special pages (com retry)
-const InfoDiaria = withOptimizedLazy(() => import("./pages/sistema/dashboard/info-diaria"), { retryAttempts: 2 });
-const Perfil = withOptimizedLazy(() => import("./pages/sistema/dashboard/perfil"));
-const Configuracoes = withOptimizedLazy(() => import("./pages/sistema/dashboard/configuracoes"));
-const Suporte = withOptimizedLazy(() => import("./pages/sistema/dashboard/suporte"));
-const RiskAssessment = withOptimizedLazy(() => import("./pages/sistema/dashboard/risk-assessment"));
-const ChangePassword = withOptimizedLazy(() => import("./pages/sistema/dashboard/change-password"));
-const PaymentOptions = withOptimizedLazy(() => import("./pages/sistema/dashboard/payment-options"));
+const DashboardCripto = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/DashboardCripto"));
+const CriptoDashboard = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/index"));
+const MercadoCripto = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/mercado"));
+const CriptoPortfolio = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/portfolio"));
+const CriptoCadastro = withOptimizedLazy(() => import("@/features/crypto/pages/cripto/cadastro"));
 
 // QueryClient com configurações otimizadas
 const queryClient = new QueryClient({
@@ -114,9 +153,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-// Lazy-load AuthCallback component
-const AuthCallback = withOptimizedLazy(() => import('./components/AuthCallback'));
 
 function App() {
   return (

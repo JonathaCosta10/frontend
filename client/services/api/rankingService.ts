@@ -3,8 +3,8 @@
  * Integração com a API /api/investimentos/ranking
  */
 
-import { localStorageManager } from "@/lib/localStorage";
-import { createHeaders } from "@/lib/apiKeyUtils";
+import { localStorageManager } from '@/lib/localStorage';
+import { createHeaders } from '@/lib/apiKeyUtils';
 
 // Base URL da API
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
