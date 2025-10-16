@@ -126,13 +126,9 @@ export class OAuthService {
       }
     }
     
-    // Bypass temporário para desenvolvimento/depuração - REMOVER EM PRODUÇÃO
-    if (import.meta.env.DEV && state && state.startsWith("oauth_oauth_")) {
-      console.warn("⚠️ BYPASS DE ESTADO PARA DESENVOLVIMENTO - Remover em produção!");
-      sessionStorage.removeItem("oauth_state");
-      sessionStorage.removeItem("oauth_base_state");
-      return true;
-    }
+    // 🚨 BYPASS REMOVIDO POR SEGURANÇA
+    // O bypass de desenvolvimento foi removido para prevenir vulnerabilidades em produção
+    // Estados OAuth devem sempre ser validados corretamente
     
     // Estado inválido
     console.error("❌ Estado OAuth inválido:", { storedState, baseState, receivedState: state });

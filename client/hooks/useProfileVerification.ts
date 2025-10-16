@@ -22,16 +22,33 @@ interface ProfileVerificationResult {
   refreshProfile: () => Promise<void>;
 }
 
-// Cache global para evitar múltiplas chamadas simultâneas
-let globalProfileData: UserProfile | null = null;
-let globalPremiumStatus: boolean | null = null;
-let lastProfileFetch = 0;
+// 🔒 CORREÇÃO DE SEGURANÇA: Cache isolado por usuário para prevenir contaminação entre sessões
+const userProfileCache = new Map<string, {
+  data: UserProfile;
+  premiumStatus: boolean;
+  timestamp: number;
+}>();
+
 let isCurrentlyFetching = false;
 const PROFILE_CACHE_TTL = 60000; // 1 minuto para reduzir requisições
 
+// Função para limpar cache de usuário específico
+const clearUserCache = (userId: string) => {
+  userProfileCache.delete(userId);
+};
+
+// Função para obter dados do cache do usuário atual
+const getUserCacheData = (userId: string) => {
+  const cached = userProfileCache.get(userId);
+  if (cached && Date.now() - cached.timestamp < PROFILE_CACHE_TTL) {
+    return cached;
+  }
+  return null;
+};
+
 export const useProfileVerification = (): ProfileVerificationResult => {
   const { user: authUser } = useAuth();
-  const [user, setUser] = useState<UserProfile | null>(globalProfileData);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
@@ -43,16 +60,20 @@ export const useProfileVerification = (): ProfileVerificationResult => {
       return null;
     }
 
+    // 🔒 SEGURANÇA: Verificar cache específico do usuário
+    const userId = authUser.id || authUser.email;
+    const cachedData = getUserCacheData(userId);
+    
     // Evitar múltiplas requisições simultâneas
     if (isCurrentlyFetching && !force) {
       console.log('⏳ [PROFILE] Requisição já em andamento, aguardando...');
-      return globalProfileData;
+      return cachedData?.data || null;
     }
 
     // Verificar cache se não forçado
-    if (!force && globalProfileData && Date.now() - lastProfileFetch < PROFILE_CACHE_TTL) {
-      console.log('📦 [PROFILE] Cache global válido, usando dados existentes');
-      return globalProfileData;
+    if (!force && cachedData) {
+      console.log('📦 [PROFILE] Cache do usuário válido, usando dados existentes');
+      return cachedData.data;
     }
 
     try {
@@ -82,9 +103,12 @@ export const useProfileVerification = (): ProfileVerificationResult => {
       };
 
       // Atualizar cache global e localStorage
-      globalProfileData = profile;
-      globalPremiumStatus = profile.premium;
-      lastProfileFetch = Date.now();
+      const userId = authUser.id || authUser.email;
+      userProfileCache.set(userId, {
+        data: profile,
+        premiumStatus: profile.premium,
+        timestamp: Date.now()
+      });
       
       localStorage.setItem('user', JSON.stringify(profile));
       localStorageManager.set("isPaidUser", profile.premium);
@@ -106,9 +130,12 @@ export const useProfileVerification = (): ProfileVerificationResult => {
           const localUser = JSON.parse(localUserData);
           console.log('🛟 [PROFILE] Usando dados do localStorage como fallback');
           
-          globalProfileData = localUser;
-          globalPremiumStatus = Boolean(localUser.premium);
-          lastProfileFetch = Date.now() - (PROFILE_CACHE_TTL / 2); // Cache mais curto para dados locais
+          const userId = authUser.id || authUser.email;
+          userProfileCache.set(userId, {
+            data: localUser,
+            premiumStatus: Boolean(localUser.premium),
+            timestamp: Date.now() - (PROFILE_CACHE_TTL / 2) // Cache mais curto para dados locais
+          });
           
           if (mountedRef.current) {
             setUser(localUser);
@@ -135,29 +162,35 @@ export const useProfileVerification = (): ProfileVerificationResult => {
     }
   }, [authUser?.email]);
 
-  // FUNÇÃO CENTRALIZADA DE VERIFICAÇÃO PREMIUM OTIMIZADA
+  // 🔒 FUNÇÃO CENTRALIZADA DE VERIFICAÇÃO PREMIUM SEGURA
   const isPaidUser = useCallback((): boolean => {
     console.log("🔍 [PROFILE] Verificando status premium centralizado...");
     
-    // 1. Verificar cache global primeiro (mais rápido)
-    if (globalPremiumStatus !== null && Date.now() - lastProfileFetch < PROFILE_CACHE_TTL) {
-      console.log(`📦 [PROFILE] Cache global hit: ${globalPremiumStatus ? "Premium" : "Gratuito"}`);
-      return globalPremiumStatus;
+    if (!authUser?.id && !authUser?.email) {
+      console.log("❌ [PROFILE] Usuário não autenticado");
+      return false;
+    }
+    
+    const userId = authUser.id || authUser.email;
+    
+    // 1. Verificar cache específico do usuário primeiro (mais seguro)
+    const cachedData = getUserCacheData(userId);
+    if (cachedData) {
+      console.log(`📦 [PROFILE] Cache do usuário hit: ${cachedData.premiumStatus ? "Premium" : "Gratuito"}`);
+      return cachedData.premiumStatus;
     }
     
     // 2. Verificar dados do perfil atual
     if (user && typeof user.premium === 'boolean') {
       console.log(`👤 [PROFILE] Status do perfil atual: ${user.premium ? "Premium" : "Gratuito"}`);
-      globalPremiumStatus = user.premium;
       return user.premium;
     }
     
-    // 3. Verificar localStorage como fallback
+    // 3. Verificar localStorage como fallback seguro (mas não confiar 100%)
     const premiumStatus = localStorageManager.get("isPaidUser");
     if (premiumStatus !== null && premiumStatus !== undefined) {
       const isPremium = Boolean(premiumStatus);
       console.log(`💾 [PROFILE] Status do localStorage: ${isPremium ? "Premium" : "Gratuito"}`);
-      globalPremiumStatus = isPremium;
       return isPremium;
     }
     
@@ -168,7 +201,6 @@ export const useProfileVerification = (): ProfileVerificationResult => {
         const localUser = JSON.parse(localUserData);
         if (localUser && typeof localUser.premium === 'boolean') {
           console.log(`🗂️ [PROFILE] Status do localStorage.user: ${localUser.premium ? "Premium" : "Gratuito"}`);
-          globalPremiumStatus = localUser.premium;
           localStorageManager.set("isPaidUser", localUser.premium);
           return localUser.premium;
         }
@@ -179,9 +211,8 @@ export const useProfileVerification = (): ProfileVerificationResult => {
     
     // 5. Por segurança, assumir não premium
     console.log('⚠️ [PROFILE] Nenhum dado encontrado, assumindo NÃO premium');
-    globalPremiumStatus = false;
     return false;
-  }, [user]);
+  }, [user, authUser]);
 
   // Função para atualizar perfil (força refresh)
   const refreshProfile = useCallback(async () => {
@@ -191,10 +222,15 @@ export const useProfileVerification = (): ProfileVerificationResult => {
 
   // Buscar perfil na inicialização (apenas se não há cache válido)
   useEffect(() => {
-    if (authUser?.email && !globalProfileData) {
-      fetchProfile();
-    } else if (globalProfileData && mountedRef.current) {
-      setUser(globalProfileData);
+    if (authUser?.email) {
+      const userId = authUser.id || authUser.email;
+      const cachedData = getUserCacheData(userId);
+      
+      if (!cachedData) {
+        fetchProfile();
+      } else if (mountedRef.current) {
+        setUser(cachedData.data);
+      }
     }
   }, [authUser?.email, fetchProfile]);
 
