@@ -11,7 +11,10 @@ export default {
   },
   define: {
     'process.env.NODE_ENV': '"production"',
-    'global': 'globalThis'
+    'global': 'globalThis',
+    '__DEV__': false,
+    'import.meta.env.DEV': false,
+    'import.meta.env.PROD': true
   },
   css: {
     postcss: {
@@ -26,10 +29,13 @@ export default {
     }
   },
   esbuild: {
-    jsx: 'automatic',
-    jsxImportSource: 'react',
+    jsx: 'transform',
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
+    drop: ['console', 'debugger'],
     define: {
-      'process.env.NODE_ENV': '"production"'
+      'process.env.NODE_ENV': '"production"',
+      '__DEV__': 'false'
     }
   }
 };
