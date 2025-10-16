@@ -9,7 +9,7 @@ function esModulesFix() {
     config() {
       console.log('🔧 ES Modules Fix Plugin ativo - REACT SIMPLE PRODUCTION');
     },
-    transformIndexHtml(html) {
+    transformIndexHtml(html: string) {
       // Injetar React globalmente no HTML
       return html.replace(
         '<head>',
@@ -23,7 +23,7 @@ function esModulesFix() {
 function reactGlobalPlugin() {
   return {
     name: 'react-global',
-    generateBundle(options, bundle) {
+    generateBundle(options: any, bundle: { [x: string]: any; }) {
       // Adicionar React como global no início do bundle principal
       Object.keys(bundle).forEach(fileName => {
         if (fileName.includes('index') && fileName.endsWith('.js')) {
@@ -66,6 +66,11 @@ export default defineConfig({
       },
     },
     rollupOptions: {
+      onwarn(warning, warn) {
+        // Suprimir avisos de dependências externas
+        if (warning.code === 'UNRESOLVED_IMPORT') return;
+        warn(warning);
+      },
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
