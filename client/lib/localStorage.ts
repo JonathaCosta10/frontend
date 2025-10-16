@@ -305,26 +305,210 @@ export class LocalStorageManager {
    */
 
   // Tokens JWT
-  setAuthToken(token: string): void {
-    if (this.isValidJWT(token)) {
+  setAuthToken(token: string): boolean {
+    if (!token) {
+      console.error("❌ Tentativa de armazenar token inválido (nulo ou vazio)");
+      return false;
+    }
+    
+    // Validar formato do token usando o método especializado
+    const isValid = this.isValidJWT(token);
+    const isDevelopment = 
+      import.meta.env.DEV || 
+      import.meta.env.MODE === 'development' || 
+      window.location.hostname === 'localhost';
+    
+    // Em produção, ser mais restritivo; em desenvolvimento, mais flexível
+    if (!isValid && !isDevelopment) {
+      console.error("❌ Token inválido rejeitado em ambiente de produção");
+      return false;
+    } else if (!isValid && isDevelopment) {
+      console.warn("⚠️ Token com formato inválido aceito apenas no ambiente de desenvolvimento");
+    }
+    
+    try {
+      // Armazenar o token
       this.set("authToken", token);
       console.log("🎫 Token JWT armazenado com segurança");
-    } else {
-      console.error("Token JWT inválido fornecido");
-      throw new Error("Invalid JWT token format");
+      
+      // Extrair detalhes do token para logs (se possível)
+      try {
+        const parts = token.split('.');
+        if (parts.length >= 2) {
+          const base64Payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(atob(base64Payload));
+          const expTime = payload.exp ? new Date(payload.exp * 1000) : null;
+          
+          console.log("📝 Detalhes do token armazenado:", { 
+            exp: expTime ? expTime.toISOString() : 'não definido',
+            iat: payload.iat ? new Date(payload.iat * 1000).toISOString() : 'não definido',
+            ttlSeconds: payload.exp ? (payload.exp - Math.floor(Date.now() / 1000)) : 'desconhecido',
+            userId: payload.user_id || payload.sub || payload.id || 'não definido'
+          });
+        }
+      } catch (decodeError) {
+        // Apenas log, não falhar a operação por problemas de decodificação
+        console.warn("⚠️ Não foi possível decodificar token para logs", decodeError);
+      }
+      
+      // Disparar evento para informar componentes sobre o novo token
+      try {
+        window.dispatchEvent(new CustomEvent('auth:token:updated', {
+          detail: { timestamp: new Date().toISOString() }
+        }));
+      } catch (e) {
+        console.warn("⚠️ Erro ao disparar evento de atualização de token:", e);
+      }
+      
+      return true;
+    } catch (e) {
+      console.error("❌ Erro ao processar token JWT:", e);
+      
+      // Em ambiente de desenvolvimento, permitir armazenar mesmo com erro
+      if (import.meta.env.DEV) {
+        console.warn("⚠️ Ambiente DEV: Armazenando token mesmo com erro no parsing");
+        this.set("authToken", token);
+        return true;
+      }
+      
+      return false;
     }
   }
 
   getAuthToken(): string | null {
-    const token = this.get("authToken");
-    if (token && this.isValidJWT(token)) {
-      return token;
+    try {
+      // Verificar se estamos em um contexto de login OAuth
+      const isCallbackAuth = window.location.pathname.includes('/auth/callback');
+      const recentLogin = localStorage.getItem('recentLoginAttempt');
+      const isRecentLogin = recentLogin && (Date.now() - parseInt(recentLogin)) < 30000;
+      
+      // Registrar tentativa de acesso ao token
+      const tokenRequestCount = parseInt(localStorage.getItem('tokenRequestCount') || '0');
+      localStorage.setItem('tokenRequestCount', (tokenRequestCount + 1).toString());
+      
+      // Log apenas a cada 5 tentativas para não poluir o console
+      if (tokenRequestCount % 5 === 0) {
+        console.log(`🔍 Solicitação de token de autenticação #${tokenRequestCount}`, {
+          rota: window.location.pathname,
+          isCallbackAuth,
+          isRecentLogin
+        });
+      }
+      
+      const token = this.get("authToken");
+      
+      // Se não há token, retorna null imediatamente
+      if (!token) {
+        return null;
+      }
+      
+      // Detecção de ambiente de desenvolvimento
+      const isDevelopment = 
+        import.meta.env.DEV || 
+        import.meta.env.MODE === 'development' || 
+        window.location.hostname === 'localhost';
+      
+      // Verificação básica de formato do token
+      const parts = token.split(".");
+      if (parts.length < 2 || parts.length > 3) {
+        console.warn("⚠️ Token JWT com formato não padrão encontrado:", { 
+          partes: parts.length,
+          comprimento: token.length
+        });
+        
+        // Em fluxo de autenticação ou ambiente de desenvolvimento, ser mais flexível
+        if (isDevelopment || isCallbackAuth || isRecentLogin) {
+          console.log("🔑 Contexto especial: Permitindo uso de token mesmo com formato não padrão");
+          return token;
+        } else {
+          console.warn("Token JWT corrompido, removendo...");
+          this.remove("authToken");
+          return null;
+        }
+      }
+      
+      // Tentar validar a estrutura do payload
+      try {
+        // Só tentar decodificar se tivermos pelo menos 2 partes
+        if (parts.length >= 2) {
+          const base64Payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(atob(base64Payload));
+          
+          // Verificar expiração apenas para logar informações
+          if (payload.exp) {
+            const now = Math.floor(Date.now() / 1000);
+            const timeLeft = payload.exp - now;
+            
+            // Registrar o tempo restante de expiração para diagnóstico
+            if (tokenRequestCount % 5 === 0) {
+              if (timeLeft < 0) {
+                console.warn("⚠️ Token JWT expirado, expirou há", Math.abs(timeLeft), "segundos");
+                
+                // Disparar evento para sistema de refresh
+                try {
+                  window.dispatchEvent(new CustomEvent('token:expired', {
+                    detail: { 
+                      timestamp: new Date().toISOString(),
+                      expiryTime: new Date(payload.exp * 1000).toISOString()
+                    }
+                  }));
+                } catch (e) {
+                  console.warn("⚠️ Erro ao disparar evento de expiração:", e);
+                }
+                
+                // No fluxo de autenticação ou desenvolvimento, ser mais tolerante
+                if (isDevelopment || isCallbackAuth || isRecentLogin) {
+                  console.log("🔑 Contexto especial: Permitindo uso de token expirado");
+                  return token;
+                }
+              } else if (timeLeft < 300) {
+                console.warn("⚠️ Token JWT expirará em breve:", timeLeft, "segundos restantes");
+                
+                // Disparar evento para sistema de refresh preventivo
+                try {
+                  window.dispatchEvent(new CustomEvent('token:expiring:soon', {
+                    detail: { 
+                      timestamp: new Date().toISOString(),
+                      timeRemaining: timeLeft
+                    }
+                  }));
+                } catch (e) {
+                  console.warn("⚠️ Erro ao disparar evento de expiração iminente:", e);
+                }
+              }
+            }
+          }
+        }
+        
+        // Token válido (ou considerado válido no contexto)
+        return token;
+      } catch (decodeError) {
+        console.error("❌ Erro ao decodificar payload do token:", decodeError);
+        
+        // Em contextos especiais, retornar o token mesmo com problemas
+        if (isDevelopment || isCallbackAuth || isRecentLogin) {
+          console.warn("⚠️ Contexto especial: Permitindo uso de token mesmo com erro de decodificação");
+          return token;
+        } else {
+          console.warn("Token JWT com payload inválido, removendo...");
+          this.remove("authToken");
+          return null;
+        }
+      }
+    } catch (error) {
+      console.error("❌ Erro ao recuperar auth token:", error);
+      
+      // Em fluxo de callback de autenticação, é mais crítico - registrar detalhes
+      if (window.location.pathname.includes('/auth/callback')) {
+        console.error("❌ Erro crítico ao recuperar token durante callback de autenticação:", {
+          erro: (error as Error).message,
+          stack: (error as Error).stack,
+          rota: window.location.pathname
+        });
+      }
+      
+      return null;
     }
-    if (token) {
-      console.warn("Token JWT corrompido, removendo...");
-      this.remove("authToken");
-    }
-    return null;
   }
 
   setRefreshToken(token: string): void {
@@ -426,21 +610,136 @@ export class LocalStorageManager {
   }
 
   // ID da sessão
-  setSessionId(sessionId: string): void {
-    this.set("sessionId", sessionId);
+  setSessionId(sessionId: string | any): void {
+    if (!sessionId) {
+      console.error("❌ Tentativa de armazenar sessionId inválido (nulo ou vazio)");
+      return;
+    }
+    
+    // Normalizar valor para string
+    const sessionIdStr = typeof sessionId === 'object' ? 
+      (sessionId.session_id || sessionId.id || JSON.stringify(sessionId)) : 
+      String(sessionId);
+    
+    console.log("🔐 Armazenando session_id:", sessionIdStr);
+    this.set("sessionId", sessionIdStr);
+    
+    // Criar backup adicional para garantir disponibilidade
+    try {
+      localStorage.setItem("backup_session_id", sessionIdStr);
+    } catch (e) {
+      console.warn("⚠️ Não foi possível criar backup do session_id:", e);
+    }
   }
 
   getSessionId(): string | null {
-    return this.get("sessionId");
+    try {
+      // Tentar obter do armazenamento primário
+      const sessionId = this.get("sessionId");
+      
+      // Se for um objeto, extrair o valor apropriado
+      if (sessionId && typeof sessionId === 'object') {
+        return sessionId.session_id || sessionId.id || sessionId.value || JSON.stringify(sessionId);
+      }
+      
+      // Se for string, retornar diretamente
+      if (sessionId) {
+        return String(sessionId);
+      }
+      
+      // Fallback para o backup
+      const backupSessionId = localStorage.getItem("backup_session_id");
+      if (backupSessionId) {
+        console.log("ℹ️ Usando sessionId de backup");
+        return backupSessionId;
+      }
+      
+      return null;
+    } catch (e) {
+      console.error("❌ Erro ao recuperar sessionId:", e);
+      
+      // Último recurso: tentar diretamente do localStorage
+      try {
+        return localStorage.getItem("backup_session_id");
+      } catch {
+        return null;
+      }
+    }
   }
 
   // Fingerprint do dispositivo
-  setDeviceFingerprint(fingerprint: DeviceFingerprint): void {
-    this.set("deviceFingerprint", fingerprint);
+  setDeviceFingerprint(fingerprint: DeviceFingerprint | string | any): void {
+    if (!fingerprint) {
+      console.error("❌ Tentativa de armazenar deviceFingerprint inválido");
+      return;
+    }
+    
+    let fingerprintValue: any;
+    
+    // Normalizar valor
+    if (typeof fingerprint === 'string') {
+      fingerprintValue = fingerprint;
+    } else if (typeof fingerprint === 'object') {
+      fingerprintValue = fingerprint.device_fingerprint || fingerprint.hash || fingerprint;
+    } else {
+      fingerprintValue = String(fingerprint);
+    }
+    
+    console.log("🔐 Armazenando device_fingerprint:", 
+      typeof fingerprintValue === 'object' ? JSON.stringify(fingerprintValue) : fingerprintValue
+    );
+    
+    this.set("deviceFingerprint", fingerprintValue);
+    
+    // Criar backup adicional para garantir disponibilidade
+    try {
+      if (typeof fingerprintValue === 'object') {
+        localStorage.setItem("backup_device_fingerprint", JSON.stringify(fingerprintValue));
+      } else {
+        localStorage.setItem("backup_device_fingerprint", String(fingerprintValue));
+      }
+    } catch (e) {
+      console.warn("⚠️ Não foi possível criar backup do device_fingerprint:", e);
+    }
   }
 
-  getDeviceFingerprint(): DeviceFingerprint | null {
-    return this.get("deviceFingerprint");
+  getDeviceFingerprint(): any {
+    try {
+      const fingerprint = this.get("deviceFingerprint");
+      
+      if (fingerprint) {
+        return fingerprint;
+      }
+      
+      // Fallback para o backup
+      const backupFingerprint = localStorage.getItem("backup_device_fingerprint");
+      if (backupFingerprint) {
+        console.log("ℹ️ Usando device_fingerprint de backup");
+        try {
+          return JSON.parse(backupFingerprint);
+        } catch {
+          return backupFingerprint;
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      console.error("❌ Erro ao recuperar device_fingerprint:", e);
+      
+      // Último recurso: tentar diretamente do localStorage
+      try {
+        const backup = localStorage.getItem("backup_device_fingerprint");
+        if (backup) {
+          try {
+            return JSON.parse(backup);
+          } catch {
+            return backup;
+          }
+        }
+      } catch {
+        return null;
+      }
+    }
   }
 
   // Versão da aplicação
@@ -509,16 +808,116 @@ export class LocalStorageManager {
    * Validar formato JWT
    */
   private isValidJWT(token: string): boolean {
+    if (!token || typeof token !== 'string') {
+      console.warn("⚠️ Token inválido: vazio ou não é string");
+      return false;
+    }
+    
+    // Verificação rápida de comprimento mínimo
+    if (token.length < 30) {
+      console.warn("⚠️ Token inválido: muito curto", { length: token.length });
+      return false;
+    }
+    
+    // Detecção de ambiente de desenvolvimento
+    const isDevelopment = 
+      import.meta.env.DEV || 
+      import.meta.env.MODE === 'development' || 
+      window.location.hostname === 'localhost';
+    
     try {
       const parts = token.split(".");
-      if (parts.length !== 3) return false;
-
-      // Verificar se cada parte é base64 válido
-      const payload = JSON.parse(atob(parts[1]));
-
-      // Verificar campos obrigatórios JWT
-      return payload.exp && payload.iat && typeof payload.exp === "number";
-    } catch {
+      
+      // Ser mais flexível com formato no ambiente de desenvolvimento
+      // Alguns tokens OAuth podem vir em formatos diferentes
+      if (parts.length < 2 || parts.length > 3) {
+        console.warn("⚠️ Token JWT inválido: formato não padrão", { partes: parts.length });
+        
+        // Em desenvolvimento, aceitar tokens não padrão para debug
+        if (isDevelopment && token.length > 100) {
+          console.log("🔧 [DEV] Aceitando token não padrão para fins de desenvolvimento");
+          return true;
+        }
+        
+        return false;
+      }
+      
+      // Não falhar completamente se header for inválido
+      try {
+        // Validar header
+        const headerBase64 = parts[0].replace(/-/g, '+').replace(/_/g, '/');
+        const header = JSON.parse(atob(headerBase64));
+        
+        if (!header.alg) {
+          console.warn("⚠️ Header JWT sem algoritmo definido");
+          // Não falhar apenas por isso
+        }
+      } catch (headerError) {
+        console.warn("⚠️ Erro ao validar header JWT:", headerError);
+        // Continuar validação mesmo com header inválido
+      }
+      
+      try {
+        // Verificar se é possível decodificar o payload
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(base64));
+        
+        // Verificar campos essenciais
+        const hasExp = 'exp' in payload;
+        const hasIat = 'iat' in payload;
+        const hasUserId = 'user_id' in payload || 'sub' in payload || 'id' in payload;
+        
+        // Log detalhado para diagnóstico
+        console.log("🔍 Validação de token JWT:", {
+          expira: payload.exp ? new Date(payload.exp * 1000).toISOString() : 'não definido',
+          emitido: payload.iat ? new Date(payload.iat * 1000).toISOString() : 'não definido',
+          tempoRestante: hasExp ? `${Math.floor((payload.exp - Math.floor(Date.now() / 1000)) / 60)} minutos` : 'indefinido',
+          possuiUserId: hasUserId,
+          tokenLength: token.length
+        });
+        
+        // Verificar expiração se presente
+        if (hasExp) {
+          const now = Math.floor(Date.now() / 1000);
+          
+          // Verificar se já expirou
+          if (payload.exp < now) {
+            console.warn("⚠️ Token JWT expirado", {
+              expirou: new Date(payload.exp * 1000).toISOString(),
+              agora: new Date(now * 1000).toISOString(),
+              expiradoHa: `${Math.floor((now - payload.exp) / 60)} minutos`
+            });
+            
+            // Em ambiente de desenvolvimento, permitir tokens expirados para testes
+            if (isDevelopment) {
+              console.log("🔧 [DEV] Aceitando token expirado para desenvolvimento");
+              return true;
+            }
+            
+            return false;
+          }
+        } else if (!hasIat && !hasUserId && !isDevelopment) {
+          // Se não tem nenhuma claim essencial, é suspeito
+          console.warn("⚠️ Token JWT sem claims essenciais");
+          return false;
+        }
+        
+        // Se chegou aqui, o token é válido
+        console.log("✅ Token JWT válido");
+        return true;
+      } catch (decodeError) {
+        console.error("❌ Erro ao decodificar payload JWT:", decodeError);
+        
+        // Em desenvolvimento, aceitar tokens problemáticos para debug
+        if (isDevelopment && token.length > 100) {
+          console.log("🔧 [DEV] Aceitando token com erro de decodificação para desenvolvimento");
+          return true;
+        }
+        
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Erro na validação do JWT:", error);
       return false;
     }
   }

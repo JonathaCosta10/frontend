@@ -1,382 +1,444 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  BarChart,
-  LineChart,
-  TrendingUp,
-  TrendingDown,
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  BarChart3, 
+  DollarSign, 
+  Globe, 
+  Zap,
+  Home,
+  Car,
+  ShoppingCart,
+  Briefcase,
   Activity,
-  Search,
-  Bell,
-  AlertCircle,
-  DollarSign,
-  Percent,
-  Users,
-  Building,
-  Loader2,
-  Calendar,
+  Calendar
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "@/contexts/TranslationContext";
 import MarketPremiumGuard from "@/components/MarketPremiumGuard";
 
-// Tipos temporários até a implementação da API real
-interface EconomicIndicator {
-  id: string;
-  name: string;
-  code: string;
-  category: IndicatorCategory;
-  value: number;
-  unit: string;
-  change: number;
-  changePercent: number;
-  lastUpdate: string;
-  frequency: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
-}
-
-interface IndicatorGroup {
-  category: IndicatorCategory;
-  title: string;
-  description: string;
-  indicators: EconomicIndicator[];
-}
-
-interface IndicatorFilter {
-  sortBy: "lastUpdate" | "name" | "change";
-  sortOrder: "asc" | "desc";
-  category?: IndicatorCategory;
-}
-
-type IndicatorCategory = 
-  | "interest_rates" 
-  | "inflation" 
-  | "employment" 
-  | "gdp" 
-  | "currency" 
-  | "commodities" 
-  | "stock_indices" 
-  | "bonds";
-
 export default function IndicadoresEconomicos() {
-  const { toast } = useToast();
-  const { t } = useTranslation();
-  const [isLoading, setIsLoading] = useState(false);
-  const [indicators, setIndicators] = useState<EconomicIndicator[]>([]);
-  const [indicatorGroups, setIndicatorGroups] = useState<IndicatorGroup[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<
-    IndicatorCategory | "all"
-  >("all");
-
-  // Filter state
-  const [filter, setFilter] = useState<IndicatorFilter>({
-    sortBy: "lastUpdate",
-    sortOrder: "desc",
+  // Dados simulados dos indicadores (em uma implementação real, viriam de uma API)
+  const [indicadores] = useState({
+    principais: [
+      {
+        nome: 'SELIC',
+        valor: 11.75,
+        unidade: '%',
+        variacao: -0.50,
+        descricao: 'Taxa básica de juros',
+        ultimaAtualizacao: '2024-01-31',
+        tendencia: 'baixa',
+        icon: BarChart3
+      },
+      {
+        nome: 'IPCA',
+        valor: 4.62,
+        unidade: '%',
+        variacao: -0.38,
+        descricao: 'Inflação acumulada em 12 meses',
+        ultimaAtualizacao: '2024-01-31',
+        tendencia: 'baixa',
+        icon: TrendingUp
+      },
+      {
+        nome: 'PIB',
+        valor: 2.9,
+        unidade: '%',
+        variacao: 0.2,
+        descricao: 'Crescimento no trimestre',
+        ultimaAtualizacao: '2024-01-31',
+        tendencia: 'alta',
+        icon: Globe
+      },
+      {
+        nome: 'Taxa de Desemprego',
+        valor: 7.8,
+        unidade: '%',
+        variacao: -0.3,
+        descricao: 'Desocupação no trimestre',
+        ultimaAtualizacao: '2024-01-31',
+        tendencia: 'baixa',
+        icon: Briefcase
+      }
+    ],
+    cambio: [
+      {
+        nome: 'USD/BRL',
+        valor: 4.98,
+        unidade: 'R$',
+        variacao: -0.02,
+        percentual: -0.40,
+        ultimaAtualizacao: '2024-02-01',
+        icon: DollarSign
+      },
+      {
+        nome: 'EUR/BRL',
+        valor: 5.39,
+        unidade: 'R$',
+        variacao: 0.01,
+        percentual: 0.19,
+        ultimaAtualizacao: '2024-02-01',
+        icon: DollarSign
+      },
+      {
+        nome: 'GBP/BRL',
+        valor: 6.33,
+        unidade: 'R$',
+        variacao: -0.03,
+        percentual: -0.47,
+        ultimaAtualizacao: '2024-02-01',
+        icon: DollarSign
+      }
+    ],
+    setoriais: [
+      {
+        nome: 'Energia Elétrica',
+        valor: 0.85,
+        unidade: '%',
+        variacao: 0.12,
+        descricao: 'Variação mensal',
+        categoria: 'Energia',
+        icon: Zap
+      },
+      {
+        nome: 'Habitação',
+        valor: 0.45,
+        unidade: '%',
+        variacao: -0.08,
+        descricao: 'Variação mensal',
+        categoria: 'Moradia',
+        icon: Home
+      },
+      {
+        nome: 'Transportes',
+        valor: -0.23,
+        unidade: '%',
+        variacao: -0.15,
+        descricao: 'Variação mensal',
+        categoria: 'Transporte',
+        icon: Car
+      },
+      {
+        nome: 'Alimentação',
+        valor: 0.67,
+        unidade: '%',
+        variacao: 0.23,
+        descricao: 'Variação mensal',
+        categoria: 'Alimentos',
+        icon: ShoppingCart
+      }
+    ]
   });
 
-  // Alerts state
-  const [alertsEnabled, setAlertsEnabled] = useState<Set<string>>(new Set());
-
-  // Load data on component mount
-  useEffect(() => {
-    loadIndicatorData();
-    loadIndicatorGroups();
-    // Removido loadMarketSentiment já que a seção foi removida
-  }, [filter, selectedCategory]);
-
-  const loadIndicatorData = async () => {
-    setIsLoading(true);
-    try {
-      // TODO: Implementar chamada para API real de indicadores econômicos
-      // Endpoint esperado: GET /api/indicadores-economicos/
-      // Parâmetros: category, sortBy, sortOrder
-      // Exemplo de uso:
-      // const response = await fetch('/api/indicadores-economicos/', {
-      //   method: 'GET',
-      //   headers: { 'Authorization': `Bearer ${token}` },
-      //   params: { category: selectedCategory !== 'all' ? selectedCategory : undefined }
-      // });
-      // const data = await response.json();
-      // setIndicators(data.indicators || []);
-      
-      // Por enquanto, mantém vazio até a API estar pronta
-      console.log("📊 Aguardando dados reais da API de indicadores econômicos");
-      setIndicators([]);
-    } catch (error) {
-      toast({
-        title: t("error"),
-        description: t("failed_load_economic_indicators"),
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const formatNumber = (value: number, decimals: number = 2) => {
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value);
   };
 
-  const loadIndicatorGroups = async () => {
-    try {
-      // TODO: Implementar chamada para API real de grupos de indicadores
-      // Endpoint esperado: GET /api/indicadores-economicos/grupos/
-      // Retorno esperado: Array de grupos com categorias na ordem: currency, inflation, interest_rates, gdp, stock_indices
-      // Exemplo de estrutura esperada:
-      // {
-      //   category: "currency",
-      //   title: "Câmbio",
-      //   description: "Variações das principais moedas",
-      //   indicators: [...]
-      // }
-      
-      console.log("📊 Carregando grupos na ordem: Câmbio → Inflação → Taxa de Juros → PIB → Índices Acionários");
-      
-      // Dados mockados temporários na nova ordem solicitada
-      const mockGroups = [
-        {
-          category: "currency" as const,
-          title: t("currency"),
-          description: "Variações das principais moedas",
-          indicators: []
-        },
-        {
-          category: "inflation" as const,
-          title: t("inflation"),
-          description: "Índices de inflação e preços",
-          indicators: []
-        },
-        {
-          category: "interest_rates" as const,
-          title: t("interest_rates"),
-          description: "Taxas de juros básicas",
-          indicators: []
-        },
-        {
-          category: "gdp" as const,
-          title: t("gdp"),
-          description: "Produto Interno Bruto",
-          indicators: []
-        },
-        {
-          category: "stock_indices" as const,
-          title: t("stock_indices"),
-          description: "Principais índices da bolsa",
-          indicators: []
-        }
-      ];
-      setIndicatorGroups(mockGroups);
-    } catch (error) {
-      console.error("Error loading indicator groups:", error);
-    }
+  const getVariationColor = (value: number) => {
+    if (value > 0) return 'text-green-600';
+    if (value < 0) return 'text-red-600';
+    return 'text-gray-600';
   };
 
-  const getCategoryIcon = (category: IndicatorCategory) => {
-    const icons = {
-      interest_rates: <Percent className="h-4 w-4" />,
-      inflation: <TrendingUp className="h-4 w-4" />,
-      employment: <Users className="h-4 w-4" />,
-      gdp: <Building className="h-4 w-4" />,
-      currency: <DollarSign className="h-4 w-4" />,
-      commodities: <BarChart className="h-4 w-4" />,
-      stock_indices: <LineChart className="h-4 w-4" />,
-      bonds: <Activity className="h-4 w-4" />,
+  const getVariationIcon = (value: number) => {
+    if (value > 0) return TrendingUp;
+    if (value < 0) return TrendingDown;
+    return Activity;
+  };
+
+  const getTendencyBadge = (tendencia: string) => {
+    const variants = {
+      'alta': 'default',
+      'baixa': 'secondary',
+      'estavel': 'outline'
+    } as const;
+    
+    const colors = {
+      'alta': 'bg-green-100 text-green-800',
+      'baixa': 'bg-red-100 text-red-800',
+      'estavel': 'bg-gray-100 text-gray-800'
     };
-    return icons[category] || <Activity className="h-4 w-4" />;
-  };
 
-  const getCategoryLabel = (category: IndicatorCategory) => {
-    const labels = {
-      interest_rates: t("interest_rates"),
-      inflation: t("inflation"),
-      employment: t("employment"),
-      gdp: t("gdp"),
-      currency: t("currency"),
-      commodities: t("commodities"),
-      stock_indices: t("stock_indices"),
-      bonds: t("bonds"),
-    };
-    return labels[category] || category;
-  };
-
-  const getVariationIcon = (change: number) => {
-    return change >= 0 ? (
-      <TrendingUp className="h-4 w-4 text-green-600" />
-    ) : (
-      <TrendingDown className="h-4 w-4 text-red-600" />
+    return (
+      <Badge variant={variants[tendencia as keyof typeof variants]} className={colors[tendencia as keyof typeof colors]}>
+        {tendencia.charAt(0).toUpperCase() + tendencia.slice(1)}
+      </Badge>
     );
   };
 
-  const getVariationColor = (change: number) => {
-    return change >= 0 ? "text-green-600" : "text-red-600";
-  };
-
-  const filteredIndicators = indicators.filter(
-    (indicator) =>
-      indicator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      indicator.code.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  const formatValue = (value: number, unit: string) => {
-    if (unit === "BRL" || unit.includes("R$")) {
-      return new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(value);
-    }
-
-    if (unit.includes("%")) {
-      return `${value.toFixed(2)}%`;
-    }
-
-    if (unit === "pontos") {
-      return new Intl.NumberFormat("pt-BR").format(value);
-    }
-
-    return `${value.toFixed(2)} ${unit}`;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const toggleAlert = (indicatorId: string) => {
-    const newAlerts = new Set(alertsEnabled);
-    if (newAlerts.has(indicatorId)) {
-      newAlerts.delete(indicatorId);
-    } else {
-      newAlerts.add(indicatorId);
-    }
-    setAlertsEnabled(newAlerts);
-
-    toast({
-      title: t("success"),
-      description: newAlerts.has(indicatorId)
-        ? t("price_alert_activated")
-        : t("price_alert_deactivated"),
-    });
-  };
-
-  // Função para ordenar categorias na ordem desejada: Câmbio, Inflação, Taxa de Juros, PIB, Índices Acionários
-  const getOrderedIndicatorGroups = () => {
-    const desiredOrder = ["currency", "inflation", "interest_rates", "gdp", "stock_indices"];
-    
-    return indicatorGroups.sort((a, b) => {
-      const indexA = desiredOrder.indexOf(a.category);
-      const indexB = desiredOrder.indexOf(b.category);
-      
-      // Se ambos estão na lista, ordenar pela posição
-      if (indexA !== -1 && indexB !== -1) {
-        return indexA - indexB;
-      }
-      
-      // Se apenas um está na lista, priorizar o que está
-      if (indexA !== -1) return -1;
-      if (indexB !== -1) return 1;
-      
-      // Se nenhum está na lista, manter ordem original
-      return 0;
-    });
-  };
-
   return (
-    <MarketPremiumGuard marketFeature="financial-calculator">
-      <div className="space-y-3 md:space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold flex items-center space-x-2">
-          <Activity className="h-8 w-8 text-blue-600" />
-          <span>{t("economic_indicators")}</span>
-        </h1>
-        <p className="text-muted-foreground">{t("follow_main_indicators")}</p>
-      </div>
-
-      {/* Main Content - Categories View */}
-      <div className="space-y-3 md:space-y-6">
-        {/* Categories Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">{t("by_category")}</h2>
+    <MarketPremiumGuard marketFeature="ticker-analysis">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Indicadores Econômicos</h1>
+          <p className="text-muted-foreground">Acompanhe os principais indicadores da economia brasileira em tempo real</p>
         </div>
 
-        {/* Categories Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-            {getOrderedIndicatorGroups().map((group) => (
-              <Card
-                key={group.category}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    {getCategoryIcon(group.category)}
-                    <span>{group.title}</span>
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {group.description}
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {group.indicators.slice(0, 3).map((indicator) => (
-                    <div
-                      key={indicator.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{indicator.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {indicator.code}
+        <Tabs defaultValue="principais" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="principais">Principais</TabsTrigger>
+            <TabsTrigger value="cambio">Câmbio</TabsTrigger>
+            <TabsTrigger value="setoriais">Setoriais</TabsTrigger>
+          </TabsList>
+
+          {/* Indicadores Principais */}
+          <TabsContent value="principais" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {indicadores.principais.map((indicador, index) => {
+                const Icon = indicador.icon;
+                const VariationIcon = getVariationIcon(indicador.variacao);
+                
+                return (
+                  <Card key={index} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <Icon className="h-6 w-6 text-blue-600" />
+                        {getTendencyBadge(indicador.tendencia)}
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="font-semibold text-lg">{indicador.nome}</h3>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-bold">
+                            {formatNumber(indicador.valor)}{indicador.unidade}
+                          </span>
+                        </div>
+                        <div className={`flex items-center gap-1 text-sm ${getVariationColor(indicador.variacao)}`}>
+                          <VariationIcon className="h-3 w-3" />
+                          <span>
+                            {indicador.variacao > 0 ? '+' : ''}{formatNumber(indicador.variacao, 2)}p.p.
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500">{indicador.descricao}</p>
+                        <p className="text-xs text-gray-400">
+                          Atualizado em {new Date(indicador.ultimaAtualizacao).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-sm">
-                          {formatValue(indicator.value, indicator.unit)}
-                        </p>
-                        <div className="flex items-center space-x-1">
-                          {getVariationIcon(indicator.change)}
-                          <span
-                            className={`text-xs ${getVariationColor(indicator.change)}`}
-                          >
-                            {indicator.changePercent > 0 ? "+" : ""}
-                            {indicator.changePercent.toFixed(2)}%
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Resumo Econômico */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Cenário Macroeconômico
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-green-700">Pontos Positivos</h4>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>SELIC em trajetória de queda, reduzindo custo do crédito</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Inflação convergindo para a meta do Banco Central</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>PIB apresentando crescimento sustentado</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Taxa de desemprego em queda gradual</span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-yellow-700">Pontos de Atenção</h4>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <span>Pressões fiscais podem afetar política monetária</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <span>Cenário externo com incertezas geopolíticas</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <span>Volatilidade cambial influenciando inflação importada</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Câmbio */}
+          <TabsContent value="cambio" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {indicadores.cambio.map((moeda, index) => {
+                const Icon = moeda.icon;
+                const VariationIcon = getVariationIcon(moeda.variacao);
+                
+                return (
+                  <Card key={index} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Icon className="h-6 w-6 text-green-600" />
+                        <Badge variant="outline">{moeda.nome.split('/')[0]}</Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-lg">{moeda.nome}</h3>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-bold">
+                            {moeda.unidade} {formatNumber(moeda.valor, 3)}
                           </span>
+                        </div>
+                        <div className={`flex items-center gap-1 text-sm ${getVariationColor(moeda.variacao)}`}>
+                          <VariationIcon className="h-3 w-3" />
+                          <span>
+                            {moeda.variacao > 0 ? '+' : ''}{formatNumber(moeda.variacao, 3)} 
+                            ({moeda.percentual > 0 ? '+' : ''}{formatNumber(moeda.percentual, 2)}%)
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          Atualizado em {new Date(moeda.ultimaAtualizacao).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Análise Cambial */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  Análise do Cenário Cambial
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-semibold text-blue-800 mb-2">Dólar Americano (USD/BRL)</h4>
+                    <p className="text-sm text-blue-700">
+                      O real mantém estabilidade frente ao dólar, reflexo da melhora dos fundamentos macroeconômicos 
+                      e da perspectiva de queda da taxa de juros americana. Fatores domésticos como política fiscal 
+                      continuam sendo monitorados pelos investidores.
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <h4 className="font-semibold text-purple-800 mb-2">Euro (EUR/BRL)</h4>
+                    <p className="text-sm text-purple-700">
+                      O euro apresenta leve valorização frente ao real, influenciado pelas decisões do BCE e 
+                      pela recuperação econômica da zona do euro. Fluxos comerciais Brasil-Europa permanecem importantes.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Indicadores Setoriais */}
+          <TabsContent value="setoriais" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {indicadores.setoriais.map((setor, index) => {
+                const Icon = setor.icon;
+                const VariationIcon = getVariationIcon(setor.valor);
+                
+                return (
+                  <Card key={index} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Icon className="h-6 w-6 text-purple-600" />
+                        <Badge variant="outline">{setor.categoria}</Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="font-semibold">{setor.nome}</h3>
+                        <div className="flex items-baseline gap-2">
+                          <span className={`text-xl font-bold ${getVariationColor(setor.valor)}`}>
+                            {setor.valor > 0 ? '+' : ''}{formatNumber(setor.valor)}{setor.unidade}
+                          </span>
+                        </div>
+                        <div className={`flex items-center gap-1 text-sm ${getVariationColor(setor.variacao)}`}>
+                          <VariationIcon className="h-3 w-3" />
+                          <span>
+                            {setor.variacao > 0 ? '+' : ''}{formatNumber(setor.variacao, 2)}p.p.
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500">{setor.descricao}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Análise Setorial */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Pressões Inflacionárias por Setor
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-red-700">Setores com Pressão Alta</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center p-2 bg-red-50 rounded">
+                          <span className="text-sm font-medium">Energia Elétrica</span>
+                          <span className="text-sm font-bold text-red-600">+0.85%</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-red-50 rounded">
+                          <span className="text-sm font-medium">Alimentação</span>
+                          <span className="text-sm font-bold text-red-600">+0.67%</span>
                         </div>
                       </div>
                     </div>
-                  ))}
-                  {group.indicators.length > 3 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => setSelectedCategory(group.category)}
-                    >
-                      {t("view_all")} ({group.indicators.length})
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+                    
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-green-700">Setores com Alívio</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                          <span className="text-sm font-medium">Transportes</span>
+                          <span className="text-sm font-bold text-green-600">-0.23%</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                          <span className="text-sm font-medium">Habitação</span>
+                          <span className="text-sm font-bold text-green-600">+0.45%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Última Atualização */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span>Dados atualizados automaticamente</span>
+              </div>
+              <span>Última atualização: {new Date().toLocaleString('pt-BR')}</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </MarketPremiumGuard>
   );

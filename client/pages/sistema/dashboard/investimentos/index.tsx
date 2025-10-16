@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, PieChart, TrendingUp, Loader2 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
+// import { usePrivacy } from "@/contexts/PrivacyContext";
+// import { useResponsive } from "@/hooks/useResponsive";
 import PieChartWithLegend from "@/components/charts/PieChartWithLegend";
 import GraficoSetorialAcao from "@/components/charts/GraficoSetorialAcao";
 import GraficoDividendosFII from "@/components/charts/GraficoDividendosFII";
+import GraficoRentabilidadeGeral from "@/components/charts/GraficoRentabilidadeGeral";
 import InvestmentDividendPremiumGuard from "@/components/InvestmentDividendPremiumGuard";
 import { investmentsApi } from '@/services/api/investments';
 import type { AlocacaoTipoResponse } from '@/services/api/investments';
@@ -39,7 +35,30 @@ const calcularRentabilidade = (valorInvestido: number, valorAtual: number): numb
 
 export default function Investimentos() {
   const { t, formatCurrency } = useTranslation();
-  const [tipoSelecionado, setTipoSelecionado] = useState("Acoes");
+  // const { formatValue, shouldHideCharts } = usePrivacy();
+  // const { isMobile, isTablet } = useResponsive();
+  
+  // Mock values for now
+  const formatValue = (value: any) => value;
+  const shouldHideCharts = false;
+  const isMobile = false;
+  const isTablet = false;
+  
+  const getResponsiveClasses = (config: {
+    mobile?: string;
+    tablet?: string;
+    desktop?: string;
+    largeDesktop?: string;
+  }) => {
+    const { mobile = '', tablet = '', desktop = '', largeDesktop = '' } = config;
+    
+    if (isMobile && mobile) return mobile;
+    else if (isTablet && tablet) return tablet;
+    else if (!isMobile && !isTablet && desktop) return desktop;
+    else if (largeDesktop) return largeDesktop;
+    
+    return 'grid-cols-1 lg:grid-cols-4'; // fallback
+  };
   const [alocacaoData, setAlocacaoData] = useState<AlocacaoTipoResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [investimentos, setInvestimentos] = useState<InvestmentAsset[]>([]);
@@ -74,7 +93,7 @@ export default function Investimentos() {
         
         // Obter dados setoriais para diversificação
         try {
-          const setoresData = await investmentsApi.getSetores(tipoSelecionado);
+          const setoresData = await investmentsApi.getSetores("Acoes");
           
           if (setoresData && 'data' in setoresData && setoresData.success) {
             // Formato novo da API
@@ -171,7 +190,7 @@ export default function Investimentos() {
     };
 
     carregarDados();
-  }, [tipoSelecionado]);
+  }, []);
 
   // Verificar se há investimentos cadastrados
   const temInvestimentos = !loading && investimentos && investimentos.length > 0;
@@ -203,291 +222,352 @@ export default function Investimentos() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isMobile ? 'px-4' : ''}`}>
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className={`flex ${isMobile ? 'flex-col' : 'flex-col md:flex-row'} justify-between items-start ${isMobile ? 'gap-2' : 'md:items-center gap-4'}`}>
         <div>
-          <h2 className="text-2xl font-bold">{t('investment_dashboard')}</h2>
-          <p className="text-muted-foreground">
+          <h2 className={`font-bold ${isMobile ? 'text-xl' : 'text-2xl'}`}>{t('investment_dashboard')}</h2>
+          <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
             {t('track_performance_distribution')}
           </p>
         </div>
-        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+        <Badge variant="outline" className={`bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 ${isMobile ? 'self-start' : ''}`}>
           {t('updated_real_time')}
         </Badge>
       </div>
 
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="md:col-span-1 lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('diversification')}</CardTitle>
-            <div className="flex items-center space-x-1 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">
-              <PieChart className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Por Tipo</span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="flex flex-col items-center space-y-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Carregando dados...</p>
-                </div>
-              </div>
-            ) : !alocacaoData || alocacaoData.alocacao_por_tipo.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full py-6">
-                <PieChart className="h-12 w-12 text-muted-foreground mb-3" />
-                <div className="text-xl font-bold text-center">Nenhum investimento</div>
-                <p className="text-sm text-muted-foreground mt-1 text-center">
-                  Adicione investimentos para ver sua diversificação
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Carteira total em destaque */}
-                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-muted-foreground">Carteira Total</span>
+      {/* Valor Total e Valorização - Nova Seção */}
+      {!shouldHideCharts && (
+        <div className={`grid gap-4 ${getResponsiveClasses({
+          mobile: 'grid-cols-1',
+          tablet: 'grid-cols-1 lg:grid-cols-2',
+          desktop: 'grid-cols-1 lg:grid-cols-4',
+          largeDesktop: 'grid-cols-1 lg:grid-cols-4'
+        })}`}>
+          {/* Box Principal - Valor Total com Slide */}
+          <div className={isMobile ? 'col-span-1' : 'lg:col-span-3'}>
+            <Card className="bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-950/20 dark:to-emerald-950/20 border-blue-200 dark:border-blue-800">
+              <CardHeader className="pb-3">
+                <CardTitle className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : 'text-lg'}`}>
+                  <PieChart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  Valor Total da Carteira
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-3xl font-bold text-foreground">
+                      {formatCurrency((alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "ACAO")?.valor_atual || 0) + 
+                                    (alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "FII")?.valor_atual || 0))}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Total investido</p>
                   </div>
-                  <div className="flex items-end justify-between">
-                    <span className="text-2xl font-bold">{formatCurrency(alocacaoData.total_carteira)}</span>
-                    <span className="text-sm text-muted-foreground">{alocacaoData.resumo.tipos_diferentes} tipos</span>
-                  </div>
-                </div>
-                
-                {/* Lista com Barras de Progresso - Layout Aprimorado */}
-                <div className="space-y-3">
-                  {alocacaoData.alocacao_por_tipo.map((item, index) => {
-                    const tipoTraduzido = item.tipo === "ACAO" ? "Ação" : 
-                                          item.tipo === "FII" ? "Fundos Imobiliários" : 
-                                          item.tipo;
-                    
-                    const bgColor = index === 0 ? "bg-blue-500" : 
-                                  index === 1 ? "bg-emerald-500" : 
-                                  "bg-purple-500";
-                    
-                    const bgLight = index === 0 ? "bg-blue-50" : 
-                                  index === 1 ? "bg-emerald-50" : 
-                                  "bg-purple-50";
-                                  
-                    const textColor = index === 0 ? "text-blue-700" : 
-                                     index === 1 ? "text-emerald-700" : 
-                                     "text-purple-700";
-                    
-                    const borderColor = index === 0 ? "border-blue-200" : 
-                                      index === 1 ? "border-emerald-200" : 
-                                      "border-purple-200";
-                    
-                    return (
-                      <div key={item.tipo} className={`p-3 rounded-lg ${bgLight} border ${borderColor} transition-all duration-200 hover:shadow-md`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center">
-                            <div className={`w-3 h-3 rounded-full ${bgColor} mr-2.5`}></div>
-                            <span className={`font-medium text-base ${textColor}`}>{tipoTraduzido}</span>
-                          </div>
-                          <div className={`font-bold text-lg ${textColor}`}>
-                            {item.percentual_alocacao.toFixed(1)}%
-                          </div>
-                        </div>
-                        
-                        {/* Barra de progresso */}
-                        <div className="w-full bg-white dark:bg-slate-700 rounded-full h-2 mb-2">
-                          <div 
-                            className={`${bgColor} h-2 rounded-full`} 
-                            style={{ width: `${item.percentual_alocacao}%` }}
-                          ></div>
-                        </div>
-                        
-                        {/* Grid de detalhes */}
-                        <div className="grid grid-cols-2 gap-2 mt-3">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Ativos</p>
-                            <p className={`font-semibold ${textColor}`}>
-                              {item.quantidade_ativos} {item.quantidade_ativos === 1 ? "ativo" : "ativos"}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">Valor</p>
-                            <p className={`font-semibold ${textColor}`}>
-                              {formatCurrency(item.valor_atual)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                {/* Insights de diversificação */}
-                {alocacaoData.resumo.tipos_diferentes > 1 && (
-                  <div className="text-xs text-muted-foreground p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-1.5">
-                      <span>💡</span>
-                      <span>
-                        {alocacaoData.alocacao_por_tipo[0].percentual_alocacao > 70 ? (
-                          <span>Considere diversificar mais para reduzir riscos</span>
-                        ) : (
-                          <span>Boa distribuição entre diferentes tipos de ativos</span>
-                        )}
-                      </span>
+                  <div className="flex gap-4">
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-blue-700">Ações</p>
+                      <p className="text-lg font-bold text-blue-700">
+                        {formatCurrency(alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "ACAO")?.valor_atual || 0)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-emerald-700">FIIs</p>
+                      <p className="text-lg font-bold text-emerald-700">
+                        {formatCurrency(alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "FII")?.valor_atual || 0)}
+                      </p>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('profitability')}</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Carregando...</span>
-              </div>
-            ) : (
-              <>
-                <div className={`text-2xl font-bold ${rentabilidadeTotal >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {rentabilidadeTotal >= 0 ? '+' : ''}{rentabilidadeTotal.toFixed(2)}%
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('accumulated_year')}
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                
+                {/* Barra de Progresso com Cores */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-blue-700 font-medium">Ações</span>
+                    <span className="text-emerald-700 font-medium">FIIs</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div className="h-full flex">
+                      <div 
+                        className="bg-blue-500 h-full transition-all duration-1000" 
+                        style={{
+                          width: `${
+                            ((alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "ACAO")?.valor_atual || 0) / 
+                             ((alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "ACAO")?.valor_atual || 0) + 
+                              (alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "FII")?.valor_atual || 0))) * 100
+                          }%`
+                        }}
+                      ></div>
+                      <div 
+                        className="bg-emerald-500 h-full transition-all duration-1000" 
+                        style={{
+                          width: `${
+                            ((alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "FII")?.valor_atual || 0) / 
+                             ((alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "ACAO")?.valor_atual || 0) + 
+                              (alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "FII")?.valor_atual || 0))) * 100
+                          }%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>
+                      {(((alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "ACAO")?.valor_atual || 0) / 
+                         ((alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "ACAO")?.valor_atual || 0) + 
+                          (alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "FII")?.valor_atual || 0))) * 100).toFixed(1)}%
+                    </span>
+                    <span>
+                      {(((alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "FII")?.valor_atual || 0) / 
+                         ((alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "ACAO")?.valor_atual || 0) + 
+                          (alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "FII")?.valor_atual || 0))) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        <InvestmentDividendPremiumGuard feature="dividends_card">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('dividends')}</CardTitle>
-              <PieChart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(2830)}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('received_month')}
+          {/* Box Valorização */}
+          <div>
+            <Card className="bg-gradient-to-br from-blue-50 to-emerald-50 border-blue-200 h-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium bg-gradient-to-r from-blue-700 to-emerald-700 bg-clip-text text-transparent flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-blue-600" />
+                  Valorização das Cotas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col justify-center">
+                <div className="text-center space-y-2">
+                  <p className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-emerald-700 bg-clip-text text-transparent">+{rentabilidadeTotal.toFixed(1)}%</p>
+                  <p className="text-xs text-muted-foreground">Rentabilidade Total</p>
+                  <Badge className="bg-gradient-to-r from-blue-100 to-emerald-100 text-blue-800 border border-blue-200 text-xs">
+                    +{formatCurrency(1250)}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Detalhes por Setor - ACIMA dos Gráficos */}
+      {!shouldHideCharts && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+          {/* Detalhes Ações */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-blue-600" />
+              <span className="text-base font-medium text-blue-800">Ações</span>
+            </div>
+
+            <Card className="bg-gradient-to-br from-blue-50 via-blue-50 to-blue-100 border-blue-300 shadow-md min-h-[320px] hover:shadow-lg transition-shadow duration-300">
+              <CardContent className="h-full flex flex-col justify-between pt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+                  {/* Diversificação */}
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Diversificação</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge className="bg-blue-100 text-blue-800 text-xs">Boa</Badge>
+                      <span className="text-sm font-medium">10 setores</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">10 ativos no total</p>
+                    <div className="w-full bg-white rounded-full h-2 mt-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{width: "85%"}}></div>
+                    </div>
+                  </div>
+
+                  {/* Maior Concentração */}
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground mb-2">Maior Concentração</p>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge className="bg-blue-50 text-blue-700 border border-blue-300">Bancos</Badge>
+                      <p className="text-lg font-bold text-blue-700">21.7%</p>
+                      <p className="text-xs text-muted-foreground">da carteira</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grid inferior - sempre na parte inferior */}
+                <div className="mt-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-blue-200">
+                    <div className="text-center p-3 bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 shadow-sm">
+                      <p className="text-xs text-muted-foreground mb-1">Segunda</p>
+                      <p className="text-xs font-medium text-blue-800">Petróleo</p>
+                      <p className="text-sm font-bold text-blue-700">15.3%</p>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 shadow-sm">
+                      <p className="text-xs text-muted-foreground mb-1">Terceira</p>
+                      <p className="text-xs font-medium text-blue-800">Tecnologia</p>
+                      <p className="text-sm font-bold text-blue-700">8.9%</p>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 shadow-sm">
+                      <p className="text-xs text-muted-foreground mb-1">Menor</p>
+                      <p className="text-xs font-medium text-blue-800">Agricultura</p>
+                      <p className="text-sm font-bold text-blue-700">1.6%</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detalhes Fundos Imobiliários */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <PieChart className="h-4 w-4 text-emerald-600" />
+              <span className="text-base font-medium text-emerald-800">Fundos Imobiliários</span>
+            </div>
+
+            <Card className="bg-gradient-to-br from-emerald-50 via-emerald-50 to-emerald-100 border-emerald-300 shadow-md min-h-[320px] hover:shadow-lg transition-shadow duration-300">
+              <CardContent className="h-full flex flex-col justify-between pt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+                  {/* Diversificação */}
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Diversificação</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge className="bg-emerald-100 text-emerald-800 text-xs">Boa</Badge>
+                      <span className="text-sm font-medium">5 setores</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">5 ativos no total</p>
+                    <div className="w-full bg-white rounded-full h-2 mt-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{width: "75%"}}></div>
+                    </div>
+                  </div>
+
+                  {/* Maior Concentração */}
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground mb-2">Maior Concentração</p>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-300">Logística</Badge>
+                      <p className="text-lg font-bold text-emerald-700">34.3%</p>
+                      <p className="text-xs text-muted-foreground">da carteira</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grid inferior - sempre na parte inferior */}
+                <div className="mt-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-emerald-200">
+                    <div className="text-center p-3 bg-gradient-to-br from-white to-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
+                      <p className="text-xs text-muted-foreground mb-1">Segunda</p>
+                      <p className="text-xs font-medium text-emerald-800">Shoppings</p>
+                      <p className="text-sm font-bold text-emerald-700">23.8%</p>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-white to-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
+                      <p className="text-xs text-muted-foreground mb-1">Terceira</p>
+                      <p className="text-xs font-medium text-emerald-800">Corporativo</p>
+                      <p className="text-sm font-bold text-emerald-700">16.2%</p>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-white to-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
+                      <p className="text-xs text-muted-foreground mb-1">Menor</p>
+                      <p className="text-xs font-medium text-emerald-800">Lajes Corp.</p>
+                      <p className="text-sm font-bold text-emerald-700">11.6%</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Gráficos Setoriais */}
+      {!shouldHideCharts && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+          {/* Gráfico Ações */}
+          <Card className="h-full bg-gradient-to-br from-blue-50 via-white to-blue-50 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardHeader className="pb-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
+              <CardTitle className="flex items-center space-x-2 text-lg font-bold">
+                <BarChart3 className="h-6 w-6" />
+                <span>Ações</span>
+              </CardTitle>
+              <p className="text-blue-100 text-sm">
+                Distribuição por setores • {dadosSetoriais.totalAtivos || 10} ativos
               </p>
+            </CardHeader>
+            <CardContent className="min-h-[700px] p-6">
+              <GraficoSetorialAcao tipoSelecionado="Acoes" />
             </CardContent>
           </Card>
-        </InvestmentDividendPremiumGuard>
-      </div>
 
-      {/* Gráficos principais */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Alocação Setorial */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center space-x-2">
-                <BarChart3 className="h-5 w-5" />
-                <span>{t('sector_allocation')}</span>
+          {/* Gráfico Fundos Imobiliários */}
+          <Card className="h-full bg-gradient-to-br from-emerald-50 via-white to-emerald-50 border-emerald-200 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardHeader className="pb-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-t-lg">
+              <CardTitle className="flex items-center space-x-2 text-lg font-bold">
+                <PieChart className="h-6 w-6" />
+                <span>Fundos Imobiliários</span>
               </CardTitle>
-              <Select value={tipoSelecionado} onValueChange={setTipoSelecionado}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Acoes">{t('stocks')}</SelectItem>
-                  <SelectItem value="Fundos Imobiliários">{t('reits')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t('investments_distributed_sector')}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <GraficoSetorialAcao tipoSelecionado={tipoSelecionado} />
-          </CardContent>
-        </Card>
-      </div>
+              <p className="text-emerald-100 text-sm">
+                Distribuição por setores • {alocacaoData?.alocacao_por_tipo.find(item => item.tipo === "FII")?.quantidade_ativos || 5} ativos
+              </p>
+            </CardHeader>
+            <CardContent className="min-h-[700px] p-6">
+              <GraficoSetorialAcao tipoSelecionado="Fundos Imobiliários" />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Histórico de Dividendos */}
       <InvestmentDividendPremiumGuard feature="dividends_history">
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center space-x-2">
-                  <TrendingUp className="h-5 w-5" />
-                  <span>{t('dividend_history')} - {tipoSelecionado}</span>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {t('dividend_evolution_over_time')}
-                </p>
-              </div>
-              <Badge variant="secondary">
-                {mes}/{ano}
-              </Badge>
-            </div>
+            <CardTitle className="flex items-center space-x-2">
+              <TrendingUp className="h-5 w-5" />
+              <span>{t('dividend_history')}</span>
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Evolução da rentabilidade por tipo de ativo e análise de yield
+            </p>
           </CardHeader>
           <CardContent>
-            <GraficoDividendosFII
-              mes={mes}
-              ano={ano}
-              tipoSelecionado={tipoSelecionado}
-            />
+            <GraficoRentabilidadeGeral tipo="linha" />
           </CardContent>
         </Card>
       </InvestmentDividendPremiumGuard>
 
-      {/* Insights e Recomendações */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('performance_analysis')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-              <p className="text-sm text-green-700 dark:text-green-300">
-                <strong>{t('diversification_goal')}:</strong> {t('well_diversified_score', { score: '85' })}
-              </p>
-            </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                <strong>{t('profitability_performance')}:</strong> {t('investments_performing_above_cdi', { percentage: '2.3' })}
-              </p>
-            </div>
-            <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                <strong>{t('attention_warning')}:</strong> {t('consider_rebalancing_portfolio')}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('next_steps')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <InvestmentDividendPremiumGuard feature="dividends_insights">
-              <div className="p-3 border-l-4 border-l-primary bg-primary/5 rounded-r-lg">
-                <p className="text-sm">
-                  <strong>{t('leverage_dividends')}:</strong> {t('received_this_month_consider_reinvest', { amount: formatCurrency(2830) })}
-                </p>
+      {/* Resumo de Performance */}
+      {!shouldHideCharts && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp className="h-5 w-5" />
+                <span>Performance da Carteira</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                <span className="text-sm font-medium">Diversificação</span>
+                <Badge className="bg-green-100 text-green-800">Excelente (85%)</Badge>
               </div>
-            </InvestmentDividendPremiumGuard>
-            <div className="p-3 border-l-4 border-l-purple-500 bg-purple-50 dark:bg-purple-950 rounded-r-lg">
-              <p className="text-sm">
-                <strong>{t('explore_new_sectors')}:</strong> {t('portfolio_concentrated_diversify')}
-              </p>
-            </div>
-            <div className="p-3 border-l-4 border-l-orange-500 bg-orange-50 dark:bg-orange-950 rounded-r-lg">
-              <p className="text-sm">
-                <strong>{t('increase_contributions')}:</strong> {t('positive_performance_increase_monthly')}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                <span className="text-sm font-medium">Rentabilidade</span>
+                <Badge className="bg-blue-100 text-blue-800">+{rentabilidadeTotal.toFixed(1)}%</Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <PieChart className="h-5 w-5" />
+                <span>Próximos Passos</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <InvestmentDividendPremiumGuard feature="dividends_insights">
+                <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg border border-primary/20">
+                  <span className="text-sm font-medium">Dividendos Recebidos</span>
+                  <Badge variant="outline">{formatCurrency(2830)} este mês</Badge>
+                </div>
+              </InvestmentDividendPremiumGuard>
+              <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
+                <span className="text-sm font-medium">Rebalanceamento</span>
+                <Badge className="bg-purple-100 text-purple-800">Considerar</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

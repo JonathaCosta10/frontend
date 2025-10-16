@@ -29,7 +29,7 @@ class ApiService {
 
   constructor(config: Partial<ApiConfig> = {}) {
     this.config = {
-      baseURL: import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000',
+      baseURL: import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000',
       timeout: 10000,
       retries: 3,
       useMocks: process.env.NODE_ENV === 'development',

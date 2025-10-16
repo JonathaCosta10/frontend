@@ -1,23 +1,162 @@
 /**
  * Funções utilitárias para formatação de dados
  * Centraliza a lógica de formatação para manter consistência em toda a aplicação
+ * PORTUGUÊS BRASILEIRO APENAS
  */
 
-import { format, parseISO, isValid, Locale as DateFnsLocale } from 'date-fns';
-import { ptBR, enUS, es } from 'date-fns/locale';
+import { format, par/**
+ * Formata tamanho de arquivo em bytes
+ * @param bytes Tamanho em bytes
+ * @param decimals Número de casas decimais (padrão: 2)
+ * @returns String formatada com unidade de tamanho
+ */
+export const formatFileSize = (
+  bytes: number | undefined | null, 
+  decimals: number = 2
+): string => {
+  if (bytes === undefined || bytes === null || bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
+};
+
+// ===== FORMATTERS ESPECÍFICOS PARA ANÁLISE DE FII =====
+
+/**
+ * Formatar P/VP com precisão específica
+ * @param value - Valor P/VP
+ * @returns String formatada (ex: 0.7866 -> "0,79")
+ */
+export const formatPVP = (value: number | string | null | undefined): string => {
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (numValue === null || numValue === undefined || isNaN(numValue)) {
+    return '0,00';
+  }
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numValue);
+};
+
+/**
+ * Formatar volume diário
+ * @param value - Valor do volume
+ * @returns String formatada como "Volume Diário = R$ xxx.xxx,xx"
+ */
+export const formatDailyVolume = (value: number | string | null | undefined): string => {
+  return `Volume Diário = ${formatCurrency(value)}`;
+};
+
+/**
+ * Formatar alavancagem como percentual
+ * @param value - Valor da alavancagem (decimal)
+ * @returns String formatada como percentual (ex: 0.2346 -> "23,5%")
+ */
+export const formatLeverage = (value: number | string | null | undefined): string => {
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (numValue === null || numValue === undefined || isNaN(numValue)) {
+    return '0,0%';
+  }
+  return formatPercentage(numValue * 100, 'pt-BR', 1);
+};
+
+/**
+ * Formatar dividend yield mensal
+ * @param value - Valor do dividend yield
+ * @returns String formatada como percentual
+ */
+export const formatDividendYield = (value: number | string | null | undefined): string => {
+  const formatted = formatPercentage(value, 'pt-BR', 2);
+  return `${formatted}`;
+};
+
+/**
+ * Determinar cor baseada na variação
+ * @param variation - Valor da variação
+ * @returns Classe CSS para coloração
+ */
+export const getVariationColor = (variation: number | null | undefined): string => {
+  if (variation === null || variation === undefined || variation === 0) {
+    return 'text-gray-600';
+  }
+  return variation > 0 ? 'text-green-600' : 'text-red-600';
+};
+
+/**
+ * Determinar ícone de tendência baseado na variação
+ * @param variation - Valor da variação
+ * @returns Nome do ícone Lucide
+ */
+export const getTrendIcon = (variation: number | null | undefined): string => {
+  if (variation === null || variation === undefined || variation === 0) {
+    return 'Minus';
+  }
+  return variation > 0 ? 'TrendingUp' : 'TrendingDown';
+};
+
+/**
+ * Formatar valores para tooltips com contexto adicional
+ * @param value - Valor a ser formatado
+ * @param type - Tipo de formatação
+ * @param context - Contexto adicional para o tooltip
+ * @returns Objeto com valor formatado e tooltip
+ */
+export const formatWithTooltip = (
+  value: number | string | null | undefined,
+  type: 'currency' | 'percentage' | 'number' | 'pvp' | 'leverage',
+  context?: string
+): { formatted: string; tooltip: string } => {
+  let formatted: string;
+  let tooltip: string;
+
+  switch (type) {
+    case 'currency':
+      formatted = formatCurrency(value);
+      tooltip = context || 'Valor monetário';
+      break;
+    case 'percentage':
+      formatted = formatPercentage(value);
+      tooltip = context || 'Percentual';
+      break;
+    case 'pvp':
+      formatted = formatPVP(value);
+      tooltip = context || 'Relação Preço ÷ Valor Patrimonial por cota';
+      break;
+    case 'leverage':
+      formatted = formatLeverage(value);
+      tooltip = context || 'Índice de alavancagem (dívida/PL)';
+      break;
+    default:
+      formatted = formatNumber(value);
+      tooltip = context || 'Valor numérico';
+  }
+
+  return { formatted, tooltip };
+};
+
+/**
+ * Validar se um valor é válido para formatação
+ * @param value - Valor a ser validado
+ * @returns true se o valor é válido
+ */
+export const isValidValue = (value: any): boolean => {
+  return value !== null && value !== undefined && !isNaN(Number(value));
+};cale as DateFnsLocale } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { currencyFormatMap, dateFormatMap } from './mappings';
 
-// Map de locales do date-fns
+// Map de locales do date-fns - apenas português brasileiro
 const localeMap: Record<string, DateFnsLocale> = {
-  'pt-BR': ptBR,
-  'en-US': enUS,
-  'es-ES': es
+  'pt-BR': ptBR
 };
 
 /**
  * Formata um valor para moeda
  * @param value Valor a ser formatado
- * @param locale Código do idioma (padrão: pt-BR)
+ * @param locale Código do idioma (padrão: pt-BR) - PORTUGUÊS APENAS
  * @param hideCents Ocultar os centavos (padrão: false)
  * @returns String formatada em moeda
  */

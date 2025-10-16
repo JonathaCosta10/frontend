@@ -1,0 +1,582 @@
+{
+  "bundleSize": {
+    "acoes-DTAd-I5X.js": {
+      "size": 22591,
+      "sizeKB": 22.06,
+      "type": "js"
+    },
+    "analise-ticker-8S0nMcDt.js": {
+      "size": 45277,
+      "sizeKB": 44.22,
+      "type": "js"
+    },
+    "AuthCallback-BhiLJ5I7.js": {
+      "size": 4667,
+      "sizeKB": 4.56,
+      "type": "js"
+    },
+    "Budget-DgxLRnw5.js": {
+      "size": 6240,
+      "sizeKB": 6.09,
+      "type": "js"
+    },
+    "cadastro-04-NWCw0.js": {
+      "size": 30354,
+      "sizeKB": 29.64,
+      "type": "js"
+    },
+    "cadastro-Do-e9arb.js": {
+      "size": 29628,
+      "sizeKB": 28.93,
+      "type": "js"
+    },
+    "calculadora-financeira-MZ8Fvywe.js": {
+      "size": 148907,
+      "sizeKB": 145.42,
+      "type": "js"
+    },
+    "change-password-BlmNI0sH.js": {
+      "size": 18122,
+      "sizeKB": 17.7,
+      "type": "js"
+    },
+    "charts-dIB9kuY7.js": {
+      "size": 595490,
+      "sizeKB": 581.53,
+      "type": "js"
+    },
+    "comparativos-D2qH_B8f.js": {
+      "size": 29425,
+      "sizeKB": 28.74,
+      "type": "js"
+    },
+    "configuracoes-Bxsootue.js": {
+      "size": 59734,
+      "sizeKB": 58.33,
+      "type": "js"
+    },
+    "CryptoPremiumGuard-BWoVi53W.js": {
+      "size": 7254,
+      "sizeKB": 7.08,
+      "type": "js"
+    },
+    "custos-CgutizFy.js": {
+      "size": 30227,
+      "sizeKB": 29.52,
+      "type": "js"
+    },
+    "DashboardCripto-HiSawlyt.js": {
+      "size": 63505,
+      "sizeKB": 62.02,
+      "type": "js"
+    },
+    "dividas-CcGhXOl-.js": {
+      "size": 36507,
+      "sizeKB": 35.65,
+      "type": "js"
+    },
+    "entradas-DLZp_71K.js": {
+      "size": 30855,
+      "sizeKB": 30.13,
+      "type": "js"
+    },
+    "fundos-investimentos-9BmXinOE.js": {
+      "size": 15267,
+      "sizeKB": 14.91,
+      "type": "js"
+    },
+    "index-B04Dt0C-.js": {
+      "size": 12455,
+      "sizeKB": 12.16,
+      "type": "js"
+    },
+    "index-BFIs0dgx.js": {
+      "size": 37655,
+      "sizeKB": 36.77,
+      "type": "js"
+    },
+    "index-C0FtRCT0.js": {
+      "size": 44173,
+      "sizeKB": 43.14,
+      "type": "js"
+    },
+    "index-DTnMfl1P.js": {
+      "size": 50421,
+      "sizeKB": 49.24,
+      "type": "js"
+    },
+    "index-HG12DX9l.js": {
+      "size": 585151,
+      "sizeKB": 571.44,
+      "type": "js"
+    },
+    "indicadores-economicos-TfC5C1WA.js": {
+      "size": 12204,
+      "sizeKB": 11.92,
+      "type": "js"
+    },
+    "info-diaria-BzpwJPdT.js": {
+      "size": 75711,
+      "sizeKB": 73.94,
+      "type": "js"
+    },
+    "Investment-Cw2RmHZ6.js": {
+      "size": 6430,
+      "sizeKB": 6.28,
+      "type": "js"
+    },
+    "InvestmentPremiumGuard-DsnzDe0U.js": {
+      "size": 9212,
+      "sizeKB": 9,
+      "type": "js"
+    },
+    "investmentService-DvYbWTGX.js": {
+      "size": 2419,
+      "sizeKB": 2.36,
+      "type": "js"
+    },
+    "lista-de-desejo-DL_b_WAo.js": {
+      "size": 55745,
+      "sizeKB": 54.44,
+      "type": "js"
+    },
+    "macroeconomia-BEtVRHA0.js": {
+      "size": 30036,
+      "sizeKB": 29.33,
+      "type": "js"
+    },
+    "Market-CiryjxoZ.js": {
+      "size": 3916,
+      "sizeKB": 3.82,
+      "type": "js"
+    },
+    "MarketPremiumGuard-CswPXKtK.js": {
+      "size": 9047,
+      "sizeKB": 8.83,
+      "type": "js"
+    },
+    "mercado-CTfDc5QI.js": {
+      "size": 24592,
+      "sizeKB": 24.02,
+      "type": "js"
+    },
+    "metas-BYcpo0vT.js": {
+      "size": 65111,
+      "sizeKB": 63.58,
+      "type": "js"
+    },
+    "NewUserGuidance-CEmR4AU4.js": {
+      "size": 33322,
+      "sizeKB": 32.54,
+      "type": "js"
+    },
+    "patrimonio-BSGkc_iE.js": {
+      "size": 38443,
+      "sizeKB": 37.54,
+      "type": "js"
+    },
+    "payment-options-B-Spe2y1.js": {
+      "size": 27059,
+      "sizeKB": 26.42,
+      "type": "js"
+    },
+    "perfil-CdJc5yMI.js": {
+      "size": 80497,
+      "sizeKB": 78.61,
+      "type": "js"
+    },
+    "portfolio-xLAMIxT8.js": {
+      "size": 40284,
+      "sizeKB": 39.34,
+      "type": "js"
+    },
+    "ranking-C_UTS2eZ.js": {
+      "size": 39079,
+      "sizeKB": 38.16,
+      "type": "js"
+    },
+    "react--0tmx9Bl.js": {
+      "size": 576706,
+      "sizeKB": 563.19,
+      "type": "js"
+    },
+    "renda-fixa-DWhJGoTn.js": {
+      "size": 23533,
+      "sizeKB": 22.98,
+      "type": "js"
+    },
+    "risk-assessment-CgRyPnKP.js": {
+      "size": 24208,
+      "sizeKB": 23.64,
+      "type": "js"
+    },
+    "SubscriptionGuard-BCYjOcA6.js": {
+      "size": 17068,
+      "sizeKB": 16.67,
+      "type": "js"
+    },
+    "suporte-BbyJilGR.js": {
+      "size": 48326,
+      "sizeKB": 47.19,
+      "type": "js"
+    },
+    "switch-DbAKQuj1.js": {
+      "size": 1172,
+      "sizeKB": 1.14,
+      "type": "js"
+    },
+    "table-ljudJpUe.js": {
+      "size": 3120,
+      "sizeKB": 3.05,
+      "type": "js"
+    },
+    "tabs-B5WZneDh.js": {
+      "size": 1644,
+      "sizeKB": 1.61,
+      "type": "js"
+    },
+    "textarea-BUUKmQRZ.js": {
+      "size": 699,
+      "sizeKB": 0.68,
+      "type": "js"
+    },
+    "Training-DQ3Dzeal.js": {
+      "size": 2036,
+      "sizeKB": 1.99,
+      "type": "js"
+    },
+    "TrainingPremiumGuard-CBEFqMrN.js": {
+      "size": 7272,
+      "sizeKB": 7.1,
+      "type": "js"
+    },
+    "ui-components-ByoYm48K.js": {
+      "size": 199,
+      "sizeKB": 0.19,
+      "type": "js"
+    },
+    "useMonthYear-Dd662U-m.js": {
+      "size": 910,
+      "sizeKB": 0.89,
+      "type": "js"
+    },
+    "utils-l0OszBQW.js": {
+      "size": 27644,
+      "sizeKB": 27,
+      "type": "js"
+    },
+    "vendor-yErKedcV.js": {
+      "size": 223100,
+      "sizeKB": 217.87,
+      "type": "js"
+    },
+    "index-pwWqsthu.css": {
+      "size": 111671,
+      "sizeKB": 109.05,
+      "type": "css"
+    }
+  },
+  "chunkAnalysis": {
+    "acoes-DTAd-I5X.js": {
+      "type": "lazy-route",
+      "size": 22.06,
+      "optimal": true
+    },
+    "analise-ticker-8S0nMcDt.js": {
+      "type": "lazy-route",
+      "size": 44.22,
+      "optimal": true
+    },
+    "AuthCallback-BhiLJ5I7.js": {
+      "type": "lazy-route",
+      "size": 4.56,
+      "optimal": true
+    },
+    "Budget-DgxLRnw5.js": {
+      "type": "lazy-route",
+      "size": 6.09,
+      "optimal": true
+    },
+    "cadastro-04-NWCw0.js": {
+      "type": "lazy-route",
+      "size": 29.64,
+      "optimal": true
+    },
+    "cadastro-Do-e9arb.js": {
+      "type": "lazy-route",
+      "size": 28.93,
+      "optimal": true
+    },
+    "calculadora-financeira-MZ8Fvywe.js": {
+      "type": "lazy-route",
+      "size": 145.42,
+      "optimal": false
+    },
+    "change-password-BlmNI0sH.js": {
+      "type": "lazy-route",
+      "size": 17.7,
+      "optimal": true
+    },
+    "charts-dIB9kuY7.js": {
+      "type": "charts",
+      "size": 581.53,
+      "optimal": false
+    },
+    "comparativos-D2qH_B8f.js": {
+      "type": "lazy-route",
+      "size": 28.74,
+      "optimal": true
+    },
+    "configuracoes-Bxsootue.js": {
+      "type": "lazy-route",
+      "size": 58.33,
+      "optimal": true
+    },
+    "CryptoPremiumGuard-BWoVi53W.js": {
+      "type": "lazy-route",
+      "size": 7.08,
+      "optimal": true
+    },
+    "custos-CgutizFy.js": {
+      "type": "lazy-route",
+      "size": 29.52,
+      "optimal": true
+    },
+    "DashboardCripto-HiSawlyt.js": {
+      "type": "lazy-route",
+      "size": 62.02,
+      "optimal": true
+    },
+    "dividas-CcGhXOl-.js": {
+      "type": "lazy-route",
+      "size": 35.65,
+      "optimal": true
+    },
+    "entradas-DLZp_71K.js": {
+      "type": "lazy-route",
+      "size": 30.13,
+      "optimal": true
+    },
+    "fundos-investimentos-9BmXinOE.js": {
+      "type": "lazy-route",
+      "size": 14.91,
+      "optimal": true
+    },
+    "index-B04Dt0C-.js": {
+      "type": "main",
+      "size": 12.16,
+      "optimal": true
+    },
+    "index-BFIs0dgx.js": {
+      "type": "main",
+      "size": 36.77,
+      "optimal": true
+    },
+    "index-C0FtRCT0.js": {
+      "type": "main",
+      "size": 43.14,
+      "optimal": true
+    },
+    "index-DTnMfl1P.js": {
+      "type": "main",
+      "size": 49.24,
+      "optimal": true
+    },
+    "index-HG12DX9l.js": {
+      "type": "main",
+      "size": 571.44,
+      "optimal": false
+    },
+    "indicadores-economicos-TfC5C1WA.js": {
+      "type": "lazy-route",
+      "size": 11.92,
+      "optimal": true
+    },
+    "info-diaria-BzpwJPdT.js": {
+      "type": "lazy-route",
+      "size": 73.94,
+      "optimal": true
+    },
+    "Investment-Cw2RmHZ6.js": {
+      "type": "lazy-route",
+      "size": 6.28,
+      "optimal": true
+    },
+    "InvestmentPremiumGuard-DsnzDe0U.js": {
+      "type": "lazy-route",
+      "size": 9,
+      "optimal": true
+    },
+    "investmentService-DvYbWTGX.js": {
+      "type": "lazy-route",
+      "size": 2.36,
+      "optimal": true
+    },
+    "lista-de-desejo-DL_b_WAo.js": {
+      "type": "lazy-route",
+      "size": 54.44,
+      "optimal": true
+    },
+    "macroeconomia-BEtVRHA0.js": {
+      "type": "lazy-route",
+      "size": 29.33,
+      "optimal": true
+    },
+    "Market-CiryjxoZ.js": {
+      "type": "lazy-route",
+      "size": 3.82,
+      "optimal": true
+    },
+    "MarketPremiumGuard-CswPXKtK.js": {
+      "type": "lazy-route",
+      "size": 8.83,
+      "optimal": true
+    },
+    "mercado-CTfDc5QI.js": {
+      "type": "lazy-route",
+      "size": 24.02,
+      "optimal": true
+    },
+    "metas-BYcpo0vT.js": {
+      "type": "lazy-route",
+      "size": 63.58,
+      "optimal": true
+    },
+    "NewUserGuidance-CEmR4AU4.js": {
+      "type": "lazy-route",
+      "size": 32.54,
+      "optimal": true
+    },
+    "patrimonio-BSGkc_iE.js": {
+      "type": "lazy-route",
+      "size": 37.54,
+      "optimal": true
+    },
+    "payment-options-B-Spe2y1.js": {
+      "type": "lazy-route",
+      "size": 26.42,
+      "optimal": true
+    },
+    "perfil-CdJc5yMI.js": {
+      "type": "lazy-route",
+      "size": 78.61,
+      "optimal": true
+    },
+    "portfolio-xLAMIxT8.js": {
+      "type": "lazy-route",
+      "size": 39.34,
+      "optimal": true
+    },
+    "ranking-C_UTS2eZ.js": {
+      "type": "lazy-route",
+      "size": 38.16,
+      "optimal": true
+    },
+    "react--0tmx9Bl.js": {
+      "type": "lazy-route",
+      "size": 563.19,
+      "optimal": false
+    },
+    "renda-fixa-DWhJGoTn.js": {
+      "type": "lazy-route",
+      "size": 22.98,
+      "optimal": true
+    },
+    "risk-assessment-CgRyPnKP.js": {
+      "type": "lazy-route",
+      "size": 23.64,
+      "optimal": true
+    },
+    "SubscriptionGuard-BCYjOcA6.js": {
+      "type": "lazy-route",
+      "size": 16.67,
+      "optimal": true
+    },
+    "suporte-BbyJilGR.js": {
+      "type": "lazy-route",
+      "size": 47.19,
+      "optimal": true
+    },
+    "switch-DbAKQuj1.js": {
+      "type": "lazy-route",
+      "size": 1.14,
+      "optimal": true
+    },
+    "table-ljudJpUe.js": {
+      "type": "lazy-route",
+      "size": 3.05,
+      "optimal": true
+    },
+    "tabs-B5WZneDh.js": {
+      "type": "lazy-route",
+      "size": 1.61,
+      "optimal": true
+    },
+    "textarea-BUUKmQRZ.js": {
+      "type": "lazy-route",
+      "size": 0.68,
+      "optimal": true
+    },
+    "Training-DQ3Dzeal.js": {
+      "type": "lazy-route",
+      "size": 1.99,
+      "optimal": true
+    },
+    "TrainingPremiumGuard-CBEFqMrN.js": {
+      "type": "lazy-route",
+      "size": 7.1,
+      "optimal": true
+    },
+    "ui-components-ByoYm48K.js": {
+      "type": "ui-library",
+      "size": 0.19,
+      "optimal": true
+    },
+    "useMonthYear-Dd662U-m.js": {
+      "type": "lazy-route",
+      "size": 0.89,
+      "optimal": true
+    },
+    "utils-l0OszBQW.js": {
+      "type": "lazy-route",
+      "size": 27,
+      "optimal": true
+    },
+    "vendor-yErKedcV.js": {
+      "type": "vendor",
+      "size": 217.87,
+      "optimal": false
+    }
+  },
+  "recommendations": [
+    {
+      "type": "bundle-splitting",
+      "message": "Considere dividir bundles grandes em chunks menores",
+      "files": [
+        "charts-dIB9kuY7.js",
+        "index-HG12DX9l.js",
+        "react--0tmx9Bl.js",
+        "vendor-yErKedcV.js"
+      ]
+    },
+    {
+      "type": "tree-shaking",
+      "message": "Bundle total muito grande - verifique tree shaking"
+    },
+    {
+      "type": "chunk-merging",
+      "message": "Muitos chunks pequenos - considere mesclar alguns"
+    }
+  ],
+  "performance": {
+    "totalSize": 3.36,
+    "jsSize": 3414649,
+    "cssSize": 111671
+  },
+  "timestamp": "2025-09-09T20:48:29.692Z",
+  "summary": {
+    "totalBundles": 55,
+    "totalSizeMB": 3.36,
+    "recommendationsCount": 3
+  }
+}

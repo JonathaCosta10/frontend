@@ -1,13 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import FinanceLogo from "@/components/FinanceLogo";
 import {
-  Moon,
-  Sun,
-  User,
-  LogIn,
   TrendingUp,
   BarChart3,
   PieChart,
@@ -15,8 +10,6 @@ import {
   Shield,
   Zap,
   Users,
-  Menu,
-  X,
   Play,
   CheckCircle,
   LockKeyhole,
@@ -24,555 +17,416 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useResponsive } from "@/hooks/useResponsive";
+import PublicLayout from "@/components/PublicLayout";
 
 export default function Home() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const novo = !prev;
-      document.documentElement.classList.toggle("dark", novo);
-      return novo;
-    });
-  };
-
-  const features = [
-    {
-      icon: <TrendingUp className="h-8 w-8" />,
-      title: t('market_analysis'),
-      description: t('market_analysis_description'),
-    },
-    {
-      icon: <BarChart3 className="h-8 w-8" />,
-      title: t('detailed_reports'),
-      description: t('detailed_reports_description'),
-    },
-    {
-      icon: <PieChart className="h-8 w-8" />,
-      title: t('diversified_portfolio'),
-      description: t('diversified_portfolio_description'),
-    },
-  ];
-
-  const stats = [
-    { label: t('quick_response'), value: "24h" },
-    { label: t('user_satisfaction'), value: "98%" },
-    { label: t('platform_updates'), value: "Semanal" },
-    { label: t('financial_insights'), value: "Diário" },
-  ];
+  const { isMobile, isTablet } = useResponsive();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className={`border-b bg-card transition-all duration-300 ${
-        isScrolled ? 'fixed top-0 left-0 right-0 z-50 shadow-lg' : ''
-      }`}>
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center space-x-2">
-              <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-8 h-8" />
-              <h1 className="text-2xl font-bold text-primary">Organizesee</h1>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
-              <nav className="mr-4">
-                <ul className="flex space-x-6">
-                  <li>
-                    <Link to="/about" className="text-muted-foreground hover:text-foreground">
-                      Sobre
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/whitepaper" className="text-muted-foreground hover:text-foreground">
-                      Whitepaper
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground">
-                      Política de Privacidade
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/terms" className="text-muted-foreground hover:text-foreground">
-                      Termos
-                    </Link>
-                  </li>
-                </ul>
-              </nav>
-            
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleDarkMode}
-                className="w-9 h-9"
-              >
-                {darkMode ? (
-                  <Sun className="h-4 w-4" />
-                ) : (
-                  <Moon className="h-4 w-4" />
-                )}
-              </Button>
-
-              <div className="flex items-center space-x-2">
-                <Link to="/login">
+    <PublicLayout>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-white dark:bg-gray-950">
+        <div className={`mx-auto max-w-7xl ${isMobile ? 'px-4' : 'px-4 sm:px-6 lg:px-8'}`}>
+          <div className={`${isMobile ? 'py-8' : 'py-12 md:py-20'}`}>
+            <div className={`grid gap-10 items-center ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+              <div>
+                <h1 className={`font-bold tracking-tight text-gray-900 dark:text-white ${isMobile ? 'text-3xl' : 'text-4xl sm:text-5xl md:text-6xl'}`}>
+                  <span className="block">{t("Organize seu")}</span>
+                  <span className="block text-blue-600 dark:text-blue-500">
+                    {t("Futuro Financeiro")}
+                  </span>
+                </h1>
+                <p className={`mt-6 max-w-lg text-gray-500 dark:text-gray-400 ${isMobile ? 'text-lg' : 'text-xl'}`}>
+                  {t(
+                    "Controle suas finanças pessoais e acompanhe seus investimentos em um único lugar, com ferramentas poderosas e intuitivas."
+                  )}
+                </p>
+                <div className={`mt-8 flex gap-4 ${isMobile ? 'flex-col' : 'flex-wrap'}`}>
+                  <Button asChild size={isMobile ? "default" : "lg"} className={isMobile ? "w-full" : "text-lg"}>
+                    <Link to="/signup">{t("Comece Grátis")}</Link>
+                  </Button>
                   <Button
-                    variant="ghost"
-                    className="flex items-center space-x-2"
+                    asChild
+                    size={isMobile ? "default" : "lg"}
+                    variant="outline"
+                    className={isMobile ? "w-full" : "text-lg"}
                   >
-                    <LogIn className="h-4 w-4" />
-                    <span>{t('login')}</span>
+                    <Link to="/demo" className="inline-flex items-center justify-center">
+                      {t("Saiba Mais")} <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
                   </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button className="flex items-center space-x-2">
-                    <User className="h-4 w-4" />
-                    <span>{t('signup')}</span>
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Mobile Navigation */}
-            <div className="flex md:hidden items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleDarkMode}
-                className="w-9 h-9"
-              >
-                {darkMode ? (
-                  <Sun className="h-4 w-4" />
-                ) : (
-                  <Moon className="h-4 w-4" />
-                )}
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="w-9 h-9"
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-4 w-4" />
-                ) : (
-                  <Menu className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Mobile Menu Dropdown */}
-          {mobileMenuOpen && (
-            <div className="md:hidden mt-4 py-4 border-t border-border">
-              <div className="flex flex-col space-y-4">
-                {/* Main Action Buttons */}
-                <div className="flex flex-col space-y-3 px-2">
-                  <Link to="/login" className="w-full">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="w-full justify-center flex items-center space-x-2 text-lg py-6"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <LogIn className="h-5 w-5" />
-                      <span>{t("login")}</span>
-                    </Button>
-                  </Link>
-                  <Link to="/signup" className="w-full">
-                    <Button
-                      size="lg"
-                      className="w-full justify-center flex items-center space-x-2 text-lg py-6 bg-primary hover:bg-primary/90"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <User className="h-5 w-5" />
-                      <span>{t("signup")}</span>
-                    </Button>
-                  </Link>
                 </div>
-                
-                {/* Quick Actions */}
-                <div className="px-2 pt-2 border-t border-border">
-                  <p className="text-sm text-muted-foreground mb-3">Navegação:</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    <Link to="/demo" className="w-full">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        Demonstração
-                      </Button>
-                    </Link>
-                    <Link to="/market" className="w-full">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <TrendingUp className="h-4 w-4 mr-2" />
-                        Mercado
-                      </Button>
-                    </Link>
-                    <Link to="/whitepaper" className="w-full">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Whitepaper
-                      </Button>
-                    </Link>
-                    <Link to="/privacy-policy" className="w-full">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <LockKeyhole className="h-4 w-4 mr-2" />
-                        Política de Privacidade
-                      </Button>
-                    </Link>
-                  </div>
+                <div className={`mt-8 ${isMobile ? 'space-y-2' : ''}`}>
+                  <Badge variant="outline" className={`px-3 py-1 text-sm ${isMobile ? 'w-full justify-center' : ''}`}>
+                    <CheckCircle className="mr-1 h-4 w-4 text-green-500" />
+                    {t("Sem taxas ocultas")}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={`px-3 py-1 text-sm ${isMobile ? 'w-full justify-center' : 'ml-2'}`}
+                  >
+                    <LockKeyhole className="mr-1 h-4 w-4 text-blue-500" />
+                    {t("Segurança de dados")}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={`px-3 py-1 text-sm ${isMobile ? 'w-full justify-center' : 'ml-2'}`}
+                  >
+                    <Shield className="mr-1 h-4 w-4 text-purple-500" />
+                    {t("Proteção de privacidade")}
+                  </Badge>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </header>
-
-      <main className={`container mx-auto px-4 pb-32 md:pb-8 ${isScrolled ? 'pt-20' : ''}`}>
-        {/* Hero Section */}
-        <section className="py-20 text-center">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              {t('organize_investments')}
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              {t('complete_platform_description')}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/market">
-                <Button variant="outline" size="lg" className="flex items-center space-x-2">
-                  <span>{t('explore_market')}</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/demo">
-                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
-                  {t('watch_demo')}
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="py-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* App Description (Required for OAuth) */}
-        <section className="py-16 bg-gradient-to-r from-primary/5 to-background">
-          <div className="max-w-4xl mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-6 text-center">O que o Organizesee faz</h2>
-            <p className="text-lg text-center text-muted-foreground mb-10">
-              Uma plataforma financeira completa para ajudar você a gerenciar suas finanças e investimentos com ferramentas profissionais
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
-                <div className="flex items-start space-x-4 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <BarChart3 className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Controle Financeiro</h3>
-                    <p className="text-muted-foreground text-sm">
-                      Organize receitas e despesas, crie orçamentos detalhados e acompanhe metas financeiras com gráficos e relatórios intuitivos.
-                    </p>
-                  </div>
-                </div>
-                <ul className="space-y-2 pl-10">
-                  <li className="flex items-center space-x-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span>Visão geral de todas suas contas</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span>Orçamentos personalizados</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span>Acompanhamento de metas financeiras</span>
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
-                <div className="flex items-start space-x-4 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Gestão de Investimentos</h3>
-                    <p className="text-muted-foreground text-sm">
-                      Acompanhe seu portfólio de investimentos, analise o desempenho de ativos e receba insights para otimizar seus rendimentos.
-                    </p>
+              <div className="relative">
+                <div className="aspect-w-5 aspect-h-3 lg:aspect-w-4 lg:aspect-h-3">
+                  <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-1 shadow-2xl">
+                    <div className="h-full w-full rounded-xl bg-white/20 p-4 backdrop-blur-sm">
+                      <div className="flex h-full flex-col justify-between rounded-lg bg-white/80 p-6 dark:bg-gray-900/90">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center">
+                                <BarChart3 className="h-6 w-6 text-white" />
+                              </div>
+                              <div>
+                                <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                                  {t("Resumo Financeiro")}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded-lg bg-gray-100 p-3 dark:bg-gray-800">
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                {t("Receitas")}
+                              </div>
+                              <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                                R$ 5.240,00
+                              </div>
+                              <div className="mt-1 text-xs text-green-500 flex items-center">
+                                <TrendingUp className="mr-1 h-3 w-3" />
+                                +8.2%
+                              </div>
+                            </div>
+                            <div className="rounded-lg bg-gray-100 p-3 dark:bg-gray-800">
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                {t("Despesas")}
+                              </div>
+                              <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                                R$ 3.180,00
+                              </div>
+                              <div className="mt-1 text-xs text-red-500 flex items-center">
+                                <TrendingUp className="mr-1 h-3 w-3 transform rotate-180" />
+                                -12.4%
+                              </div>
+                            </div>
+                          </div>
+                          <div className="h-24 overflow-hidden rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-2">
+                            <div className="flex h-full items-end justify-around px-2">
+                              {[0.4, 0.6, 0.5, 0.8, 0.6, 0.7, 0.9].map(
+                                (height, i) => (
+                                  <div
+                                    key={i}
+                                    className="w-6 rounded-t bg-gradient-to-t from-blue-500 to-indigo-500"
+                                    style={{ height: `${height * 100}%` }}
+                                  ></div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                          <Button asChild size="sm" className="text-xs">
+                            <Link to="/login">
+                              {t("Tenha sua Análise Completa")}
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <ul className="space-y-2 pl-10">
-                  <li className="flex items-center space-x-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span>Dashboard de investimentos</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span>Análise de carteira e diversificação</span>
-                  </li>
-                  <li className="flex items-center space-x-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span>Informações de mercado em tempo real</span>
-                  </li>
-                </ul>
+                <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-tr from-yellow-400 to-orange-500 blur-3xl opacity-50"></div>
+                <div className="absolute -bottom-8 -left-8 h-40 w-40 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 blur-3xl opacity-40"></div>
               </div>
             </div>
           </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              {t('everything_need_invest_better')}
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {t('professional_tools_maximize_returns')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-              >
-                <CardHeader>
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
-                    {feature.icon}
-                  </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* Benefits Section */}
-        <section className="py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                {t('why_choose_organizesee')}
-              </h2>
-              <div className="space-y-6">
-                <div className="flex items-start space-x-4">
-                  <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Shield className="h-4 w-4 text-success" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">{t('reliable_data')}</h3>
-                    <p className="text-muted-foreground">
-                      {t('reliable_data_description')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Zap className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">{t('intuitive_interface')}</h3>
-                    <p className="text-muted-foreground">
-                      {t('intuitive_interface_description')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <div className="w-8 h-8 bg-secondary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Users className="h-4 w-4 text-secondary-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">{t('active_community')}</h3>
-                    <p className="text-muted-foreground">
-                      {t('active_community_description')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative">
-              <Card className="p-8 bg-gradient-to-br from-primary/5 to-primary/10">
-                <div className="text-center">
-                  <TrendingUp className="h-16 w-16 text-primary mx-auto mb-4" />
-                  <h3 className="text-2xl font-bold mb-4">{t('start_today')}</h3>
-                  <p className="text-muted-foreground mb-6">
-                    {t('thousands_investors_trust')}
-                  </p>
-                  <Link to="/login">
-                    <Button size="lg" className="w-full">
-                      {t('explore_platform')}
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      {/* Data Usage & Privacy Section (Required for OAuth) */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold mb-6 text-center">Como usamos seus dados</h2>
-            
-            <div className="bg-card rounded-xl p-6 shadow-sm mb-8">
-              <h3 className="text-xl font-semibold mb-4">Transparência e Proteção de Dados</h3>
-              <p className="text-muted-foreground mb-4">
-                O Organizesee solicita permissões de acesso apenas para fornecer uma experiência personalizada e segura:
-              </p>
-              
-              <div className="space-y-4 mt-6">
-                <div className="flex items-start space-x-3">
-                  <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Autenticação segura</p>
-                    <p className="text-sm text-muted-foreground">
-                      Usamos seu e-mail apenas para autenticação e comunicações essenciais sobre sua conta.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Dados criptografados</p>
-                    <p className="text-sm text-muted-foreground">
-                      Todas as suas informações financeiras são criptografadas e nunca compartilhadas com terceiros.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Controle total</p>
-                    <p className="text-sm text-muted-foreground">
-                      Você pode revogar permissões ou excluir seus dados a qualquer momento através das configurações da conta.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-8 pt-6 border-t border-border">
-                <Link to="/privacy-policy" className="text-primary hover:underline font-medium flex items-center">
-                  <span>Leia nossa Política de Privacidade completa</span>
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <footer className="border-t bg-card mt-20">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <img src="/finance-logo.svg" alt="Organizesee Logo" className="w-6 h-6" />
-              <span className="font-semibold">Organizesee</span>
-            </div>
-            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-6">
-              <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">
-                Política de Privacidade
-              </Link>
-              <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">
-                Termos de Uso
-              </Link>
-              <p className="text-sm text-muted-foreground">
-                © 2024 Organizesee. Todos os direitos reservados.
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Floating Action Buttons for Mobile */}
-      <div className="fixed bottom-6 left-4 right-4 md:hidden z-40">
-        <div className="flex flex-col space-y-3">
-          {/* Primary CTA - Signup */}
-          <Link to="/signup" className="w-full">
-            <Button
-              size="lg"
-              className="w-full justify-center flex items-center space-x-2 text-lg py-4 bg-primary hover:bg-primary/90 shadow-lg transform transition-transform hover:scale-105"
-            >
-              <User className="h-5 w-5" />
-              <span className="font-semibold">{t("signup")}</span>
-              <Badge variant="secondary" className="ml-2 bg-white text-primary text-xs px-2">
-                GRÁTIS
-              </Badge>
-            </Button>
-          </Link>
-          
-          {/* Secondary CTA - Login */}
-          <Link to="/login" className="w-full">
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full justify-center flex items-center space-x-2 text-lg py-4 bg-background hover:bg-muted shadow-lg border-2 transform transition-transform hover:scale-105"
-            >
-              <LogIn className="h-5 w-5" />
-              <span className="font-semibold">{t("login")}</span>
-            </Button>
-          </Link>
         </div>
       </div>
-    </div>
+
+      {/* Features Section */}
+      <div className="bg-gray-50 dark:bg-gray-900 py-16 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+              {t("Tudo que você precisa para gerenciar suas finanças")}
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-500 dark:text-gray-400">
+              {t(
+                "Ferramentas poderosas que o ajudam a tomar decisões financeiras inteligentes"
+              )}
+            </p>
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Feature 1 */}
+            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="pb-2">
+                <div className="mb-4 h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <PieChart className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <CardTitle className="text-xl">{t("Orçamento Inteligente")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {t(
+                    "Acompanhe seus gastos automaticamente, categorize transações e visualize para onde está indo seu dinheiro."
+                  )}
+                </p>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="mt-4 p-0 hover:bg-transparent"
+                >
+                  <Link to="/demo" className="flex items-center text-blue-600 dark:text-blue-400">
+                    {t("Saiba mais")}
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Feature 2 */}
+            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="pb-2">
+                <div className="mb-4 h-12 w-12 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <BarChart3 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <CardTitle className="text-xl">{t("Acompanhamento de Investimentos")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {t(
+                    "Visualize todos os seus investimentos em um só lugar, acompanhe o desempenho e receba análises personalizadas."
+                  )}
+                </p>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="mt-4 p-0 hover:bg-transparent"
+                >
+                  <Link to="/market" className="flex items-center text-green-600 dark:text-green-400">
+                    {t("Explorar mercados")}
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Feature 3 */}
+            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="pb-2">
+                <div className="mb-4 h-12 w-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                  <Shield className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <CardTitle className="text-xl">{t("Segurança Avançada")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {t(
+                    "Seus dados são protegidos com criptografia de nível bancário. Você mantém o controle completo das suas informações."
+                  )}
+                </p>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="mt-4 p-0 hover:bg-transparent"
+                >
+                  <Link to="/privacy-policy" className="flex items-center text-purple-600 dark:text-purple-400">
+                    {t("Política de privacidade")}
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works Section */}
+      <div className="bg-white dark:bg-gray-950 py-16 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+              {t("Como funciona")}
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-500 dark:text-gray-400">
+              {t("Simples de configurar, fácil de usar, poderoso em resultados")}
+            </p>
+          </div>
+
+          <div className="mt-16">
+            <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+              {/* Step 1 */}
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-500 text-white">
+                    1
+                  </div>
+                </div>
+                <h3 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+                  {t("Crie uma conta")}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {t(
+                    "Registre-se gratuitamente em menos de 2 minutos e acesse todas as ferramentas."
+                  )}
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-500 text-white">
+                    2
+                  </div>
+                </div>
+                <h3 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+                  {t("Conecte suas contas")}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {t(
+                    "Importe seus dados financeiros de forma segura ou adicione informações manualmente."
+                  )}
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-500 text-white">
+                    3
+                  </div>
+                </div>
+                <h3 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+                  {t("Tome melhores decisões")}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {t(
+                    "Visualize insights, defina metas e acompanhe seu progresso em tempo real."
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="mt-16 flex justify-center">
+              <Button asChild size="lg" className="text-lg">
+                <Link to="/signup">
+                  <Play className="mr-2 h-5 w-5" />
+                  {t("Comece agora")}
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Testimonials */}
+      <div className="bg-gray-50 dark:bg-gray-900 py-16 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+              {t("O que nossos usuários dizem")}
+            </h2>
+          </div>
+          <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
+            {/* Testimonial 1 */}
+            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-4">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                    M
+                  </div>
+                  <div className="ml-3">
+                    <div className="font-medium text-gray-900 dark:text-white">Marcos S.</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{t("Empresário")}</div>
+                  </div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300">
+                  "{t(
+                    "Finalmente consigo ter uma visão clara das minhas finanças pessoais e empresariais. A plataforma é intuitiva e os gráficos me ajudam a entender meus gastos rapidamente."
+                  )}"
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 2 */}
+            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-4">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-r from-green-500 to-teal-500 flex items-center justify-center text-white font-bold">
+                    A
+                  </div>
+                  <div className="ml-3">
+                    <div className="font-medium text-gray-900 dark:text-white">Ana L.</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{t("Investidora")}</div>
+                  </div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300">
+                  "{t(
+                    "Como investidora, eu precisava de uma ferramenta para acompanhar meu portfólio diversificado. Esta plataforma me dá exatamente isso, com análises detalhadas e atualizações em tempo real."
+                  )}"
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 3 */}
+            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-4">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center text-white font-bold">
+                    R
+                  </div>
+                  <div className="ml-3">
+                    <div className="font-medium text-gray-900 dark:text-white">Renata C.</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{t("Profissional Liberal")}</div>
+                  </div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300">
+                  "{t(
+                    "Consegui economizar mais de 20% dos meus ganhos mensais desde que comecei a usar o sistema. As dicas personalizadas e o acompanhamento de metas fizeram toda a diferença."
+                  )}"
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 py-16 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-between md:flex-row">
+            <div className="text-center md:text-left mb-8 md:mb-0">
+              <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                {t("Pronto para organizar suas finanças?")}
+              </h2>
+              <p className="mt-3 max-w-md text-lg text-blue-100">
+                {t("Junte-se a milhares de pessoas que estão transformando sua relação com o dinheiro.")}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <Button asChild size="lg" className="bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-500 shadow-lg">
+                <Link to="/signup">{t("Criar conta grátis")}</Link>
+              </Button>
+              <Button asChild size="lg" className="bg-white text-gray-900 font-semibold hover:bg-gray-100 shadow-lg">
+                <Link to="/about">{t("Saber mais")}</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </PublicLayout>
   );
 }

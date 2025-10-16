@@ -22,13 +22,16 @@ import {
   Trash2,
   Target,
   Bell,
+  EyeOff,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { budgetApi } from "@/services/api/budget";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { useMonthYear } from "@/hooks/useMonthYear";
 
 // ========================= INTERFACES =========================
 interface Entrada {
@@ -86,6 +89,7 @@ const COLORS = [
 export default function Entradas() {
   const { isAuthenticated } = useAuth();
   const { t, formatCurrency } = useTranslation();
+  const { formatValue, shouldHideCharts } = usePrivacy();
 
   // ========================= ESTADOS =========================
   const [entradas, setEntradas] = useState<Entrada[]>([]);
@@ -99,6 +103,7 @@ export default function Entradas() {
     descricao: "",
     valor_mensal: "",
   });
+  const { mes, ano } = useMonthYear();
   
   // Hook para detectar cliques fora do formulário
   useEffect(() => {
@@ -129,9 +134,6 @@ export default function Entradas() {
   }, [formData]);
 
   // ========================= CONFIGURAÇÕES =========================
-  // Obter mês e ano do localStorage
-  const mes = localStorage.getItem("mes") || String(new Date().getMonth() + 1).padStart(2, "0");
-  const ano = localStorage.getItem("ano") || String(new Date().getFullYear());
 
   // Configuração das categorias
   const categorias = [
@@ -376,7 +378,7 @@ export default function Entradas() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totalEntradas)}
+              {formatValue(totalEntradas)}
             </div>
             <p className="text-xs text-muted-foreground">
               {totaisPorCategoria.length} {t("active_categories")}
@@ -393,7 +395,7 @@ export default function Entradas() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {formatCurrency(totalComReplicacao)}
+              {formatValue(totalComReplicacao)}
             </div>
             <p className="text-xs text-muted-foreground">
               {t("recurring_income")}
@@ -410,7 +412,7 @@ export default function Entradas() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              {formatCurrency(totalSemReplicacao)}
+              {formatValue(totalSemReplicacao)}
             </div>
             <p className="text-xs text-muted-foreground">
               {t("one_time_income")}
@@ -484,7 +486,7 @@ export default function Entradas() {
                       {entrada.descricao}
                     </TableCell>
                     <TableCell className="text-green-600 font-semibold">
-                      {formatCurrency(entrada.valor_mensal)}
+                      {formatValue(entrada.valor_mensal)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center">
@@ -534,7 +536,14 @@ export default function Entradas() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {totaisPorCategoria && totaisPorCategoria.length > 0 ? (
+            {shouldHideCharts() ? (
+              <div className="h-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <div className="text-center space-y-2">
+                  <EyeOff className="h-8 w-8 text-gray-400 mx-auto" />
+                  <p className="text-gray-500 text-sm">Gráfico oculto</p>
+                </div>
+              </div>
+            ) : totaisPorCategoria && totaisPorCategoria.length > 0 ? (
               <div className="w-full h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -553,7 +562,7 @@ export default function Entradas() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: any) => [formatCurrency(value), 'Valor']}
+                      formatter={(value: any) => [shouldHideCharts() ? 'R$ ****' : formatCurrency(value), 'Valor']}
                       labelFormatter={(label) => `Categoria: ${label}`}
                     />
                     <Legend />

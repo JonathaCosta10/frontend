@@ -26,11 +26,15 @@ import {
   Trash2,
   Target,
   Bell,
+  EyeOff,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 import { budgetApi } from "@/services/api/budget";
+import { useToast } from "@/components/ui/use-toast";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useMonthYear } from "@/hooks/useMonthYear";
 
 interface Custo {
   id: number;
@@ -78,6 +82,8 @@ const COLORS = [
 export default function Custos() {
   const { isAuthenticated } = useAuth();
   const { t, formatCurrency } = useTranslation();
+  const { formatValue, shouldHideCharts } = usePrivacy();
+  const { toast } = useToast();
   const [custos, setCustos] = useState<Custo[]>([]);
   const [totaisPorCategoria, setTotaisPorCategoria] = useState<TotalPorCategoria[]>([]);
   const [resumoGastos, setResumoGastos] = useState<ResumoGastos | null>(null);
@@ -87,6 +93,7 @@ export default function Custos() {
     valor_mensal: "",
   });
   const [loading, setLoading] = useState(false);
+  const { mes, ano } = useMonthYear();
 
   // Função para preparar dados do gráfico
   const prepararDadosGrafico = () => {
@@ -104,11 +111,7 @@ export default function Custos() {
     }));
   };
 
-  // Obter mês e ano do localStorage
-  const mes =
-    localStorage.getItem("mes") ||
-    String(new Date().getMonth() + 1).padStart(2, "0");
-  const ano = localStorage.getItem("ano") || String(new Date().getFullYear());
+  // Mês e ano são obtidos do hook useMonthYear
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -142,12 +145,20 @@ export default function Custos() {
   // Função para cadastrar um custo
   const cadastrarCusto = async () => {
     if (!isAuthenticated) {
-      alert(t("authentication_required_cost"));
+      toast({
+        title: "Erro",
+        description: t("authentication_required_cost"),
+        variant: "destructive",
+      });
       return;
     }
 
     if (!formData.descricao || !formData.valor_mensal) {
-      alert(t("fill_description_monthly_value"));
+      toast({
+        title: "Erro",
+        description: t("fill_description_monthly_value"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -162,7 +173,12 @@ export default function Custos() {
 
     try {
       await budgetApi.cadastrarGasto(data);
-      alert(t("cost_registered_successfully"));
+      toast({
+        title: "Sucesso!",
+        description: "Custo cadastrado com sucesso.",
+        variant: "default",
+        duration: 3000,
+      });
       setFormData({
         descricao: "",
         valor_mensal: "",
@@ -170,7 +186,11 @@ export default function Custos() {
       atualizarCustos();
     } catch (error) {
       console.error("Erro ao cadastrar custo:", error);
-      alert(t("cost_registration_error"));
+      toast({
+        title: "Erro",
+        description: t("cost_registration_error"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -180,10 +200,19 @@ export default function Custos() {
       try {
         await budgetApi.excluirGasto(id);
         atualizarCustos();
-        alert(t("cost_deleted_successfully"));
+        toast({
+          title: "Sucesso!",
+          description: "Custo excluído com sucesso.",
+          variant: "default",
+          duration: 3000,
+        });
       } catch (error) {
         console.error("Erro ao excluir custo:", error);
-        alert(t("cost_deletion_error"));
+        toast({
+          title: "Erro",
+          description: t("cost_deletion_error"),
+          variant: "destructive",
+        });
       }
     }
   };
@@ -191,7 +220,11 @@ export default function Custos() {
   // Função para atualizar flag de repetição
   const atualizarFlagCusto = async (id: number, novaFlag: boolean) => {
     if (!isAuthenticated) {
-      alert(t("authentication_required"));
+      toast({
+        title: "Erro",
+        description: t("authentication_required"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -204,9 +237,11 @@ export default function Custos() {
       atualizarCustos();
     } catch (error) {
       console.error("Erro ao atualizar flag do custo:", error);
-      alert(
-        `${t("flag_update_error")}: ${error.response?.data?.detail || t("unexpected_error")}`
-      );
+      toast({
+        title: "Erro",
+        description: `${t("flag_update_error")}: ${error.response?.data?.detail || t("unexpected_error")}`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -237,7 +272,7 @@ export default function Custos() {
 
   // Função para formatar valores monetários
   const formatarValor = (valor: number) => {
-    return formatCurrency(valor);
+    return formatValue(valor);
   };
 
   // Função para obter o ícone da categoria
@@ -457,7 +492,14 @@ export default function Custos() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {totaisPorCategoria && totaisPorCategoria.length > 0 ? (
+            {shouldHideCharts() ? (
+              <div className="h-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <div className="text-center space-y-2">
+                  <EyeOff className="h-8 w-8 text-gray-400 mx-auto" />
+                  <p className="text-gray-500 text-sm">Gráfico oculto</p>
+                </div>
+              </div>
+            ) : totaisPorCategoria && totaisPorCategoria.length > 0 ? (
               <div className="w-full h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -476,7 +518,7 @@ export default function Custos() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: any) => [formatCurrency(value), 'Valor']}
+                      formatter={(value: any) => [shouldHideCharts() ? 'R$ ****' : formatCurrency(value), 'Valor']}
                       labelFormatter={(label) => `Categoria: ${label}`}
                     />
                     <Legend />

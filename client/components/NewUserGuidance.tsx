@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -112,6 +112,7 @@ export function BudgetNoDataGuidance() {
   const { mes, ano } = useMonthYear();
   const [isReplicating, setIsReplicating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [replicationInProgress, setReplicationInProgress] = useState(false);
   
   // Estados para as seleções do modal
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -120,6 +121,30 @@ export function BudgetNoDataGuidance() {
     gastos: false,
     dividas: false
   });
+  
+  // Efeito para verificar se houve uma replicação bem-sucedida recentemente
+  useEffect(() => {
+    try {
+      const wasSuccessful = sessionStorage.getItem('replication_success');
+      const replicationTime = sessionStorage.getItem('replication_time');
+      
+      if (wasSuccessful === 'true' && replicationTime) {
+        // Calcular se a replicação foi recente (menos de 5 segundos)
+        const replicationTimestamp = new Date(replicationTime).getTime();
+        const now = new Date().getTime();
+        const timeDiff = now - replicationTimestamp;
+        
+        if (timeDiff < 5000) {
+          console.log('🎉 Página recarregada após replicação bem-sucedida!');
+          // Limpar os dados de replicação do sessionStorage
+          sessionStorage.removeItem('replication_success');
+          sessionStorage.removeItem('replication_time');
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao verificar status de replicação:', e);
+    }
+  }, []);
 
   // Recuperar dados históricos do localStorage
   const getHistData = () => {
@@ -158,18 +183,34 @@ export function BudgetNoDataGuidance() {
     
     setSelectedMonth(defaultMonth);
     
-    // Definir opções padrão baseadas no hist_data
+    // Inicializar opções
+    // Se historicalData tem opções disponíveis, podemos pré-selecionar as que estão disponíveis
+    // mas vamos garantir que sejam valores booleanos
+    const availableOptions = {
+      entradas: Boolean(historicalData.histData.replicar_entradas),
+      gastos: Boolean(historicalData.histData.replicar_gastos),
+      dividas: Boolean(historicalData.histData.replicar_dividas)
+    };
+    
+    // Selecionar por padrão as opções que estão disponíveis
     setReplicationOptions({
-      entradas: historicalData.histData.replicar_entradas || false,
-      gastos: historicalData.histData.replicar_gastos || false,
-      dividas: historicalData.histData.replicar_dividas || false
+      entradas: availableOptions.entradas,
+      gastos: availableOptions.gastos,
+      dividas: availableOptions.dividas
     });
     
     setIsModalOpen(true);
+    console.log('Modal de replicação aberto. Opções inicializadas:', availableOptions);
   };
 
   const handleReplicateData = async () => {
     if (!historicalData || !selectedMonth) return;
+    
+    // Verificar se já existe uma replicação em andamento
+    if (replicationInProgress) {
+      console.log('⚠️ Replicação já está em andamento. Ignorando clique adicional.');
+      return;
+    }
     
     // Verificar se pelo menos uma opção está selecionada
     const hasSelection = Object.values(replicationOptions).some(Boolean);
@@ -178,36 +219,114 @@ export function BudgetNoDataGuidance() {
       return;
     }
     
+    // Marcar que uma replicação está em progresso
+    setReplicationInProgress(true);
     setIsReplicating(true);
+    
+    // Preparar o corpo da requisição
+    const requestBody = {
+      de: {
+        mes: parseInt(selectedMonth),
+        ano: parseInt(ano) 
+      },
+      para: {
+        mes: parseInt(mes),
+        ano: parseInt(ano)
+      },
+      tipos: {
+        replicar_entradas: Boolean(replicationOptions.entradas),
+        replicar_gastos: Boolean(replicationOptions.gastos),
+        replicar_dividas: Boolean(replicationOptions.dividas)
+      }
+    };
+    
+    console.log('Solicitação de replicação:', requestBody);
+    
     try {
-      const requestBody = {
-        de: {
-          mes: parseInt(selectedMonth),
-          ano: parseInt(ano) // Assumindo mesmo ano, ajustar se necessário
-        },
-        para: {
-          mes: parseInt(mes),
-          ano: parseInt(ano)
-        },
-        tipos: {
-          replicar_entradas: replicationOptions.entradas,
-          replicar_gastos: replicationOptions.gastos,
-          replicar_dividas: replicationOptions.dividas
-        }
-      };
-
+      // Usar a api.post para manter todas as credenciais de autenticação
       const response = await api.post('/api/replicar_dados', requestBody);
       
-      if (response.data.success) {
+      console.log('📡 Resposta recebida:', response);
+      
+      // Verificação de resposta de sucesso melhorada
+      // A resposta pode estar diretamente no objeto response ou dentro de response.data
+      const responseData = response.data || response;
+      
+      // Verificar se a resposta indica sucesso de alguma forma
+      if (responseData && 
+         (responseData.success === true || 
+          responseData.status === 'success' || 
+          responseData.message?.toLowerCase().includes('sucesso'))) {
+        console.log('✅ Replicação bem-sucedida!', responseData);
+        
+        // Fechar o modal primeiro
         setIsModalOpen(false);
-        // Recarregar a página para mostrar os dados replicados
-        window.location.reload();
+        
+        // Mostrar mensagem de sucesso ao usuário
+        alert(responseData.message || 'Dados replicados com sucesso!');
+        
+        // Recarregar a página após um breve atraso
+        setTimeout(() => {
+          console.log('🔄 Recarregando a página com os novos dados...');
+          window.location.reload();
+        }, 1500);
+        return; // Encerrar a função após o sucesso
+      } 
+      
+      // Se chegou aqui, não foi encontrado um indicador de sucesso na resposta
+      console.error('❌ Resposta da API sem indicação de sucesso:', response);
+      
+      // Verificar se é um erro de dados já existentes
+      if (responseData?.dados_existentes && responseData?.tipos_bloqueados) {
+        const tiposBloqueados = responseData.tipos_bloqueados
+          .map((tipo: string) => {
+            switch(tipo) {
+              case 'entradas': return 'Entradas';
+              case 'gastos': return 'Gastos';
+              case 'dividas': return 'Dívidas';
+              default: return tipo;
+            }
+          })
+          .join(', ');
+        
+        alert(`Não foi possível replicar: ${tiposBloqueados} já existem para ${getMesNome(parseInt(mes))}/${ano}.`);
+      } else {
+        alert(responseData?.error || responseData?.message || 'Erro ao replicar dados. Tente novamente.');
       }
-    } catch (error) {
-      console.error('Erro ao replicar dados:', error);
-      alert('Erro ao replicar dados. Tente novamente.');
+    } catch (error: any) {
+      console.error('❌ Erro ao fazer requisição:', error);
+      
+      // Verificar se, apesar do erro, temos uma resposta com indicação de sucesso
+      const errorData = error.response?.data || error.details || {};
+      
+      if (errorData.success === true || 
+          errorData.status === 'success' || 
+          errorData.message?.toLowerCase().includes('sucesso')) {
+        console.log('⚠️ Erro com resposta de sucesso:', errorData);
+        
+        setIsModalOpen(false);
+        alert(errorData.message || 'Dados replicados com sucesso!');
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        return;
+      }
+      
+      // Tentar obter mensagem de erro mais detalhada
+      const errorMessage = 
+        errorData.detail ||
+        errorData.error ||
+        errorData.message ||
+        error.message ||
+        'Erro ao replicar dados. Tente novamente.';
+      
+      alert(errorMessage);
     } finally {
       setIsReplicating(false);
+      setTimeout(() => {
+        setReplicationInProgress(false);
+      }, 2000);
     }
   };
 
@@ -220,11 +339,17 @@ export function BudgetNoDataGuidance() {
     return meses[index - 1] || '';
   };
 
-  const handleOptionChange = (option: keyof typeof replicationOptions, checked: boolean) => {
+  const handleOptionChange = (option: keyof typeof replicationOptions, checked: boolean | "indeterminate") => {
+    // Converter para boolean explicitamente, tratando "indeterminate" como false
+    const boolValue = checked === true;
+    
     setReplicationOptions(prev => ({
       ...prev,
-      [option]: checked
+      [option]: boolValue // Garantir que o valor seja boolean
     }));
+    
+    // Logs para debug
+    console.log(`Opção ${option} alterada para:`, boolValue, typeof boolValue);
   };
 
   return (
@@ -302,8 +427,8 @@ export function BudgetNoDataGuidance() {
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id="entradas"
-                            checked={replicationOptions.entradas}
-                            onCheckedChange={(checked) => handleOptionChange('entradas', checked as boolean)}
+                            checked={Boolean(replicationOptions.entradas)}
+                            onCheckedChange={(checked) => handleOptionChange('entradas', checked)}
                             disabled={!historicalData?.histData.replicar_entradas}
                           />
                           <label htmlFor="entradas" className="text-sm">
@@ -317,8 +442,8 @@ export function BudgetNoDataGuidance() {
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id="gastos"
-                            checked={replicationOptions.gastos}
-                            onCheckedChange={(checked) => handleOptionChange('gastos', checked as boolean)}
+                            checked={Boolean(replicationOptions.gastos)}
+                            onCheckedChange={(checked) => handleOptionChange('gastos', checked)}
                             disabled={!historicalData?.histData.replicar_gastos}
                           />
                           <label htmlFor="gastos" className="text-sm">
@@ -332,8 +457,8 @@ export function BudgetNoDataGuidance() {
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id="dividas"
-                            checked={replicationOptions.dividas}
-                            onCheckedChange={(checked) => handleOptionChange('dividas', checked as boolean)}
+                            checked={Boolean(replicationOptions.dividas)}
+                            onCheckedChange={(checked) => handleOptionChange('dividas', checked)}
                             disabled={!historicalData?.histData.replicar_dividas}
                           />
                           <label htmlFor="dividas" className="text-sm">
@@ -350,18 +475,19 @@ export function BudgetNoDataGuidance() {
                     <div className="flex gap-2 pt-4">
                       <Button 
                         onClick={handleReplicateData}
-                        disabled={isReplicating || !selectedMonth}
-                        className="bg-purple-600 hover:bg-purple-700 text-white flex-1"
+                        disabled={isReplicating || !selectedMonth || replicationInProgress}
+                        className={`${isReplicating ? 'bg-indigo-600' : 'bg-purple-600 hover:bg-purple-700'} text-white flex-1 relative`}
                       >
                         {isReplicating ? (
                           <>
                             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Replicando...
+                            <span>Replicando...</span>
+                            <span className="absolute top-0 right-0 h-2 w-2 bg-green-400 rounded-full animate-ping"></span>
                           </>
                         ) : (
                           <>
                             <RefreshCw className="h-4 w-4 mr-2" />
-                            Replicar Dados
+                            <span>Replicar Dados</span>
                           </>
                         )}
                       </Button>

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Moon, Sun, ArrowLeft, CheckCircle, Mail, Clock } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
-import LanguageSelector from "@/components/LanguageSelector";
+// LanguageSelector removed - Portuguese only application
 
 export default function PasswordResetSent() {
   const [darkMode, setDarkMode] = useState(false);
@@ -75,7 +75,7 @@ export default function PasswordResetSent() {
             </Link>
 
             <div className="flex items-center space-x-4">
-              <LanguageSelector variant="compact" showCurrency={false} size="sm" />
+              {/* Language selector removed - Portuguese only */}
 
               <Button
                 variant="ghost"

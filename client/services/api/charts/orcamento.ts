@@ -1,5 +1,6 @@
 // Budget Charts API Service
 import { developmentConfig, simulateApiDelay } from "../../config/development";
+import { authenticatedGet, authenticatedPost, authenticatedFetch } from '@/lib/authenticatedFetch';
 
 export interface ChartDataPoint {
   label: string;
@@ -38,7 +39,7 @@ export const budgetChartsApi = {
       ];
     }
 
-    const response = await fetch(`/api/orcamento/grafico_variacao_entrada?mes=${mes}&ano=${ano}`);
+    const response = await authenticatedGet('/api/orcamento/grafico_variacao_entrada?mes=${mes}&ano=${ano}');
     if (!response.ok) throw new Error('Failed to fetch variação entrada data');
     return response.json();
   },
@@ -63,7 +64,7 @@ export const budgetChartsApi = {
       ];
     }
 
-    const response = await fetch(`/api/orcamento/grafico_meta_mes_mes?mes=${mes}&ano=${ano}`);
+    const response = await authenticatedGet('/api/orcamento/grafico_meta_mes_mes?mes=${mes}&ano=${ano}');
     if (!response.ok) throw new Error('Failed to fetch meta mês a mês data');
     return response.json();
   },
@@ -83,7 +84,7 @@ export const budgetChartsApi = {
       ];
     }
 
-    const response = await fetch(`/api/orcamento/grafico_distribuicao_gastos?mes=${mes}&ano=${ano}`);
+    const response = await authenticatedGet('/api/orcamento/grafico_distribuicao_gastos?mes=${mes}&ano=${ano}');
     if (!response.ok) throw new Error('Failed to fetch distribuição gastos data');
     return response.json();
   },
@@ -105,7 +106,7 @@ export const budgetChartsApi = {
       };
     }
 
-    const response = await fetch(`/api/orcamento/dashboard_overview?mes=${mes}&ano=${ano}`);
+    const response = await authenticatedGet('/api/orcamento/dashboard_overview?mes=${mes}&ano=${ano}');
     if (!response.ok) throw new Error('Failed to fetch dashboard overview data');
     return response.json();
   },

@@ -124,17 +124,35 @@ export class ApiService {
       ...customHeaders,
     };
 
-    // CORS Fix: Não adicionar headers problemáticos para refresh token
+    // IMPORTANTE: Sempre incluir session_id e device_fingerprint para resolver o erro de token malformado
+    // A única exceção é para o endpoint de refresh token que pode ter restrições específicas de CORS
     if (!skipCustomHeaders) {
-      // Comentado para evitar erro CORS no refresh token
-      // const sessionId = localStorageManager.getSessionId();
-      // if (sessionId) {
-      //   headers["X-Session-ID"] = sessionId;
-      // }
-      // const fingerprint = localStorageManager.getDeviceFingerprint();
-      // if (fingerprint) {
-      //   headers["X-Device-ID"] = fingerprint.hash;
-      // }
+      try {
+        // Obter session_id do localStorage
+        const sessionId = localStorageManager.getSessionId();
+        if (sessionId) {
+          console.log("🔑 Incluindo session_id no cabeçalho:", sessionId);
+          headers["X-Session-ID"] = sessionId;
+        } else {
+          console.warn("⚠️ session_id não encontrado no localStorage!");
+        }
+        
+        // Obter device_fingerprint do localStorage
+        const fingerprint = localStorageManager.getDeviceFingerprint();
+        if (fingerprint) {
+          // Se for objeto, usar a propriedade hash, se for string usar diretamente
+          const fingerprintValue = typeof fingerprint === 'object' ? 
+            (fingerprint.hash || JSON.stringify(fingerprint)) : 
+            fingerprint;
+            
+          console.log("👆 Incluindo device_fingerprint no cabeçalho:", fingerprintValue);
+          headers["X-Device-Fingerprint"] = fingerprintValue;
+        } else {
+          console.warn("⚠️ device_fingerprint não encontrado no localStorage!");
+        }
+      } catch (e) {
+        console.error("❌ Erro ao adicionar dados de sessão aos headers:", e);
+      }
     }
 
     if (includeAuth) {
@@ -152,21 +170,56 @@ export class ApiService {
    */
   private isTokenValid(token: string): boolean {
     try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const now = Math.floor(Date.now() / 1000);
-
-      // Verificar se token está prestes a expirar (em 1 minuto)
-      if (payload.exp - now < 60) {
+      // Validar formato básico do JWT (deve ter três partes separadas por pontos)
+      const parts = token.split(".");
+      if (parts.length !== 3) {
+        console.error("⚠️ Token com formato inválido (não tem 3 partes):", {
+          partes: parts.length,
+          tokenLength: token.length
+        });
         return false;
       }
 
-      // Validar campos obrigatórios
-      if (!payload.user_id || !payload.email) {
+      // Verificar se a segunda parte é decodificável como base64
+      try {
+        // Garantir que o base64 seja válido para decodificação
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(base64));
+        
+        const now = Math.floor(Date.now() / 1000);
+        
+        // Log detalhado sobre o token para diagnóstico
+        console.log("🔍 Validação detalhada do JWT:", {
+          exp: payload.exp ? new Date(payload.exp * 1000).toISOString() : 'ausente',
+          iat: payload.iat ? new Date(payload.iat * 1000).toISOString() : 'ausente',
+          ttlSegundos: payload.exp ? (payload.exp - now) : 'desconhecido',
+          agora: new Date(now * 1000).toISOString(),
+          tempoRestante: payload.exp ? `${Math.floor((payload.exp - now) / 60)} minutos` : 'desconhecido',
+          hasUserId: !!payload.user_id || !!payload.sub,
+          hasEmail: !!payload.email
+        });
+
+        // Verificar se token está prestes a expirar (em 1 minuto)
+        if (payload.exp && payload.exp - now < 60) {
+          console.warn("⚠️ Token está prestes a expirar (menos de 1 minuto)");
+          return false;
+        }
+
+        // Aceitar tokens com user_id/sub OU email (mais flexível para OAuth)
+        const hasIdentifier = !!(payload.user_id || payload.sub);
+        
+        if (!hasIdentifier) {
+          console.warn("⚠️ Token sem identificador de usuário");
+          return false;
+        }
+
+        return payload.exp ? payload.exp > now : true;
+      } catch (decodeError) {
+        console.error("❌ Erro ao decodificar payload do JWT:", decodeError);
         return false;
       }
-
-      return payload.exp > now;
-    } catch {
+    } catch (error) {
+      console.error("❌ Erro ao validar token JWT:", error);
       return false;
     }
   }
@@ -220,6 +273,7 @@ export class ApiService {
     // Gerenciamento de timeout adaptativo - mais tempo para requisições importantes
     const timeoutDuration = isRefreshTokenRequest ? 30000 : 
                             endpoint.includes("/distribuicao_gastos") ? 25000 : 
+                            endpoint.includes("/rentabilidade-geral") ? 45000 : // Aumentando timeout para rentabilidade
                             endpoint.includes("/auth/") ? 20000 : 
                             endpoint.includes("/login") ? 30000 : 15000;
     
@@ -256,6 +310,31 @@ export class ApiService {
         clearTimeout(requestTimeout); // Limpar timeout se a resposta for recebida
       
         // Tratar 401 Unauthorized
+        if (response.status === 401) {
+          // Log detalhado do erro 401 para diagnóstico
+          console.warn("⚠️ [401 UNAUTHORIZED]", {
+            endpoint,
+            hasSessionId: headers["X-Session-ID"] ? "sim" : "não",
+            hasDeviceFingerprint: headers["X-Device-Fingerprint"] ? "sim" : "não",
+            hasAuthHeader: headers["Authorization"] ? "sim" : "não"
+          });
+          
+          try {
+            const errorData = await response.clone().json();
+            console.error("🔴 Detalhes do erro 401:", errorData);
+            
+            // Verificar se é o erro específico de token malformado
+            if (errorData.message && errorData.message.includes("Token malformado")) {
+              console.error("🔴 Erro de token malformado detectado - dados de sessão:", {
+                sessionId: localStorageManager.getSessionId(),
+                deviceFingerprint: localStorageManager.getDeviceFingerprint()
+              });
+            }
+          } catch (e) {
+            console.log("Não foi possível extrair detalhes do erro 401");
+          }
+        }
+        
         if (
           response.status === 401 &&
           includeAuth &&
@@ -386,46 +465,64 @@ export class ApiService {
    * Executar refresh real do token
    */
   private async performTokenRefresh(): Promise<boolean> {
+    console.log("🔄 Iniciando processo de refresh do token de autenticação");
+    
     // Prevenir múltiplos refreshes em curto período de tempo - RELAXAR PARA LOGIN
     const lastRefreshKey = 'lastTokenRefreshAttempt';
     const lastRefreshTime = parseInt(localStorage.getItem(lastRefreshKey) || '0');
     const currentTime = Date.now();
-    const minRefreshInterval = 2000; // Reduzido para 2 segundos para permitir fluxos de login
+    const minRefreshInterval = 1000; // Reduzido para 1 segundo para resolver fluxos de autenticação OAuth
     
-    // Se um login acabou de ser realizado, não bloquear o refresh
+    // Se um login acabou de ser realizado ou estamos no callback OAuth, não bloquear o refresh
     const recentLoginAttempt = localStorage.getItem('recentLoginAttempt');
-    const isPostLogin = recentLoginAttempt && (currentTime - parseInt(recentLoginAttempt)) < 10000;
+    const isCallbackAuth = window.location.pathname.includes('/auth/callback');
+    const isPostLogin = recentLoginAttempt && (currentTime - parseInt(recentLoginAttempt)) < 30000;
     
-    if (currentTime - lastRefreshTime < minRefreshInterval && !isPostLogin) {
+    if (currentTime - lastRefreshTime < minRefreshInterval && !isPostLogin && !isCallbackAuth) {
       console.log("⚠️ [TOKEN REFRESH] Tentativas muito frequentes, aguardando intervalo mínimo", {
         lastAttempt: new Date(lastRefreshTime).toISOString(),
         currentTime: new Date(currentTime).toISOString(),
         timeDiff: currentTime - lastRefreshTime,
         minInterval: minRefreshInterval,
-        isPostLogin
+        isPostLogin,
+        isCallbackAuth
       });
-      await new Promise(resolve => setTimeout(resolve, 500)); // Reduzido para não atrasar tanto
-      return true; // Tentar mesmo assim após o delay, para não bloquear login
+      
+      // Se estamos no fluxo de OAuth ou login recente, permitir sem atraso
+      if (isCallbackAuth || isPostLogin) {
+        console.log("🔑 Contexto de autenticação detectado, permitindo refresh imediato");
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 200)); // Delay mínimo
+      }
     }
     
     // Registrar tentativa atual
     localStorage.setItem(lastRefreshKey, currentTime.toString());
     
-    // Sistema de controle de tentativas
+    // Sistema de controle de tentativas - Flexibilizar para autenticação OAuth
     const refreshCountKey = 'tokenRefreshAttemptCount';
-    const maxAttempts = 3;
-    const currentAttempts = parseInt(localStorage.getItem(refreshCountKey) || '0');
+    const maxAttempts = isCallbackAuth ? 5 : 3; // Mais tentativas para o fluxo de callback OAuth
+    let currentAttempts = parseInt(localStorage.getItem(refreshCountKey) || '0');
+    
+    // Reset do contador se for um contexto de autenticação
+    if (isCallbackAuth || isPostLogin) {
+      console.log("🔑 Contexto de autenticação detectado, resetando contador de tentativas");
+      currentAttempts = 0;
+      localStorage.setItem(refreshCountKey, '0');
+    }
     
     if (currentAttempts >= maxAttempts) {
       console.log("🛑 [TOKEN REFRESH] Máximo de tentativas atingido:", {
         currentAttempts,
-        maxAttempts
+        maxAttempts,
+        isCallbackAuth,
+        isPostLogin
       });
       
-      // Reset do contador após 30 segundos para permitir novas tentativas
+      // Reset do contador após 15 segundos para permitir novas tentativas
       setTimeout(() => {
         localStorage.setItem(refreshCountKey, '0');
-      }, 30000);
+      }, 15000);
       
       return false;
     }
@@ -437,46 +534,173 @@ export class ApiService {
     try {
       const refreshToken = localStorageManager.getRefreshToken();
       if (!refreshToken) {
-        console.log("Nenhum refresh token disponível");
+        console.log("❌ Nenhum refresh token disponível");
         return false;
       }
 
-      console.log("Tentando refresh do token");
+      // Log do refresh token para debug (apenas partes)
+      console.log("🔑 Refresh token usado:", { 
+        length: refreshToken.length,
+        start: refreshToken.substring(0, 5) + '...',
+        end: '...' + refreshToken.substring(refreshToken.length - 5)
+      });
 
       // Criar controller para timeout mais longo para refresh
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
         controller.abort('timeout');
       }, 30000);
+      
+      // Construir headers específicos para refresh token
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      };
 
       try {
-        // Usar fetch direto para refresh para evitar loops
-        const response = await fetch(normalizeUrl("/api/auth/token/refresh/"), {
-          method: "POST",
-          headers: this.buildHeaders({}, false, true),
-          body: JSON.stringify({ refresh: refreshToken }),
-          signal: controller.signal
-        })
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json();
+        // Usar fetch direto para refresh para evitar loops, com três opções de endpoints
+        let response, endpointUsed;
+        let success = false;
+        let errorDetails;
+        
+        // Preparar dados de sessão para incluir em todas tentativas de refresh
+        const sessionId = localStorageManager.getSessionId();
+        const deviceFingerprint = localStorageManager.getDeviceFingerprint();
+        
+        // Preparar corpo da requisição com dados de sessão que será usado em todos os endpoints
+        const refreshBody = {
+          refresh: refreshToken,
+          session_id: sessionId,
+          device_fingerprint: typeof deviceFingerprint === 'object' ? 
+            (deviceFingerprint.hash || JSON.stringify(deviceFingerprint)) : 
+            deviceFingerprint
+        };
+        
+        console.log("� Dados de sessão para refresh token:", {
+          hasSessionId: !!sessionId,
+          hasDeviceFingerprint: !!deviceFingerprint,
+          sessionIdTipo: typeof sessionId,
+          deviceFingerprintTipo: typeof deviceFingerprint
         });
         
+        // Tentar o endpoint principal primeiro
+        try {
+          const mainEndpoint = normalizeUrl("/api/auth/token/refresh/");
+          console.log("🔄 Tentando refresh em endpoint principal:", mainEndpoint);
+          
+          console.log("📤 Enviando refresh token com dados de sessão:", {
+            endpoint: mainEndpoint,
+            bodyKeys: Object.keys(refreshBody)
+          });
+          
+          response = await fetch(mainEndpoint, {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify(refreshBody),
+            credentials: 'include', // Importante para CORS
+            signal: controller.signal
+          });
+          
+          if (response.ok) {
+            endpointUsed = mainEndpoint;
+            success = true;
+            console.log("✅ Refresh bem-sucedido no endpoint principal");
+          } else {
+            const errorText = await response.text();
+            errorDetails = { status: response.status, text: errorText, endpoint: mainEndpoint };
+            console.warn("⚠️ Falha no endpoint principal:", errorDetails);
+            throw new Error(`Falha no endpoint principal: ${response.status}`);
+          }
+        } catch (mainEndpointError) {
+          // Se falhar, tentar o segundo endpoint
+          console.log("🔄 Tentando segundo endpoint para refresh...");
+          try {
+            const secondEndpoint = normalizeUrl("/auth/token/refresh/");
+            
+            console.log("📤 Tentando segundo endpoint com dados de sessão:", {
+              endpoint: secondEndpoint,
+              bodyKeys: Object.keys(refreshBody)
+            });
+            
+            response = await fetch(secondEndpoint, {
+              method: "POST",
+              headers: headers,
+              body: JSON.stringify(refreshBody),
+              credentials: 'include',
+              signal: controller.signal
+            });
+            
+            if (response.ok) {
+              endpointUsed = secondEndpoint;
+              success = true;
+              console.log("✅ Refresh bem-sucedido no segundo endpoint");
+            } else {
+              const errorText = await response.text();
+              errorDetails = { ...errorDetails, status2: response.status, text2: errorText, endpoint2: secondEndpoint };
+              console.warn("⚠️ Falha também no segundo endpoint:", errorDetails);
+              throw new Error(`Falha também no segundo endpoint: ${response.status}`);
+            }
+          } catch (secondEndpointError) {
+            // Se ambos falharem, tentar endpoint de fallback direto para backend
+            console.log("🔄 Tentando endpoint de fallback para refresh...");
+            const fallbackEndpoint = import.meta.env.VITE_BACKEND_URL 
+                ? `${import.meta.env.VITE_BACKEND_URL}/auth/token/refresh/` 
+                : 'http://127.0.0.1:5000/auth/token/refresh/';
+            
+            console.log("📤 Tentando endpoint fallback com dados de sessão:", {
+              endpoint: fallbackEndpoint,
+              bodyKeys: Object.keys(refreshBody)
+            });
+            
+            response = await fetch(fallbackEndpoint, {
+              method: "POST",
+              headers: headers,
+              body: JSON.stringify(refreshBody),
+              credentials: 'include',
+              signal: controller.signal
+            });
+            
+            if (response.ok) {
+              endpointUsed = fallbackEndpoint;
+              success = true;
+              console.log("✅ Refresh bem-sucedido no endpoint de fallback");
+            } else {
+              errorDetails = { 
+                ...errorDetails, 
+                status3: response.status, 
+                endpoint3: fallbackEndpoint 
+              };
+              throw new Error(`Todos os endpoints de refresh falharam`);
+            }
+          }
+        }
+
+        if (!success || !response.ok) {
+          throw new Error(`Refresh falhou em todos os endpoints: ${JSON.stringify(errorDetails)}`);
+        }
+
+        const data = await response.json();
         clearTimeout(timeoutId);
 
-        if (!response.access) {
-          throw new Error("Resposta de refresh inválida");
+        console.log("🔍 Resposta do refresh token:", {
+          hasAccess: !!data.access,
+          hasRefresh: !!data.refresh,
+          hasUser: !!data.user,
+          endpoint: endpointUsed
+        });
+
+        if (!data.access) {
+          throw new Error("Resposta de refresh inválida: sem token de acesso");
         }
 
         // Processar resposta completa através do ResponseParms
         const { responseParms } = await import('../contexts/ResponseParms');
         console.log("🔄 Processando refresh token através do ResponseParms");
-        console.log("🔍 Dados recebidos do refresh:", response);
         
         // Simular estrutura de resposta da API para processamento
         const apiResponse = {
           success: true,
-          data: response,
+          data: data,
           status: 200,
           message: "Refresh token bem-sucedido"
         };
@@ -485,7 +709,7 @@ export class ApiService {
           response: apiResponse,
           chave: "refreshToken",
           method: "POST",
-          endpoint: "/api/auth/token/refresh/",
+          endpoint: endpointUsed,
           withAuth: true
         });
         
@@ -502,7 +726,6 @@ export class ApiService {
             success: true 
           } 
         });
-        console.log("🚀 [TOKEN EVENT] Disparando evento tokenRefreshed:", tokenRefreshEvent.detail);
         window.dispatchEvent(tokenRefreshEvent);
         
         // Evento de autenticação
@@ -511,32 +734,35 @@ export class ApiService {
             timestamp: new Date().toISOString()
           } 
         });
-        console.log("🚀 [TOKEN EVENT] Disparando evento authTokenRefreshed");
         window.dispatchEvent(authEvent);
         
         // Evento de compatibilidade com login
-        const loginEvent = new CustomEvent('auth_login_success', { 
+        const loginEvent = new CustomEvent('auth:login:success', { 
           detail: { 
             source: 'tokenRefresh',
             timestamp: new Date().toISOString()
           } 
         });
-        console.log("🚀 [TOKEN EVENT] Disparando evento de compatibilidade auth_login_success");
         window.dispatchEvent(loginEvent);
         
-        // Evento customizado para lógica de retry
-        try {
-          if (window.handleTokenRefreshAndRetry && typeof window.handleTokenRefreshAndRetry === 'function') {
-            console.log("🔄 [TOKEN EVENT] Chamando handler customizado");
-            window.handleTokenRefreshAndRetry();
-          }
-        } catch (handlerError) {
-          console.error("❌ [TOKEN EVENT] Erro ao chamar handler customizado:", handlerError);
-        }
-        
         console.log("📡 [TOKEN EVENT] Eventos de refresh disparados com sucesso");
-        console.log("✅ Refresh do token bem-sucedido");
-        return true;
+        
+        // Verificar se o token foi realmente armazenado
+        const storedToken = localStorageManager.getAuthToken();
+        if (storedToken) {
+          console.log("✅ Token armazenado com sucesso após refresh");
+          return true;
+        } else {
+          console.warn("⚠️ Token não foi armazenado corretamente após refresh");
+          
+          // Tentar armazenar novamente
+          if (data.access) {
+            console.log("� Tentando armazenar token novamente");
+            const stored = localStorageManager.setAuthToken(data.access);
+            return stored;
+          }
+          return false;
+        }
       } catch (requestError) {
         clearTimeout(timeoutId);
         throw requestError;
@@ -547,6 +773,29 @@ export class ApiService {
         attempt: currentAttempts + 1,
         maxAttempts
       });
+      
+      // Emitir evento de falha para notificar componentes
+      const failEvent = new CustomEvent('tokenRefreshFailed', { 
+        detail: { 
+          timestamp: new Date().toISOString(),
+          error: (error as Error).message,
+          attempt: currentAttempts
+        } 
+      });
+      window.dispatchEvent(failEvent);
+      
+      // Verificar se estamos em contexto de OAuth para tratamento especial
+      if (isCallbackAuth) {
+        console.log("⚠️ Falha no refresh durante autenticação OAuth");
+        // Em callback de autenticação, notificar componentes de autenticação
+        const authFailEvent = new CustomEvent('auth:oauth:error', { 
+          detail: { 
+            timestamp: new Date().toISOString(),
+            error: (error as Error).message
+          } 
+        });
+        window.dispatchEvent(authFailEvent);
+      }
       
       // Se for a última tentativa, disparar falha de autenticação
       if (currentAttempts + 1 >= maxAttempts) {

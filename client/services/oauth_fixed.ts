@@ -40,7 +40,7 @@ console.log("🔍 Debug Environment Variables:");
 console.log("VITE_GOOGLE_CLIENT_ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
 console.log("OAUTH_CONFIG.google.clientId:", OAUTH_CONFIG.google.clientId);
 console.log("VITE_BACKEND_URL:", import.meta.env.VITE_BACKEND_URL);
-console.log("Fallback backend URL: http://127.0.0.1:8000");
+console.log("Fallback backend URL: http://127.0.0.1:5000");
 
 export class OAuthService {
   private static googleSigninPaths: string[] = [
@@ -159,7 +159,7 @@ export class OAuthService {
       console.log("🔐 Estado OAuth gerado e armazenado");
       
       // Obter a URL do backend
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
       console.log("🎯 Backend URL:", backendUrl);
       
       // Construir parâmetros com mais informações
@@ -319,7 +319,7 @@ export class OAuthService {
       }
 
       // Obter a URL do backend
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000';
       console.log("🎯 Backend URL:", backendUrl);
       
       // Enviar código para o backend processar
@@ -384,7 +384,7 @@ export class OAuthService {
 
   static async handleGoogleLogin(params: GoogleLoginParams): Promise<GoogleCallbackResponse> {
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000';
       
       console.log("🔄 Iniciando login com credenciais Google:", {
         email: params.email,

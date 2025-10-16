@@ -33,7 +33,8 @@ class AuthApiService {
   }
 
   async logout(refreshToken: string) {
-    return await api.post("/api/auth/logout/", { refresh: refreshToken }, false);
+    // CORREÇÃO: logout precisa de autenticação para validar session_id e device_fingerprint
+    return await api.post("/api/auth/logout/", { refresh: refreshToken }, true);
   }
 
   async getUser() {

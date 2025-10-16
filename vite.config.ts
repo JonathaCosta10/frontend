@@ -1,49 +1,326 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react-swc'
 import path from 'path'
+import { visualizer } from 'rollup-plugin-visualizer'
+import { createESModulesFixPlugin } from './client/lib/vite-esmodules-fix'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Plugin customizado para resolver problemas de ES modules
+    createESModulesFixPlugin(),
+    // Plugin de análise de bundle (apenas em produção)
+    process.env.ANALYZE === 'true' && visualizer({
+      filename: 'dist/bundle-analysis.html',
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
+    })
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client"),
+      // Alias para lodash para resolver problemas de import
+      'lodash': path.resolve(__dirname, 'node_modules/lodash'),
+      'lodash/get': path.resolve(__dirname, 'node_modules/lodash/get.js'),
+      'lodash/set': path.resolve(__dirname, 'node_modules/lodash/set.js'),
+      'lodash/has': path.resolve(__dirname, 'node_modules/lodash/has.js'),
+      'lodash/merge': path.resolve(__dirname, 'node_modules/lodash/merge.js'),
+      // Alias para react-is para resolver conflitos de versão
+      'react-is': path.resolve(__dirname, 'client/lib/react-is-polyfill.ts')
     },
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
+    // Resolver dedupe para evitar múltiplas versões
+    dedupe: ['react', 'react-dom', 'react-is', 'eventemitter3']
   },
   build: {
-    // Otimizações para produção
+    // Otimizações avançadas para produção
     minify: 'terser',
     sourcemap: false,
     cssCodeSplit: true,
+    target: 'esnext',
+    // Aumentar limite de chunk para reduzir avisos
+    chunkSizeWarningLimit: 1000,
     
-    // Configurações de chunking para melhor cache
+    // Configurações de chunking otimizadas para resolver avisos
     rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
-          router: ['react-router-dom'],
-          utils: ['clsx', 'tailwind-merge']
+      // Suprimir avisos específicos conhecidos
+      onwarn(warning, warn) {
+        // Suprimir aviso de dependência circular do Recharts (problema conhecido da biblioteca)
+        if (warning.code === 'CIRCULAR_DEPENDENCY' && 
+            warning.message?.includes('recharts') && 
+            warning.message?.includes('getLegendProps')) {
+          return;
         }
+        // Mostrar outros avisos normalmente
+        warn(warning);
+      },
+      output: {
+        manualChunks: (id) => {
+          // Core React libraries - dividir React em chunks menores
+          if (id.includes('react/') || id.includes('react-dom/')) {
+            return 'react-core';
+          }
+          if (id.includes('react-router')) {
+            return 'react-router';
+          }
+          
+          // UI Component library - dividir Radix em chunks menores
+          if (id.includes('@radix-ui/react-dialog') || id.includes('@radix-ui/react-dropdown-menu')) {
+            return 'ui-core';
+          }
+          if (id.includes('@radix-ui/react-select') || id.includes('@radix-ui/react-tabs')) {
+            return 'ui-forms';
+          }
+          if (id.includes('@radix-ui') || id.includes('lucide-react')) {
+            return 'ui-extended';
+          }
+          
+          // Charts - SOLUÇÃO PARA DEPENDÊNCIA CIRCULAR DO RECHARTS
+          if (id.includes('chart.js') || id.includes('Chart')) {
+            return 'charts-chartjs-core';
+          }
+          if (id.includes('react-chartjs-2')) {
+            return 'charts-react-charts';
+          }
+          
+          // Recharts - SOLUÇÃO DEFINITIVA para dependência circular
+          if (id.includes('recharts')) {
+            // Forçar TODOS os módulos do recharts no mesmo chunk para resolver dependência circular
+            return 'charts-recharts';
+          }
+          
+          // Forms and validation - separar validação
+          if (id.includes('react-hook-form')) {
+            return 'forms-core';
+          }
+          if (id.includes('zod') || id.includes('@hookform')) {
+            return 'forms-validation';
+          }
+          
+          // Data fetching - separar TanStack Query
+          if (id.includes('@tanstack/react-query')) {
+            return 'data-query';
+          }
+          if (id.includes('axios')) {
+            return 'data-http';
+          }
+          
+          // Animation libraries
+          if (id.includes('framer-motion')) {
+            return 'animations';
+          }
+          
+          // Date libraries - separar bibliotecas de data
+          if (id.includes('date-fns')) {
+            return 'date-utils';
+          }
+          if (id.includes('dayjs')) {
+            return 'date-dayjs';
+          }
+          
+          // Utils and helpers - dividir utilitários
+          if (id.includes('clsx') || id.includes('tailwind-merge')) {
+            return 'ui-utils';
+          }
+          
+          // Translation and i18n
+          if (id.includes('i18next') || id.includes('react-i18next')) {
+            return 'i18n';
+          }
+          
+          // Large third-party libraries - DIVIDIR CHUNKS GRANDES
+          if (id.includes('lodash')) {
+            return 'lodash';
+          }
+          
+          // Crypto/financial specific libs
+          if (id.includes('crypto') || id.includes('bitcoin') || id.includes('financial')) {
+            return 'crypto-libs';
+          }
+          
+          // Large node_modules packages - dividir vendors grandes em chunks menores
+          if (id.includes('node_modules')) {
+            // Separar vendors por tamanho estimado para chunks menores
+            const largeVendors = ['monaco-editor', 'pdf', 'xlsx', 'moment'];
+            if (largeVendors.some(vendor => id.includes(vendor))) {
+              return 'vendor-large';
+            }
+            
+            // Dividir vendor-common em chunks menores
+            const hash = id.split('node_modules/')[1]?.split('/')[0];
+            if (hash && hash.length > 0) {
+              // Criar chunks baseados na primeira letra do pacote para distribuir melhor
+              const firstChar = hash[0].toLowerCase();
+              if (['a', 'b', 'c'].includes(firstChar)) return 'vendor-abc';
+              if (['d', 'e', 'f'].includes(firstChar)) return 'vendor-def';
+              if (['g', 'h', 'i'].includes(firstChar)) return 'vendor-ghi';
+              if (['j', 'k', 'l'].includes(firstChar)) return 'vendor-jkl';
+              if (['m', 'n', 'o'].includes(firstChar)) return 'vendor-mno';
+              if (['p', 'q', 'r'].includes(firstChar)) return 'vendor-pqr';
+              if (['s', 't', 'u'].includes(firstChar)) return 'vendor-stu';
+              return 'vendor-vwxyz';
+            }
+            return 'vendor-common';
+          }
+        },
+        // Optimize file naming for better caching
+        chunkFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'react-core') {
+            return 'assets/react-[hash].js';
+          }
+          if (chunkInfo.name?.includes('chart')) {
+            return 'assets/charts-[name]-[hash].js';
+          }
+          return 'assets/[name]-[hash].js';
+        },
+        entryFileNames: 'assets/entry-[hash].js',
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith('.css')) {
+            return 'assets/styles-[hash].css';
+          }
+          return 'assets/[name]-[hash].[ext]';
+        }
+      },
+      
+      // Configurações de performance para bundles grandes
+      external: (id) => {
+        // Não externalizar dependências críticas, mas considerar lazy loading
+        return false;
       }
     },
     
-    // Configurações de performance
-    chunkSizeWarningLimit: 1000,
+    // Configurações de performance avançadas  
+    assetsInlineLimit: 512, // Reduzido para menos inlining
     
-    // Otimizar assets
-    assetsInlineLimit: 4096
+    // Optimize terser for better compression
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
+        passes: 3, // Mais passes para melhor compressão
+        unsafe_arrows: true,
+        unsafe_methods: true,
+        unsafe_proto: true,
+        unsafe_regexp: true,
+        unsafe_undefined: true
+      },
+      mangle: {
+        safari10: true,
+        properties: {
+          regex: /^_/
+        }
+      },
+      format: {
+        comments: false // Remove todos os comentários
+      }
+    },
+    
+    // Configurações específicas para reduzir bundle size
+    reportCompressedSize: false, // Desabilita relatório de tamanho comprimido (economiza tempo de build)
   },
   
-  // Otimizações de desenvolvimento (apenas local)
+  // Otimizações de desenvolvimento
   server: {
     port: 3000,
-    host: true
+    host: true,
+    // Enable HMR optimizations
+    hmr: {
+      overlay: false
+    }
   },
   
   // Preview para testes de produção
   preview: {
     port: 4173,
     host: true
+  },
+  
+  // Dependency optimization - otimizações agressivas
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      // Pré-bundle apenas as dependências críticas
+      'axios',
+      // Incluir lodash específicos para resolver problema de import
+      'lodash/sortBy',
+      'lodash/isNil', 
+      'lodash/throttle',
+      'lodash/isFunction',
+      'lodash/isObject',
+      'lodash/last',
+      'lodash/upperFirst',
+      'lodash/maxBy',
+      'lodash/minBy',
+      'lodash/isEqual',
+      'lodash/first',
+      'lodash/range',
+      'lodash/some',
+      'lodash/max',
+      'lodash/isNaN',
+      'lodash/min',
+      'lodash/sumBy',
+      'lodash/omit',
+      'lodash/isNumber',
+      'lodash/isString',
+      'lodash/uniqBy',
+      'lodash/flatMap',
+      'lodash/isPlainObject',
+      'lodash/isBoolean',
+      'lodash/mapValues',
+      'lodash/every',
+      'lodash/find',
+      'lodash/memoize',
+      'lodash/get',
+      'lodash/set',
+      'lodash/has',
+      'lodash/merge',
+      // Incluir react-is para resolver conflitos de versão
+      'react-is',
+      'prop-types',
+      // Incluir eventemitter3 para resolver problemas de ES modules
+      'eventemitter3'
+    ],
+    exclude: [
+      '@vite/client',
+      '@vite/env'
+    ],
+    // Force bundling de dependências pequenas
+    force: true
+  },
+  
+  // Enable experimental features for better performance
+  esbuild: {
+    target: 'esnext',
+    logOverride: { 'this-is-undefined-in-esm': 'silent' },
+    // Tree shaking mais agressivo
+    treeShaking: true,
+    // Minificação adicional
+    minifyIdentifiers: true,
+    minifyWhitespace: true,
+    minifySyntax: true,
+    // Remover imports não utilizados
+    ignoreAnnotations: false,
+    // Otimizações de performance
+    keepNames: false,
+    legalComments: 'none',
+    // Configurar para resolver imports CommonJS corretamente
+    format: 'esm',
+    platform: 'browser'
+  },
+  
+  // Configurações adicionais para resolver problemas de módulos
+  ssr: {
+    noExternal: ['react-is', 'eventemitter3', 'recharts']
+  },
+  
+  // Define para otimização de produção
+  define: {
+    __DEV__: false,
+    'process.env.NODE_ENV': '"production"'
   }
 })

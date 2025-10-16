@@ -10,6 +10,7 @@ import { authCookies, userPreferences } from "../lib/cookies";
 import { cacheManager, CACHE_KEYS } from "../lib/cache";
 import { clearAllAuthState } from "../lib/authUtils";
 import { getApiKey } from "../lib/apiKeyUtils";
+import { authenticatedFetch } from "../lib/authenticatedFetch";
 import {
   login as loginRules,
   register as registerRules,
@@ -19,7 +20,7 @@ import {
 import { eventEmitter, EVENTS } from "../lib/eventEmitter";
 
 // Configuração do ambiente
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
 
 // Interfaces
 interface User {
@@ -160,12 +161,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Verificar se estamos voltando de um redirecionamento OAuth
   useEffect(() => {
     const oauthRedirect = sessionStorage.getItem('auth_redirect_attempted');
-    if (oauthRedirect) {
-      console.log("🔄 AuthContext: Detectado redirecionamento recente do OAuth:", oauthRedirect);
+    const authRedirectCompleted = sessionStorage.getItem('auth_redirect_completed');
+    
+    if (oauthRedirect || authRedirectCompleted) {
+      console.log("🔄 AuthContext: Detectado redirecionamento OAuth:", { 
+        redirect_attempted: oauthRedirect,
+        redirect_completed: authRedirectCompleted 
+      });
+      
       // Forçar revalidação do estado de autenticação
       setRevalidationCounter(prev => prev + 1);
-      // Limpar flag do redirecionamento para não reprocessar
+      
+      // Limpar flags de redirecionamento para não reprocessar
       sessionStorage.removeItem('auth_redirect_attempted');
+      sessionStorage.removeItem('auth_redirect_completed');
+      
+      // Verificar e corrigir possíveis inconsistências nos dados de autenticação
+      const token = localStorageManager.getAuthToken();
+      const userData = localStorageManager.getUserData();
+      const isPaidUserValue = localStorageManager.get("isPaidUser");
+      
+      console.log("🔍 Verificando dados de autenticação pós-OAuth:", {
+        token: !!token,
+        userData: !!userData,
+        isPaidUser: isPaidUserValue,
+        isPaidUserType: typeof isPaidUserValue
+      });
+      
+      // Corrigir inconsistência no isPaidUser se necessário
+      if (userData && (isPaidUserValue === null || isPaidUserValue === undefined)) {
+        console.log("⚠️ Corrigindo isPaidUser ausente...");
+        const correctedValue = Boolean(userData.isPaidUser);
+        localStorageManager.set("isPaidUser", correctedValue);
+        console.log("✅ isPaidUser corrigido:", correctedValue);
+      }
     }
   }, []);
 
@@ -627,14 +656,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Função interna para validação com backend
       async function validateWithBackend(tokenToValidate: string): Promise<boolean> {
         // Importante: usar 127.0.0.1 em vez de localhost para evitar problemas com cookies
-        const backendUrl = (BACKEND_URL || 'http://127.0.0.1:8000').replace('localhost', '127.0.0.1');
+        const backendUrl = (BACKEND_URL || 'http://127.0.0.1:5000').replace('localhost', '127.0.0.1');
         
         try {
-          const profileResponse = await fetch(`${backendUrl}/api/user/profile`, {
+          const profileResponse = await authenticatedFetch(`${backendUrl}/api/user/profile`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-              'X-API-Key': getApiKey(),
               'Authorization': `Bearer ${tokenToValidate}`
             },
             credentials: 'include',
@@ -724,12 +752,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log("🔑 API_KEY length:", apiKey?.length);
         console.log("🔑 API_KEY preview:", apiKey?.substring(0, 10) + "...");
         
-        const response = await fetch(`${BACKEND_URL}/auth/logout/`, {
+        const response = await authenticatedFetch(`${BACKEND_URL}/auth/logout/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${currentToken}`,
             'Content-Type': 'application/json',
-            'X-API-Key': apiKey,
           },
         });
         
@@ -783,7 +810,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isPremiumUser = (): boolean => {
     // Sempre verificar localStorage primeiro (dados mais atualizados do backend)
-    const isPaidUserFromStorage = localStorageManager.get("isPaidUser");
+    let isPaidUserFromStorage = localStorageManager.get("isPaidUser");
     
     console.log("🔍 isPremiumUser chamado - Verificação completa:", {
       timestamp: new Date().toISOString(),
@@ -792,7 +819,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       storageValueToString: String(isPaidUserFromStorage)
     });
     
-    // Se não existe no storage, verificar nos dados do usuário
+    // Se o valor não é um booleano, mas existe, convertê-lo explicitamente
+    if (isPaidUserFromStorage !== null && typeof isPaidUserFromStorage !== 'boolean') {
+      console.log("⚠️ Valor de isPaidUser não é boolean, convertendo...");
+      isPaidUserFromStorage = Boolean(isPaidUserFromStorage);
+      // Persistir o valor corrigido no localStorage
+      localStorageManager.set("isPaidUser", isPaidUserFromStorage);
+      console.log("✅ Valor corrigido e persistido:", isPaidUserFromStorage);
+    }
+    
+    // Se existe no storage, usar esse valor
     if (isPaidUserFromStorage !== null) {
       console.log("🔍 Premium status do localStorage:", isPaidUserFromStorage);
       return isPaidUserFromStorage;
@@ -801,6 +837,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Fallback para dados do usuário em memória
     const userData = localStorageManager.getUserData();
     const premiumStatus = userData?.isPaidUser || user?.subscription_type === "premium" || false;
+    
+    // Persistir o valor para próximas verificações
+    if (userData?.isPaidUser !== undefined) {
+      console.log("⚠️ isPaidUser ausente no localStorage mas presente nos dados do usuário, corrigindo...");
+      const isPaidUserBoolean = Boolean(userData.isPaidUser);
+      localStorageManager.set("isPaidUser", isPaidUserBoolean);
+    }
     
     console.log("🔍 Premium status fallback:", {
       userDataIsPaid: userData?.isPaidUser,

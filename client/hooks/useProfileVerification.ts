@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 import { localStorageManager } from '../lib/localStorage';
@@ -22,164 +22,187 @@ interface ProfileVerificationResult {
   refreshProfile: () => Promise<void>;
 }
 
+// Cache global para evitar múltiplas chamadas simultâneas - REVERTIDO para estabilidade
+let globalProfileData: UserProfile | null = null;
+let globalPremiumStatus: boolean | null = null;
+let lastProfileFetch = 0;
+let isCurrentlyFetching = false;
+const PROFILE_CACHE_TTL = 60000; // 1 minuto para reduzir requisições
+
 export const useProfileVerification = (): ProfileVerificationResult => {
   const { user: authUser } = useAuth();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(globalProfileData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
 
-  // FUNÇÃO CENTRALIZADA DE VERIFICAÇÃO PREMIUM
-  // Esta função é o único ponto de verificação em toda a aplicação
+  // Função para buscar perfil de forma controlada
+  const fetchProfile = useCallback(async (force = false): Promise<UserProfile | null> => {
+    if (!authUser?.email) {
+      console.log('❌ [PROFILE] Usuário não autenticado');
+      return null;
+    }
+
+    // Evitar múltiplas requisições simultâneas
+    if (isCurrentlyFetching && !force) {
+      console.log('⏳ [PROFILE] Requisição já em andamento, aguardando...');
+      return globalProfileData;
+    }
+
+    // Verificar cache se não forçado
+    if (!force && globalProfileData && Date.now() - lastProfileFetch < PROFILE_CACHE_TTL) {
+      console.log('📦 [PROFILE] Cache global válido, usando dados existentes');
+      return globalProfileData;
+    }
+
+    try {
+      isCurrentlyFetching = true;
+      if (mountedRef.current) {
+        setIsLoading(true);
+        setError(null);
+      }
+      
+      console.log('🔄 [PROFILE] Buscando perfil do usuário:', authUser.email);
+      
+      const response = await api.get('/api/user/profile/');
+      
+      if (!response.data) {
+        throw new Error('Dados do perfil não encontrados');
+      }
+
+      const profile: UserProfile = {
+        id: response.data.id,
+        email: response.data.email,
+        nome: response.data.nome || response.data.name || authUser.email,
+        premium: Boolean(response.data.premium),
+        plano: response.data.plano || 'free',
+        data_expiracao: response.data.data_expiracao,
+        created_at: response.data.created_at,
+        updated_at: response.data.updated_at
+      };
+
+      // Atualizar cache global e localStorage
+      globalProfileData = profile;
+      globalPremiumStatus = profile.premium;
+      lastProfileFetch = Date.now();
+      
+      localStorage.setItem('user', JSON.stringify(profile));
+      localStorageManager.set("isPaidUser", profile.premium);
+      
+      if (mountedRef.current) {
+        setUser(profile);
+      }
+      
+      console.log('✅ [PROFILE] Perfil atualizado com sucesso');
+      return profile;
+      
+    } catch (error) {
+      console.error('❌ [PROFILE] Erro na API:', error);
+      
+      // Em caso de erro, tentar usar dados do localStorage como fallback
+      const localUserData = localStorage.getItem('user');
+      if (localUserData) {
+        try {
+          const localUser = JSON.parse(localUserData);
+          console.log('🛟 [PROFILE] Usando dados do localStorage como fallback');
+          
+          globalProfileData = localUser;
+          globalPremiumStatus = Boolean(localUser.premium);
+          lastProfileFetch = Date.now() - (PROFILE_CACHE_TTL / 2); // Cache mais curto para dados locais
+          
+          if (mountedRef.current) {
+            setUser(localUser);
+            setError(null);
+          }
+          
+          return localUser;
+        } catch (parseError) {
+          console.error('❌ [PROFILE] Erro ao parsear localStorage:', parseError);
+        }
+      }
+      
+      // Se chegou aqui, realmente há um erro
+      if (mountedRef.current) {
+        setError(error instanceof Error ? error.message : 'Erro ao carregar perfil');
+      }
+      
+      return null;
+    } finally {
+      isCurrentlyFetching = false;
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [authUser?.email]);
+
+  // FUNÇÃO CENTRALIZADA DE VERIFICAÇÃO PREMIUM OTIMIZADA - REVERTIDA
   const isPaidUser = useCallback((): boolean => {
-    console.log("🔍 Verificando status premium centralizado...");
+    console.log("🔍 [PROFILE] Verificando status premium centralizado...");
     
-    // SEMPRE verificar primeiro no localStorage (fonte primária de verdade)
-    const premiumStatus = localStorageManager.get("isPaidUser");
-    
-    if (premiumStatus !== null && premiumStatus !== undefined) {
-      // Converter explicitamente para boolean para garantir tipo consistente
-      const isPremium = Boolean(premiumStatus);
-      console.log(`🔍 Status premium do localStorage: ${isPremium ? "Premium" : "Gratuito"}`);
-      return isPremium;
+    // 1. Verificar cache global primeiro (mais rápido)
+    if (globalPremiumStatus !== null && Date.now() - lastProfileFetch < PROFILE_CACHE_TTL) {
+      console.log(`📦 [PROFILE] Cache global hit: ${globalPremiumStatus ? "Premium" : "Gratuito"}`);
+      return globalPremiumStatus;
     }
     
-    // Caso o localStorage não tenha a informação, verificar nos dados do usuário
+    // 2. Verificar dados do perfil atual
     if (user && typeof user.premium === 'boolean') {
-      console.log(`🔍 Status premium do perfil do usuário: ${user.premium ? "Premium" : "Gratuito"}`);
+      console.log(`👤 [PROFILE] Status do perfil atual: ${user.premium ? "Premium" : "Gratuito"}`);
+      globalPremiumStatus = user.premium;
       return user.premium;
     }
     
-    // Se não houver dados, verificar no AuthContext
+    // 3. Verificar localStorage como fallback
+    const premiumStatus = localStorageManager.get("isPaidUser");
+    if (premiumStatus !== null && premiumStatus !== undefined) {
+      const isPremium = Boolean(premiumStatus);
+      console.log(`💾 [PROFILE] Status do localStorage: ${isPremium ? "Premium" : "Gratuito"}`);
+      globalPremiumStatus = isPremium;
+      return isPremium;
+    }
+    
+    // 4. Verificar localStorage.user como último recurso
     const localUserData = localStorage.getItem('user');
     if (localUserData) {
       try {
         const localUser = JSON.parse(localUserData);
         if (localUser && typeof localUser.premium === 'boolean') {
-          console.log(`🔍 Status premium do localStorage.user: ${localUser.premium ? "Premium" : "Gratuito"}`);
+          console.log(`🗂️ [PROFILE] Status do localStorage.user: ${localUser.premium ? "Premium" : "Gratuito"}`);
+          globalPremiumStatus = localUser.premium;
+          localStorageManager.set("isPaidUser", localUser.premium);
           return localUser.premium;
         }
       } catch (error) {
-        console.warn('⚠️ Erro ao parsear dados do localStorage:', error);
+        console.warn('⚠️ [PROFILE] Erro ao parsear localStorage:', error);
       }
     }
     
-    // Por segurança, assumir que não é premium se não encontrar dados
-    console.log('⚠️ Nenhum dado de premium encontrado, assumindo NÃO premium');
+    // 5. Por segurança, assumir não premium
+    console.log('⚠️ [PROFILE] Nenhum dado encontrado, assumindo NÃO premium');
+    globalPremiumStatus = false;
     return false;
   }, [user]);
-  
-  // Função para buscar perfil do usuário
-  const fetchUserProfile = useCallback(async () => {
-    if (!authUser?.email) {
-      console.log('👤 Nenhum usuário autenticado');
-      setUser(null);
-      return;
-    }
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      console.log('🔄 Buscando perfil do usuário:', authUser.email);
-      
-      // Fazer requisição para verificar perfil
-      const response = await api.get('/api/user/profile/');
-      
-      if (response.data) {
-        const profileData: UserProfile = {
-          id: response.data.id,
-          email: response.data.email,
-          nome: response.data.nome || response.data.name || authUser.email,
-          premium: Boolean(response.data.premium),
-          plano: response.data.plano || 'free',
-          data_expiracao: response.data.data_expiracao,
-          created_at: response.data.created_at,
-          updated_at: response.data.updated_at
-        };
-
-        console.log('✅ Perfil carregado:', profileData);
-        setUser(profileData);
-
-        // IMPORTANTE: Atualizar o localStorage com status premium atual
-        // Esta é a fonte primária de verdade para todo o aplicativo
-        localStorage.setItem('user', JSON.stringify(profileData));
-        localStorageManager.set("isPaidUser", profileData.premium);
-        console.log(`✅ Status premium atualizado no localStorage: ${profileData.premium ? "Premium" : "Gratuito"}`);
-      } else {
-        console.warn('⚠️ Resposta da API sem dados válidos');
-        setError('Dados do perfil não encontrados');
-      }
-    } catch (error: any) {
-      console.error('❌ Erro ao buscar perfil:', error);
-      
-      // Em caso de erro, tentar usar dados do localStorage
-      const localUserData = localStorage.getItem('user');
-      if (localUserData) {
-        try {
-          const localUser = JSON.parse(localUserData);
-          console.log('🛟 Usando dados do localStorage após erro na API');
-          setUser(localUser);
-          
-          // Verificar se temos status premium no localStorage
-          if (localStorageManager.get("isPaidUser") === null && localUser.premium !== undefined) {
-            localStorageManager.set("isPaidUser", Boolean(localUser.premium));
-            console.log(`🛟 Recuperando status premium do localStorage.user: ${Boolean(localUser.premium) ? "Premium" : "Gratuito"}`);
-          }
-        } catch (parseError) {
-          console.error('❌ Erro ao parsear localStorage:', parseError);
-          setError('Erro ao carregar perfil do usuário');
-        }
-      } else {
-        setError('Erro ao carregar perfil do usuário');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [authUser?.email]);
-
-  // Função para atualizar perfil
+  // Função para atualizar perfil (força refresh)
   const refreshProfile = useCallback(async () => {
-    await fetchUserProfile();
-  }, [fetchUserProfile]);
+    console.log('🔄 [PROFILE] Forçando refresh do perfil...');
+    await fetchProfile(true);
+  }, [fetchProfile]);
 
-  // Efeito para carregar perfil quando usuário muda
+  // Buscar perfil na inicialização (apenas se não há cache válido)
   useEffect(() => {
-    if (authUser?.email) {
-      fetchUserProfile();
-    } else {
-      setUser(null);
-      setError(null);
+    if (authUser?.email && !globalProfileData) {
+      fetchProfile();
+    } else if (globalProfileData && mountedRef.current) {
+      setUser(globalProfileData);
     }
-  }, [authUser?.email, fetchUserProfile]);
+  }, [authUser?.email, fetchProfile]);
 
-  // Efeito para escutar mudanças no localStorage
+  // Cleanup ao desmontar
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      // Reação à mudança no user geral
-      if (e.key === 'user' && e.newValue) {
-        try {
-          const newUser = JSON.parse(e.newValue);
-          setUser(newUser);
-          console.log('🔄 Perfil atualizado via localStorage:', newUser);
-          
-          // Verificar se precisamos atualizar o status premium
-          if (newUser && typeof newUser.premium === 'boolean') {
-            localStorageManager.set("isPaidUser", newUser.premium);
-            console.log(`🔄 Status premium atualizado via localStorage.user: ${newUser.premium ? "Premium" : "Gratuito"}`);
-          }
-        } catch (error) {
-          console.error('❌ Erro ao parsear dados do storage:', error);
-        }
-      }
-      
-      // Reação direta à mudança do status premium
-      if (e.key === 'isPaidUser') {
-        console.log('🔄 Status premium alterado via localStorage:', e.newValue);
-      }
+    return () => {
+      mountedRef.current = false;
     };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   return {

@@ -35,11 +35,15 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function Configuracoes() {
   const { toast } = useToast();
-  const { language, currency, setLanguage, setCurrency, t } = useTranslation();
+  const { t } = useTranslation();
+  const { theme, setTheme } = useTheme();
+  const { isMobile, isTablet } = useResponsive();
   const { 
     resetOnboarding, 
     hasSeenOnboarding,
@@ -119,54 +123,20 @@ export default function Configuracoes() {
   ];
 
   return (
-    <div className="space-y-3 md:space-y-6">
-      <div className="flex items-center justify-between">
+    <div className={`space-y-3 md:space-y-6 ${isMobile ? 'px-4' : ''}`}>
+      <div className={`flex items-center ${isMobile ? 'flex-col space-y-4' : 'justify-between'}`}>
         <div className="flex items-center space-x-3">
           <Settings className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold">{t('settings')}</h1>
-            <p className="text-muted-foreground">
+            <h1 className={`font-bold ${isMobile ? 'text-2xl' : 'text-3xl'}`}>{t('settings')}</h1>
+            <p className="text-muted-foreground text-sm">
               {t('manage_preferences')}
             </p>
           </div>
         </div>
-
-        {/* Quick Language and Currency Toggles */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Globe className="h-4 w-4 text-muted-foreground" />
-            <select
-              className="h-8 px-2 rounded border border-input bg-background text-sm"
-              value={language}
-              onChange={(e) => {
-                setLanguage(e.target.value);
-                handleSimpleSettingChange("language", e.target.value);
-              }}
-            >
-              <option value="pt-BR">🇧🇷 PT</option>
-              <option value="en-US">🇺🇸 EN</option>
-              <option value="es-ES">🇪🇸 ES</option>
-            </select>
-          </div>
-          <div className="flex items-center space-x-2">
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-            <select
-              className="h-8 px-2 rounded border border-input bg-background text-sm"
-              value={currency}
-              onChange={(e) => {
-                setCurrency(e.target.value);
-                handleSimpleSettingChange("currency", e.target.value);
-              }}
-            >
-              <option value="BRL">BRL</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-            </select>
-          </div>
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
+      <div className={`grid gap-3 md:gap-6 ${isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 lg:grid-cols-2'}`}>
         {/* Notificações */}
         <Card>
           <CardHeader>
@@ -249,83 +219,69 @@ export default function Configuracoes() {
           </CardContent>
         </Card>
 
-        {/* Aparência e Regionalização */}
+        {/* Aparência */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Palette className="h-5 w-5" />
-              <span>{t('appearance_regionalization')}</span>
+              <span>{t('appearance')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Tema */}
             <div className="space-y-3">
               <Label>{t('theme')}</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {themes.map((theme) => {
-                  const IconComponent = theme.icon;
+              <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-3'}`}>
+                {[
+                  { value: "light", label: "Claro", icon: Sun },
+                  { value: "dark", label: "Escuro", icon: Moon },
+                  { value: "system", label: "Sistema", icon: Monitor },
+                ].map((themeOption) => {
+                  const IconComponent = themeOption.icon;
                   return (
                     <Button
-                      key={theme.value}
+                      key={themeOption.value}
                       variant={
-                        settings.theme === theme.value ? "default" : "outline"
+                        theme === themeOption.value ? "default" : "outline"
                       }
                       size="sm"
                       onClick={() => {
-                        handleSimpleSettingChange("theme", theme.value);
-                        // Apply theme immediately like moon button click
-                        if (theme.value === "dark") {
-                          document.documentElement.classList.add("dark");
-                        } else if (theme.value === "light") {
-                          document.documentElement.classList.remove("dark");
-                        } else if (theme.value === "system") {
-                          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                          document.documentElement.classList.toggle("dark", prefersDark);
-                        }
+                        setTheme(themeOption.value as "light" | "dark" | "system");
+                        toast({
+                          title: t('configuration_updated'),
+                          description: t('theme_updated_successfully'),
+                        });
                       }}
-                      className="flex flex-col items-center space-y-1 h-auto p-3"
+                      className={`flex ${isMobile ? 'flex-row justify-start' : 'flex-col'} items-center ${isMobile ? 'space-x-2' : 'space-y-1'} ${isMobile ? 'h-10 px-3' : 'h-auto p-3'}`}
                     >
                       <IconComponent className="h-4 w-4" />
-                      <span className="text-xs">{t(theme.value === 'light' ? 'light' : theme.value === 'dark' ? 'dark' : 'system')}</span>
+                      <span className={`text-xs ${isMobile ? 'text-sm' : ''}`}>
+                        {themeOption.label}
+                      </span>
                     </Button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Regionalização */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="language">{t('language')}</Label>
-                <select
-                  id="language"
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                  value={language}
-                  onChange={(e) => {
-                    setLanguage(e.target.value);
-                    handleSimpleSettingChange("language", e.target.value);
-                  }}
-                >
-                  <option value="pt-BR">Português (Brasil)</option>
-                  <option value="en-US">English (US)</option>
-                  <option value="es-ES">Español</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="currency">{t('currency')}</Label>
-                <select
-                  id="currency"
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                  value={currency}
-                  onChange={(e) => {
-                    setCurrency(e.target.value);
-                    handleSimpleSettingChange("currency", e.target.value);
-                  }}
-                >
-                  <option value="BRL">Real (BRL)</option>
-                  <option value="USD">Dólar (USD)</option>
-                  <option value="EUR">Euro (EUR)</option>
-                </select>
+            {/* Informação sobre idioma e moeda */}
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <Globe className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium">{t('language_and_currency')}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('fixed_portuguese_real')}
+                  </p>
+                  <div className="flex items-center space-x-4 mt-2">
+                    <Badge variant="outline" className="text-xs">
+                      🇧🇷 Português (Brasil)
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      💰 Real (BRL)
+                    </Badge>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>

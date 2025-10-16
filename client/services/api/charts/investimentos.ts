@@ -1,5 +1,6 @@
 // Investments Charts API Service
 import { developmentConfig, simulateApiDelay } from "../../config/development";
+import { authenticatedGet, authenticatedPost, authenticatedFetch } from '@/lib/authenticatedFetch';
 
 export interface InvestmentAllocation {
   tipo: string;
@@ -37,7 +38,7 @@ export const investmentChartsApi = {
       ];
     }
 
-    const response = await fetch('/api/investimentos/grafico_alocacao_tipo');
+    const response = await authenticatedGet('/api/investimentos/grafico_alocacao_tipo');
     if (!response.ok) throw new Error('Failed to fetch alocação tipo data');
     return response.json();
   },
@@ -74,7 +75,7 @@ export const investmentChartsApi = {
       ];
     }
 
-    const response = await fetch('/api/investimentos/grafico_setorial_acoes');
+    const response = await authenticatedGet('/api/investimentos/grafico_setorial_acoes');
     if (!response.ok) throw new Error('Failed to fetch setorial ações data');
     return response.json();
   },
@@ -93,7 +94,7 @@ export const investmentChartsApi = {
       ];
     }
 
-    const response = await fetch(`/api/investimentos/grafico_dividendos_fii?mes=${mes}&ano=${ano}`);
+    const response = await authenticatedGet('/api/investimentos/grafico_dividendos_fii?mes=${mes}&ano=${ano}');
     if (!response.ok) throw new Error('Failed to fetch dividendos FII data');
     return response.json();
   },
@@ -117,7 +118,7 @@ export const investmentChartsApi = {
       };
     }
 
-    const response = await fetch('/api/investimentos/dashboard_overview');
+    const response = await authenticatedGet('/api/investimentos/dashboard_overview');
     if (!response.ok) throw new Error('Failed to fetch investments dashboard data');
     return response.json();
   },
@@ -161,7 +162,7 @@ export const investmentChartsApi = {
       return mockData[periodo];
     }
 
-    const response = await fetch(`/api/investimentos/performance_periodo?periodo=${periodo}`);
+    const response = await authenticatedGet('/api/investimentos/performance_periodo?periodo=${periodo}');
     if (!response.ok) throw new Error('Failed to fetch performance período data');
     return response.json();
   },

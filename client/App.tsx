@@ -9,126 +9,216 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TranslationProvider } from "./contexts/TranslationContext";
+import { PrivacyProvider } from "./contexts/PrivacyContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
+// TODO: Implementar LazyContextProviders para reduzir entry chunk
+// import { LazyContextProviders } from "./contexts/LazyContexts";
 import ProtectedRoute from "./components/ProtectedRoute";
-import DashboardLayout from "./components/DashboardLayout";
+const DashboardLayout = withOptimizedLazy(() => import("./components/DashboardLayout"), { preload: true });
+import { OptimizedSuspense, withOptimizedLazy } from "./components/OptimizedSuspense";
 
-// Loading component
-const LoadingSpinner = () => (
+// Loading component optimizado
+const LoadingSpinner = React.memo(() => (
   <div className="flex items-center justify-center h-32">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
   </div>
-);
+));
+LoadingSpinner.displayName = "LoadingSpinner";
 
-// Public Pages - Keep critical ones as direct imports
-import Index from "./pages/HomePublicPages/Index";
-import Home from "./pages/HomePublicPages/Home";
-import Demo from "./pages/HomePublicPages/Demo";
-import PublicMarket from "./pages/HomePublicPages/PublicMarket";
-import MarketPage from "./pages/MarketPage";
-import LoginRequired from "./pages/HomePublicPages/LoginRequired";
-import Whitepaper from "./pages/HomePublicPages/Documents/Whitepaper";
-import Login from "./pages/HomePublicPages/Login";
-import Signup from "./pages/HomePublicPages/Signup";
-import ForgotPassword from "./pages/HomePublicPages/ForgotPassword";
-import PasswordResetSent from "./pages/HomePublicPages/PasswordResetSent";
-import VerifyResetCode from "./pages/HomePublicPages/VerifyResetCode";
-import ResetPassword from "./pages/HomePublicPages/ResetPassword";
+// Public Pages - Convert all to lazy loading to reduce entry chunk
+const Index = withOptimizedLazy(() => import("./pages/HomePublicPages/Index"), { preload: true });
+const Home = withOptimizedLazy(() => import("./pages/HomePublicPages/Home"));
+const Demo = withOptimizedLazy(() => import("./pages/HomePublicPages/Demo"));
+const PublicMarket = withOptimizedLazy(() => import("./pages/HomePublicPages/PublicMarket"));
+const MarketPage = withOptimizedLazy(() => import("./pages/MarketPage"));
+const PublicMarketPage = withOptimizedLazy(() => import("./pages/HomePublicPages/Market"));
+const CriptoMarket = withOptimizedLazy(() => import("./pages/HomePublicPages/CriptoMarket"));
+const LoginRequired = withOptimizedLazy(() => import("./pages/HomePublicPages/LoginRequired"));
+const Whitepaper = withOptimizedLazy(() => import("./pages/HomePublicPages/Documents/Whitepaper"));
+const About = withOptimizedLazy(() => import("./pages/HomePublicPages/About"));
+const PrivacyPolicy = withOptimizedLazy(() => import("./pages/HomePublicPages/PrivacyPolicy"));
+const Terms = withOptimizedLazy(() => import("./pages/HomePublicPages/Terms"));
+const Login = withOptimizedLazy(() => import("./pages/HomePublicPages/Login"), { preload: true });
+const Signup = withOptimizedLazy(() => import("./pages/HomePublicPages/Signup"), { preload: true });
+const ForgotPassword = withOptimizedLazy(() => import("./pages/HomePublicPages/ForgotPassword"));
+const PasswordResetSent = withOptimizedLazy(() => import("./pages/HomePublicPages/PasswordResetSent"));
+const VerifyResetCode = withOptimizedLazy(() => import("./pages/HomePublicPages/VerifyResetCode"));
+const ResetPassword = withOptimizedLazy(() => import("./pages/HomePublicPages/ResetPassword"));
 
-// Error Pages
-import NotFound from "./pages/ErrosTratamento/NotFound";
-import AuthenticationError from "./pages/ErrosTratamento/AuthenticationError";
-import LoginError from "./pages/ErrosTratamento/LoginError";
+// Error Pages - also convert to lazy
+const NotFound = withOptimizedLazy(() => import("./pages/ErrosTratamento/NotFound"));
+const AuthenticationError = withOptimizedLazy(() => import("./pages/ErrosTratamento/AuthenticationError"));
+const LoginError = withOptimizedLazy(() => import("./pages/ErrosTratamento/LoginError"));
 
-// OAuth Components removidos
+// Auth Pages - also convert to lazy
+const TwoFactorEmailSetup = withOptimizedLazy(() => import("./pages/PagesAuth/TwoFactorEmailSetup"));
+const Pagamento = withOptimizedLazy(() => import("./pages/Pagamento"));
 
-// Auth Pages (remain in original location)
-import TwoFactorEmailSetup from "./pages/PagesAuth/TwoFactorEmailSetup";
-import Pagamento from "./pages/Pagamento";
+// Lazy loaded system pages - Budget (com preload)
+const Budget = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/Budget"), { preload: true });
+const BudgetOverview = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/index"));
+const Entradas = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/entradas"));
+const Custos = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/custos"));
+const Dividas = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/dividas"));
+const Metas = withOptimizedLazy(() => import("./pages/sistema/dashboard/orcamento/metas"));
 
-// Lazy loaded system pages - Budget
-const Budget = React.lazy(() => import("./pages/sistema/dashboard/orcamento/Budget"));
-const BudgetOverview = React.lazy(() => import("./pages/sistema/dashboard/orcamento/index"));
-const Entradas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/entradas"));
-const Custos = React.lazy(() => import("./pages/sistema/dashboard/orcamento/custos"));
-const Dividas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/dividas"));
-const Metas = React.lazy(() => import("./pages/sistema/dashboard/orcamento/metas"));
+// Lazy loaded system pages - Investments (com preload para Investment principal)
+const Investment = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/Investment"), { preload: true });
+const Investimentos = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/index"));
+const Comparativos = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/comparativos"));
+const Cadastro = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/cadastro"));
+const Ranking = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/ranking"));
+const Patrimonio = withOptimizedLazy(() => import("./pages/sistema/dashboard/investimentos/patrimonio"));
 
-// Lazy loaded system pages - Investments
-const Investment = React.lazy(() => import("./pages/sistema/dashboard/investimentos/Investment"));
-// Usando a versão atualizada com exibição correta de ativos e setores
-const Investimentos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/index"));
-const Comparativos = React.lazy(() => import("./pages/sistema/dashboard/investimentos/comparativos"));
-const Cadastro = React.lazy(() => import("./pages/sistema/dashboard/investimentos/cadastro"));
-const Ranking = React.lazy(() => import("./pages/sistema/dashboard/investimentos/ranking"));
-const Patrimonio = React.lazy(() => import("./pages/sistema/dashboard/investimentos/patrimonio"));
+// Lazy loaded system pages - Market (sem preload - usuário precisa navegar primeiro)
+const Market = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/Market"));
+const FIIMarket = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/page"));
+const IndicadoresEconomicos = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
+const ListaDeDesejo = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
+const AnaliseTicker = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
+const AnaliseAcoesCompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-acoes-completa"));
+const AnaliseFIICompleta = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/analise-fii-completa"));
+const CalculadoraFinanceira = withOptimizedLazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
 
-// Lazy loaded system pages - Market
-const Market = React.lazy(() => import("./pages/sistema/dashboard/mercado/Market"));
-const FIIMarket = React.lazy(() => import("./pages/sistema/dashboard/mercado/index"));
-const IndicadoresEconomicos = React.lazy(() => import("./pages/sistema/dashboard/mercado/indicadores-economicos"));
-const ListaDeDesejo = React.lazy(() => import("./pages/sistema/dashboard/mercado/lista-de-desejo"));
-const AnaliseTicker = React.lazy(() => import("./pages/sistema/dashboard/mercado/analise-ticker"));
-const CalculadoraFinanceira = React.lazy(() => import("./pages/sistema/dashboard/mercado/calculadora-financeira"));
+// Lazy loaded system pages - Crypto (sem preload)
+const DashboardCripto = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/DashboardCripto"));
+const CriptoDashboard = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/index"));
+const MercadoCripto = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/mercado"));
+const CriptoPortfolio = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/portfolio"));
+const CriptoCadastro = withOptimizedLazy(() => import("./pages/sistema/dashboard/cripto/cadastro"));
 
-// Lazy loaded system pages - Crypto
-const DashboardCripto = React.lazy(() => import("./pages/sistema/dashboard/cripto/DashboardCripto"));
-const CriptoDashboard = React.lazy(() => import("./pages/sistema/dashboard/cripto/index"));
-const MercadoCripto = React.lazy(() => import("./pages/sistema/dashboard/cripto/mercado"));
-const CriptoPortfolio = React.lazy(() => import("./pages/sistema/dashboard/cripto/portfolio"));
-const CriptoCadastro = React.lazy(() => import("./pages/sistema/dashboard/cripto/cadastro"));
+// Lazy loaded system pages - Training (sem preload)
+const Training = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/Training"));
+const FundosInvestimentos = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/fundos-investimentos"));
+const RendaFixa = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/renda-fixa"));
+const Acoes = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/acoes"));
+const Macroeconomia = withOptimizedLazy(() => import("./pages/sistema/dashboard/treinamentos/macroeconomia"));
 
-// Lazy loaded system pages - Training
-const Training = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/Training"));
-const FundosInvestimentos = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/fundos-investimentos"));
-const RendaFixa = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/renda-fixa"));
-const Acoes = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/acoes"));
-const Macroeconomia = React.lazy(() => import("./pages/sistema/dashboard/treinamentos/macroeconomia"));
+// Lazy loaded special pages (com retry)
+const InfoDiaria = withOptimizedLazy(() => import("./pages/sistema/dashboard/info-diaria"), { retryAttempts: 2 });
+const Perfil = withOptimizedLazy(() => import("./pages/sistema/dashboard/perfil"));
+const Configuracoes = withOptimizedLazy(() => import("./pages/sistema/dashboard/configuracoes"));
+const Suporte = withOptimizedLazy(() => import("./pages/sistema/dashboard/suporte"));
+const RiskAssessment = withOptimizedLazy(() => import("./pages/sistema/dashboard/risk-assessment"));
+const ChangePassword = withOptimizedLazy(() => import("./pages/sistema/dashboard/change-password"));
+const PaymentOptions = withOptimizedLazy(() => import("./pages/sistema/dashboard/payment-options"));
 
-// Lazy loaded special pages
-const InfoDiaria = React.lazy(() => import("./pages/sistema/dashboard/info-diaria"));
-const Perfil = React.lazy(() => import("./pages/sistema/dashboard/perfil"));
-const Configuracoes = React.lazy(() => import("./pages/sistema/dashboard/configuracoes"));
-const Suporte = React.lazy(() => import("./pages/sistema/dashboard/suporte"));
-const RiskAssessment = React.lazy(() => import("./pages/sistema/dashboard/risk-assessment"));
-const ChangePassword = React.lazy(() => import("./pages/sistema/dashboard/change-password"));
-const PaymentOptions = React.lazy(() => import("./pages/sistema/dashboard/payment-options"));
-
-const queryClient = new QueryClient();
+// QueryClient com configurações otimizadas
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      gcTime: 10 * 60 * 1000, // 10 minutos
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Lazy-load AuthCallback component
-const AuthCallback = React.lazy(() => import('./components/AuthCallback'));
+const AuthCallback = withOptimizedLazy(() => import('./components/AuthCallback'));
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TranslationProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-              <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <TranslationProvider>
+            <PrivacyProvider>
+              <TooltipProvider>
+              <Toaster />
+              <Sonner />
+                <BrowserRouter>
               <Routes>
                 {/* Public Routes */}
-                <Route path="/" element={<Index />} />
-                <Route path="/home" element={<Home />} />
-                <Route path="/demo" element={<Demo />} />
-                <Route path="/market" element={<MarketPage />} />
-                <Route path="/whitepaper" element={<Whitepaper />} />
-                <Route path="/login-required" element={<LoginRequired />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Index />
+                  </Suspense>
+                } />
+                <Route path="/home" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Home />
+                  </Suspense>
+                } />
+                <Route path="/demo" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Demo />
+                  </Suspense>
+                } />
+                <Route path="/market" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PublicMarketPage />
+                  </Suspense>
+                } />
+                <Route path="/cripto-market" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <CriptoMarket />
+                  </Suspense>
+                } />
+                <Route path="/whitepaper" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Whitepaper />
+                  </Suspense>
+                } />
+                <Route path="/about" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <About />
+                  </Suspense>
+                } />
+                <Route path="/privacy-policy" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PrivacyPolicy />
+                  </Suspense>
+                } />
+                <Route path="/terms" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Terms />
+                  </Suspense>
+                } />
+                <Route path="/login-required" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <LoginRequired />
+                  </Suspense>
+                } />
+                <Route path="/login" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Login />
+                  </Suspense>
+                } />
+                <Route path="/signup" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Signup />
+                  </Suspense>
+                } />
+                <Route path="/forgot-password" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ForgotPassword />
+                  </Suspense>
+                } />
                 <Route
                   path="/password-reset-sent"
-                  element={<PasswordResetSent />}
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <PasswordResetSent />
+                    </Suspense>
+                  }
                 />
                 <Route
                   path="/verify-reset-code"
-                  element={<VerifyResetCode />}
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <VerifyResetCode />
+                    </Suspense>
+                  }
                 />
                 <Route
                   path="/reset-password"
-                  element={<ResetPassword />}
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <ResetPassword />
+                    </Suspense>
+                  }
                 />
                 
                 {/* OAuth Callback Routes */}
@@ -144,34 +234,58 @@ function App() {
                 {/* OAuth Callbacks removidos */}
 
                 {/* Auth Routes */}
-                <Route path="/2fa/email" element={<TwoFactorEmailSetup />} />
-                <Route path="/2fa/totp" element={<TwoFactorEmailSetup />} />
+                <Route path="/2fa/email" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <TwoFactorEmailSetup />
+                  </Suspense>
+                } />
+                <Route path="/2fa/totp" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <TwoFactorEmailSetup />
+                  </Suspense>
+                } />
                 
                 {/* Protected Payment Route */}
                 <Route 
                   path="/pagamento" 
                   element={
                     <ProtectedRoute>
-                      <DashboardLayout />
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <DashboardLayout />
+                      </Suspense>
                     </ProtectedRoute>
                   }
                 >
-                  <Route index element={<Pagamento />} />
+                  <Route index element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Pagamento />
+                    </Suspense>
+                  } />
                 </Route>
 
                 {/* Error Routes */}
                 <Route
                   path="/authentication-error"
-                  element={<AuthenticationError />}
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AuthenticationError />
+                    </Suspense>
+                  }
                 />
-                <Route path="/login-error" element={<LoginError />} />
+                <Route path="/login-error" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <LoginError />
+                  </Suspense>
+                } />
 
                 {/* Protected Dashboard Routes */}
                 <Route
                   path="/dashboard"
                   element={
                     <ProtectedRoute>
-                      <DashboardLayout />
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <DashboardLayout />
+                      </Suspense>
                     </ProtectedRoute>
                   }
                 >
@@ -298,6 +412,21 @@ function App() {
                         <AnaliseTicker />
                       </Suspense>
                     } />
+                    <Route path="analise-ticker/fii" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AnaliseFIICompleta />
+                      </Suspense>
+                    } />
+                    <Route path="analise-ticker-acoes" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AnaliseAcoesCompleta />
+                      </Suspense>
+                    } />
+                    <Route path="analise-ticker-fii" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AnaliseFIICompleta />
+                      </Suspense>
+                    } />
                     <Route
                       path="calculadora-financeira"
                       element={
@@ -393,12 +522,18 @@ function App() {
                 </Route>
 
                 {/* Catch-all route for 404 */}
-                <Route path="*" element={<NotFound />} />
+                <Route path="*" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <NotFound />
+                  </Suspense>
+                } />
               </Routes>
             </BrowserRouter>
-          </TooltipProvider>
+            </TooltipProvider>
+          </PrivacyProvider>
         </TranslationProvider>
       </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

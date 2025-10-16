@@ -4,7 +4,7 @@
  */
 
 // Base URL da API
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
 
 // Rotas de Autenticação
 export const AUTH_ROUTES = {
@@ -102,11 +102,17 @@ export const INVESTMENT_ROUTES = {
 
   // Investimentos Pessoais - NOVAS APIs (URLs corrigidas conforme backend)
   buscarTickers: "/api/investimentos/buscar-tickers/",
+  buscarTickersFII: "/api/investimentos/buscar-tickers/fii/",
+  buscarTickersAcoes: "/api/investimentos/buscar-tickers/acoes/",
   ativosPessoais: "/api/investimentos/ativos-pessoais/",
   cadastrarAtivo: "/api/investimentos/ativos-pessoais/",
   editarAtivo: "/api/investimentos/ativos-pessoais/",
   excluirAtivo: "/api/investimentos/ativos-pessoais/deletar/",
   resumoCarteira: "/api/investimentos/resumo-carteira/",
+  analiseAtivo: "/api/investimentos/analise-ativo/",
+  analiseAtivoFII: "/api/investimentos/analise-ativo/fii/",
+  analiseAtivoAcoes: "/api/investimentos/analise-ativo/acoes/",
+  rentabilidadeGeral: "/api/investimentos/rentabilidade-geral/",
 };
 
 // Rotas de Market (Públicas)
@@ -230,11 +236,14 @@ export const ROUTES_MAP: Record<string, string> = {
 
   // Investimentos Pessoais - NOVAS APIs
   buscarTickers: INVESTMENT_ROUTES.buscarTickers,
+  buscarTickersFII: INVESTMENT_ROUTES.buscarTickersFII,
+  buscarTickersAcoes: INVESTMENT_ROUTES.buscarTickersAcoes,
   ativosPessoais: INVESTMENT_ROUTES.ativosPessoais,
   cadastrarAtivo: INVESTMENT_ROUTES.cadastrarAtivo,
   editarAtivo: INVESTMENT_ROUTES.editarAtivo,
   excluirAtivo: INVESTMENT_ROUTES.excluirAtivo,
   resumoCarteira: INVESTMENT_ROUTES.resumoCarteira,
+  analiseAtivo: INVESTMENT_ROUTES.analiseAtivo,
 
   // Market
   market: MARKET_ROUTES.marketData,

@@ -48,7 +48,7 @@ console.log("🔍 Debug Environment Variables:");
 console.log("VITE_GOOGLE_CLIENT_ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
 console.log("OAUTH_CONFIG.google.clientId:", OAUTH_CONFIG.google.clientId);
 console.log("VITE_BACKEND_URL:", import.meta.env.VITE_BACKEND_URL);
-console.log("Fallback backend URL: http://127.0.0.1:8000");
+console.log("Fallback backend URL: http://127.0.0.1:5000");
 
 export class OAuthService {
   private static googleSigninPaths: string[] = [
@@ -126,13 +126,9 @@ export class OAuthService {
       }
     }
     
-    // Bypass temporário para desenvolvimento/depuração - REMOVER EM PRODUÇÃO
-    if (import.meta.env.DEV && state && state.startsWith("oauth_oauth_")) {
-      console.warn("⚠️ BYPASS DE ESTADO PARA DESENVOLVIMENTO - Remover em produção!");
-      sessionStorage.removeItem("oauth_state");
-      sessionStorage.removeItem("oauth_base_state");
-      return true;
-    }
+    // 🚨 BYPASS REMOVIDO POR SEGURANÇA
+    // O bypass de desenvolvimento foi removido para prevenir vulnerabilidades em produção
+    // Estados OAuth devem sempre ser validados corretamente
     
     // Estado inválido
     console.error("❌ Estado OAuth inválido:", { storedState, baseState, receivedState: state });
@@ -228,7 +224,7 @@ export class OAuthService {
       console.log("🔐 Estado OAuth gerado e armazenado");
       
       // Obter a URL do backend
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
       console.log("🎯 Backend URL:", backendUrl);
       
       // Construir parâmetros com mais informações
@@ -392,7 +388,7 @@ export class OAuthService {
       }
 
       // Obter a URL do backend
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000';
       console.log("🎯 Backend URL:", backendUrl);
       
       // Enviar código para o backend processar
@@ -563,7 +559,7 @@ export class OAuthService {
 
   static async handleGoogleLogin(params: GoogleLoginParams): Promise<GoogleCallbackResponse> {
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000';
       
       console.log("🔄 Iniciando login com credenciais Google:", {
         email: params.email,

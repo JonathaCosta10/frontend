@@ -16,17 +16,15 @@ export default function InvestmentPremiumGuard({ children, featureType }: Invest
   const navigate = useNavigate();
   const { t } = useTranslation();
   
-  // Verificação dupla para garantir consistência
-  const isPremiumFromHook = isPaidUser();
-  const isPremiumFromStorage = JSON.parse(localStorage.getItem('isPaidUser') || 'false');
-  const isPremium = isPremiumFromHook || isPremiumFromStorage;
+  // 🔒 CORREÇÃO CRÍTICA: Usar APENAS o hook autorizado (não localStorage direto)
+  // Evita bypass de segurança onde usuário pode definir localStorage.setItem('isPaidUser', 'true')
+  const isPremium = isPaidUser();
   
-  // Log para debug
+  // Log seguro para debug
   console.log(`🔒 InvestmentPremiumGuard (${featureType}):`, { 
-    fromHook: isPremiumFromHook,
-    fromStorage: isPremiumFromStorage,
-    final: isPremium,
-    featureType
+    isPremium,
+    featureType,
+    source: 'hook_only' // Indica que veio apenas do hook autorizado
   });
 
   // Redirecionamento automático para página de pagamento se não for premium

@@ -2,9 +2,10 @@ import React from "react";
 import { budgetApi, DistribuicaoGastosResponse } from "@/services/api/budget";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Target, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import { Target, AlertTriangle, TrendingUp, TrendingDown, Eye, EyeOff } from "lucide-react";
 import { useApiData } from "@/hooks/useApiData";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 
 interface MetaRealidadeChartProps {
   mes: number;
@@ -27,6 +28,7 @@ interface CategoriaData {
 
 const MetaRealidadeChart: React.FC<MetaRealidadeChartProps> = ({ mes, ano }) => {
   const { formatCurrency } = useTranslation();
+  const { formatValue, shouldHideCharts } = usePrivacy();
   
   const { data, loading, error } = useApiData(
     () => budgetApi.getDistribuicaoGastosCompleta(mes, ano)
@@ -238,36 +240,38 @@ const MetaRealidadeChart: React.FC<MetaRealidadeChartProps> = ({ mes, ano }) => 
       )}
 
       {/* Resumo Geral */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-sm text-muted-foreground">Total Planejado</div>
-              <div className="text-lg font-bold text-blue-700 dark:text-blue-400">
-                {formatCurrency(dadosCategorias.reduce((sum, cat) => sum + cat.planejado, 0))}
+      {!shouldHideCharts() && (
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <div className="text-sm text-muted-foreground">Total Planejado</div>
+                <div className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                  {formatValue(dadosCategorias.reduce((sum, cat) => sum + cat.planejado, 0))}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Total Realizado</div>
+                <div className="text-lg font-bold text-purple-700 dark:text-purple-400">
+                  {formatValue(dadosCategorias.reduce((sum, cat) => sum + cat.realizado, 0))}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Dentro do Orçamento</div>
+                <div className="text-lg font-bold text-green-700 dark:text-green-400">
+                  {dadosCategorias.filter(cat => cat.status === 'dentro').length}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Acima do Orçamento</div>
+                <div className="text-lg font-bold text-red-700 dark:text-red-400">
+                  {dadosCategorias.filter(cat => cat.status === 'excedeu').length}
+                </div>
               </div>
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Total Realizado</div>
-              <div className="text-lg font-bold text-purple-700 dark:text-purple-400">
-                {formatCurrency(dadosCategorias.reduce((sum, cat) => sum + cat.realizado, 0))}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Dentro do Orçamento</div>
-              <div className="text-lg font-bold text-green-700 dark:text-green-400">
-                {dadosCategorias.filter(cat => cat.status === 'dentro').length}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Acima do Orçamento</div>
-              <div className="text-lg font-bold text-red-700 dark:text-red-400">
-                {dadosCategorias.filter(cat => cat.status === 'excedeu').length}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Cards das Categorias */}
       <div className="grid gap-4">
@@ -289,35 +293,44 @@ const MetaRealidadeChart: React.FC<MetaRealidadeChartProps> = ({ mes, ano }) => 
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">
-                    {formatCurrency(categoria.realizado)} / {formatCurrency(categoria.planejado)}
+                    {formatValue(categoria.realizado)} / {formatValue(categoria.planejado)}
                   </div>
                   <div className={`text-xs ${
                     categoria.status === 'excedeu' ? 'text-red-600' : 
                     categoria.status === 'dentro' ? 'text-green-600' : 'text-gray-600'
                   }`}>
-                    {categoria.percentualUsado.toFixed(1)}% usado
+                    {shouldHideCharts() ? '****% usado' : `${categoria.percentualUsado.toFixed(1)}% usado`}
                   </div>
                 </div>
               </div>
               
               {/* Barra de Progresso */}
               <div className="space-y-2">
-                <Progress 
-                  value={categoria.percentualUsado} 
-                  className="h-2"
-                  style={{
-                    '--progress-background': categoria.status === 'excedeu' ? '#fef2f2' : '#f0f9ff',
-                    '--progress-foreground': categoria.status === 'excedeu' ? '#dc2626' : categoria.cor
-                  } as React.CSSProperties}
-                />
+                {shouldHideCharts() ? (
+                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <EyeOff className="h-3 w-3 text-gray-400" />
+                  </div>
+                ) : (
+                  <Progress 
+                    value={categoria.percentualUsado} 
+                    className="h-2"
+                    style={{
+                      '--progress-background': categoria.status === 'excedeu' ? '#fef2f2' : '#f0f9ff',
+                      '--progress-foreground': categoria.status === 'excedeu' ? '#dc2626' : categoria.cor
+                    } as React.CSSProperties}
+                  />
+                )}
                 
                 {/* Informações adicionais */}
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>
-                    {categoria.planejado > categoria.realizado 
-                      ? `Disponível: ${formatCurrency(categoria.planejado - categoria.realizado)}`
-                      : `Excesso: ${formatCurrency(categoria.realizado - categoria.planejado)}`
-                    }
+                    {shouldHideCharts() ? (
+                      categoria.planejado > categoria.realizado ? 'Disponível: R$ ****' : 'Excesso: R$ ****'
+                    ) : (
+                      categoria.planejado > categoria.realizado 
+                        ? `Disponível: ${formatCurrency(categoria.planejado - categoria.realizado)}`
+                        : `Excesso: ${formatCurrency(categoria.realizado - categoria.planejado)}`
+                    )}
                   </span>
                   <span>
                     {categoria.status === 'dentro' ? 'Dentro do orçamento' : 

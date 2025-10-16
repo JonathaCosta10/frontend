@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Import do serviço de investimentos
@@ -26,11 +27,7 @@ const toNumber = (value: string | number | undefined | null): number => {
   return 0;
 };
 
-const formatCurrency = (value: string | number | undefined | null): string => {
-  const numValue = toNumber(value);
-  if (numValue === 0 && (value === null || value === undefined)) return 'N/A';
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numValue);
-};
+// Função para formatar valores com base na privacidade
 
 const formatPercentage = (value: string | number | undefined | null): string => {
   const numValue = toNumber(value);
@@ -87,6 +84,14 @@ const formatQuantityInput = (value: string): string => {
 
 export default function CadastroInvestimentos() {
   const { toast } = useToast();
+  const { formatValue } = usePrivacy();
+
+  // Função para formatar valores com base na privacidade
+  const formatCurrency = (value: string | number | undefined | null): string => {
+    const numValue = toNumber(value);
+    if (numValue === 0 && (value === null || value === undefined)) return 'N/A';
+    return formatValue(numValue);
+  };
   
   // Estados principais
   const [investimentos, setInvestimentos] = useState<Investimento[]>([]);

@@ -14,8 +14,8 @@ export const developmentConfig = {
   // Ativa funcionalidades experimentais
   enableExperimentalFeatures: false,
 
-  // Simulação de usuário premium para testes
-  simulatePremiumUser: true,
+  // 🚨 CONFIGURAÇÃO PERIGOSA REMOVIDA POR SEGURANÇA
+  // simulatePremiumUser foi removido para prevenir bypass de autenticação premium
   
   // Define um atraso mínimo em ms para requisições simuladas para melhorar experiência de desenvolvimento
   mockApiDelayMin: 300,

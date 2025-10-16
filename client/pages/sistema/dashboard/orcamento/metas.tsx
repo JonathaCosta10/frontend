@@ -30,23 +30,39 @@ import {
   AlertTriangle,
   Trash2,
   Sparkles,
+  EyeOff,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 import { useToast } from "@/hooks/use-toast";
 import { budgetApi } from "@/services/api/budget";
 import PremiumStatusTestSimulator from "@/components/PremiumStatusTestSimulator";
-// Optimized Chart.js import - only import what we need
+// Optimized Chart.js import - import all components needed for doughnut charts
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  ArcElement,
+  DoughnutController,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Doughnut } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  DoughnutController,
+  Title,
+  Tooltip,
+  Legend
+);
 
 // Register only the components we need
 ChartJS.register(
@@ -88,6 +104,7 @@ interface SliderValues {
 export default function Metas() {
   const { isAuthenticated } = useAuth();
   const { t, formatCurrency } = useTranslation();
+  const { formatValue, shouldHideCharts } = usePrivacy();
   const { toast } = useToast();
   const [metas, setMetas] = useState<Meta[]>([]);
   const [resumoMetas, setResumoMetas] = useState<ResumoMetas | null>(null);
@@ -575,74 +592,77 @@ export default function Metas() {
       )}
       
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("total_saved")}
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totalEconomizado)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t("of_total")} {formatCurrency(totalObjetivos)}
-            </p>
-          </CardContent>
-        </Card>
+      {!shouldHideCharts() && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {t("total_saved")}
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {formatValue(totalEconomizado)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("of_total")} {formatValue(totalObjetivos)}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("active_goals")}
-            </CardTitle>
-            <Target className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metasAtivas}</div>
-            <p className="text-xs text-muted-foreground">
-              {metas.length} {t("total_goals")}
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {t("active_goals")}
+              </CardTitle>
+              <Target className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metasAtivas}</div>
+              <p className="text-xs text-muted-foreground">
+                {metas.length} {t("total_goals")}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("completed_goals")}
-            </CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metasConcluidas}</div>
-            <p className="text-xs text-muted-foreground">
-              {metasConcluidas > 0 && metas.length > 0
-                ? `${((metasConcluidas / metas.length) * 100).toFixed(0)}% ${t("completed").toLowerCase()}`
-                : t("none_completed")}
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {t("completed_goals")}
+              </CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metasConcluidas}</div>
+              <p className="text-xs text-muted-foreground">
+                {metasConcluidas > 0 && metas.length > 0
+                  ? `${((metasConcluidas / metas.length) * 100).toFixed(0)}% ${t("completed").toLowerCase()}`
+                  : t("none_completed")}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("general_progress")}
-            </CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {getProgressoGeral().toFixed(1)}%
-            </div>
-            <Progress value={getProgressoGeral()} className="mt-2" />
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {t("general_progress")}
+              </CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {getProgressoGeral().toFixed(1)}%
+              </div>
+              <Progress value={getProgressoGeral()} className="mt-2" />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Alocação de Metas - Gráfico e Sliders */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {!shouldHideCharts() && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico */}
         <Card>
           <CardHeader>
@@ -661,7 +681,16 @@ export default function Metas() {
               </div>
             )}
             <div className="relative h-80">
-              <canvas ref={chartRef} />
+              {shouldHideCharts() ? (
+                <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <div className="text-center space-y-2">
+                    <EyeOff className="h-8 w-8 text-gray-400 mx-auto" />
+                    <p className="text-gray-500 text-sm">Gráfico oculto</p>
+                  </div>
+                </div>
+              ) : (
+                <canvas ref={chartRef} />
+              )}
             </div>
           </CardContent>
         </Card>
@@ -749,6 +778,7 @@ export default function Metas() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Botão Adicionar */}
       <div className="flex justify-between items-center">
@@ -1143,8 +1173,8 @@ export default function Metas() {
                         {t("progress")}: {progresso.toFixed(1)}%
                       </span>
                       <span>
-                        {formatCurrency(valorHoje)} /{" "}
-                        {formatCurrency(valorAlvo)}
+                        {formatValue(valorHoje)} /{" "}
+                        {formatValue(valorAlvo)}
                       </span>
                     </div>
                     <Progress
@@ -1178,7 +1208,7 @@ export default function Metas() {
                         {t("remaining")}:{" "}
                       </span>
                       <span className="font-semibold">
-                        {formatCurrency(valorAlvo - valorHoje)}
+                        {formatValue(valorAlvo - valorHoje)}
                       </span>
                     </div>
                   )}

@@ -11,10 +11,12 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useToast } from "@/hooks/use-toast";
-import LanguageSelector from "@/components/LanguageSelector";
+// LanguageSelector removed - Portuguese only application
 import OAuthService from "@/services/oauth";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
 import Footer from "@/components/Footer";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useResponsive } from "@/hooks/useResponsive";
 
 interface LoginForm {
   username: string; // email ou usuário
@@ -23,10 +25,11 @@ interface LoginForm {
 }
 
 export default function Login() {
-  const [darkMode, setDarkMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { isMobile, isTablet } = useResponsive();
   const { toast } = useToast();
   const {
     register,
@@ -40,11 +43,8 @@ export default function Login() {
   const { t } = useTranslation();
 
   const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const novo = !prev;
-      document.documentElement.classList.toggle("dark", novo);
-      return novo;
-    });
+    const newTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
   };
 
   const onSubmit = async (data: LoginForm) => {
@@ -106,7 +106,7 @@ export default function Login() {
                 onClick={toggleDarkMode}
                 className="w-9 h-9"
               >
-                {darkMode ? (
+                {resolvedTheme === 'dark' ? (
                   <Sun className="h-4 w-4" />
                 ) : (
                   <Moon className="h-4 w-4" />
@@ -129,7 +129,7 @@ export default function Login() {
                 onClick={toggleDarkMode}
                 className="w-9 h-9"
               >
-                {darkMode ? (
+                {resolvedTheme === 'dark' ? (
                   <Sun className="h-4 w-4" />
                 ) : (
                   <Moon className="h-4 w-4" />
@@ -200,16 +200,16 @@ export default function Login() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[calc(100vh-88px)]">
-        <div className="w-full max-w-md">
+      <main className={`container mx-auto px-4 py-8 flex items-center justify-center min-h-[calc(100vh-88px)] ${isMobile ? 'px-4' : 'px-8'}`}>
+        <div className={`w-full ${isMobile ? 'max-w-sm' : 'max-w-md'}`}>
           <Card className="border-0 shadow-lg">
-            <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold">
+            <CardHeader className={`text-center ${isMobile ? 'pb-4' : 'pb-6'}`}>
+              <CardTitle className={`font-bold ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                 {t("enter_account")}
               </CardTitle>
-              <p className="text-muted-foreground">{t("enter_data_access")}</p>
+              <p className="text-muted-foreground text-sm">{t("enter_data_access")}</p>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className={`space-y-6 ${isMobile ? 'px-4' : ''}`}>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="username">{t("email_or_username")}</Label>

@@ -13,9 +13,10 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
-import { useApiData } from "@/hooks/useApiData";
+import { TrendingUp, TrendingDown, DollarSign, EyeOff } from "lucide-react";
+import { useBudgetCache } from "@/hooks/useApiCache";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { usePrivacy } from "@/contexts/PrivacyContext";
 
 // Register Chart.js components
 ChartJS.register(
@@ -36,9 +37,22 @@ interface VariacaoEntradaChartProps {
 
 const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano }) => {
   const { formatCurrency } = useTranslation();
+  const { formatValue, shouldHideCharts } = usePrivacy();
   
-  const { data, loading, error } = useApiData(
-    () => budgetApi.getVariacaoEntrada(mes, ano)
+  // Usar cache inteligente para evitar múltiplas chamadas
+  const { 
+    data, 
+    loading, 
+    error,
+    isStale 
+  } = useBudgetCache(
+    (mes: number, ano: number) => budgetApi.getVariacaoEntrada(mes, ano),
+    mes,
+    ano,
+    {
+      ttl: 2 * 60 * 1000, // 2 minutos para dados de variação
+      staleWhileRevalidate: true
+    }
   );
 
   const calcularEstatisticas = (dados: VariacaoEntrada[]) => {
@@ -106,7 +120,7 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
             const value = context.parsed.y;
             // Debug: log para verificar se o valor está correto
             console.log('Tooltip value:', value, 'Formatted:', formatCurrency(value));
-            return `Entradas: ${formatCurrency(value)}`;
+            return `Entradas: ${shouldHideCharts() ? 'R$ ****' : formatCurrency(value)}`;
           },
         },
       },
@@ -131,7 +145,7 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
         ticks: {
           color: 'hsl(var(--muted-foreground))',
           callback: function (value: any) {
-            return formatCurrency(value);
+            return shouldHideCharts() ? '****' : formatCurrency(value);
           },
           font: {
             size: 12,
@@ -149,7 +163,9 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
   if (loading) {
     return (
       <div className="h-80 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+        <div className="animate-pulse text-muted-foreground">
+          {isStale ? "Atualizando dados..." : "Carregando..."}
+        </div>
       </div>
     );
   }
@@ -161,6 +177,11 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
         <div>
           <h3 className="text-lg font-semibold">Nenhum dado disponível</h3>
           <p className="text-muted-foreground">Cadastre entradas para visualizar o gráfico</p>
+          {isStale && (
+            <p className="text-xs text-orange-500 mt-2">
+              ⚠️ Exibindo dados em cache - falha ao atualizar
+            </p>
+          )}
         </div>
       </div>
     );
@@ -177,25 +198,25 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
             <div className="text-center p-3 bg-green-50 dark:bg-green-950 rounded-lg">
               <div className="text-sm text-muted-foreground">Faturamento Anual</div>
               <div className="text-lg font-bold text-green-700 dark:text-green-400">
-                {formatCurrency(estatisticas.total)}
+                {formatValue(estatisticas.total)}
               </div>
             </div>
             <div className="text-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
               <div className="text-sm text-muted-foreground">Média Mensal</div>
               <div className="text-lg font-bold text-blue-700 dark:text-blue-400">
-                {formatCurrency(estatisticas.media)}
+                {formatValue(estatisticas.media)}
               </div>
             </div>
             <div className="text-center p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
               <div className="text-sm text-muted-foreground">Melhor Mês</div>
               <div className="text-lg font-bold text-purple-700 dark:text-purple-400">
-                {formatCurrency(estatisticas.maximo)}
+                {formatValue(estatisticas.maximo)}
               </div>
             </div>
             <div className="text-center p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
               <div className="text-sm text-muted-foreground">Pior Mês</div>
               <div className="text-lg font-bold text-orange-700 dark:text-orange-400">
-                {formatCurrency(estatisticas.minimo)}
+                {formatValue(estatisticas.minimo)}
               </div>
             </div>
           </div>
@@ -203,21 +224,30 @@ const VariacaoEntradaChart: React.FC<VariacaoEntradaChartProps> = ({ mes, ano })
 
         {/* Gráfico */}
         <div className="h-64 mb-6">
-          <Line data={configGrafico} options={opcoes} />
+          {shouldHideCharts() ? (
+            <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <div className="text-center space-y-2">
+                <EyeOff className="h-8 w-8 text-gray-400 mx-auto" />
+                <p className="text-gray-500 text-sm">Gráfico oculto</p>
+              </div>
+            </div>
+          ) : (
+            <Line data={configGrafico} options={opcoes} />
+          )}
         </div>
 
         {/* Insights */}
-        {estatisticas && (
+        {estatisticas && !shouldHideCharts() && (
           <div className="p-4 bg-muted/50 rounded-lg">
             <div className="flex items-center space-x-2 mb-2">
               <TrendingUp className="h-4 w-4 text-green-600" />
               <span className="font-medium text-sm">Insights</span>
             </div>
             <div className="text-sm text-muted-foreground space-y-1">
-              <div>• Faturamento anual: {formatCurrency(estatisticas.total)}</div>
-              <div>• Média mensal: {formatCurrency(estatisticas.media)}</div>
-              <div>• Melhor performance: {formatCurrency(estatisticas.maximo)}</div>
-              <div>• Menor entrada: {formatCurrency(estatisticas.minimo)}</div>
+              <div>• Faturamento anual: {formatValue(estatisticas.total)}</div>
+              <div>• Média mensal: {formatValue(estatisticas.media)}</div>
+              <div>• Melhor performance: {formatValue(estatisticas.maximo)}</div>
+              <div>• Menor entrada: {formatValue(estatisticas.minimo)}</div>
               <div>• Total de meses com dados: {data.length}</div>
             </div>
           </div>

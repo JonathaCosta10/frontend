@@ -35,7 +35,7 @@ const API_CONFIG = {
   useBackendCrypto: import.meta.env.VITE_USE_BACKEND_CRYPTO !== 'false', // Default true
   fallbackToCoinGecko: import.meta.env.VITE_CRYPTO_FALLBACK_TO_COINGECKO !== 'false', // Default true
   cacheDuration: parseInt(import.meta.env.VITE_CRYPTO_CACHE_DURATION) || 120000, // 2 minutes
-  baseUrl: import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'
+  baseUrl: import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000'
 };
 
 export const backendCryptoApi = {

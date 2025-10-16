@@ -1,5 +1,6 @@
 // Crypto Charts API Service
 import { developmentConfig, simulateApiDelay } from "../../config/development";
+import { authenticatedGet, authenticatedPost, authenticatedFetch } from '@/lib/authenticatedFetch';
 
 export interface CryptoPrice {
   ticker: string;
@@ -98,7 +99,7 @@ export const cryptoChartsApi = {
       ];
     }
 
-    const response = await fetch('/api/cripto/precos_tempo_real');
+    const response = await authenticatedGet('/api/cripto/precos_tempo_real');
     if (!response.ok) throw new Error('Failed to fetch crypto prices data');
     return response.json();
   },
@@ -139,7 +140,7 @@ export const cryptoChartsApi = {
       ];
     }
 
-    const response = await fetch('/api/cripto/portfolio');
+    const response = await authenticatedGet('/api/cripto/portfolio');
     if (!response.ok) throw new Error('Failed to fetch crypto portfolio data');
     return response.json();
   },
@@ -159,7 +160,7 @@ export const cryptoChartsApi = {
       }));
     }
 
-    const response = await fetch(`/api/cripto/historico_precos?ticker=${ticker}&periodo=${periodo}`);
+    const response = await authenticatedGet('/api/cripto/historico_precos?ticker=${ticker}&periodo=${periodo}');
     if (!response.ok) throw new Error('Failed to fetch crypto historical data');
     return response.json();
   },
@@ -181,7 +182,7 @@ export const cryptoChartsApi = {
       };
     }
 
-    const response = await fetch('/api/cripto/market_overview');
+    const response = await authenticatedGet('/api/cripto/market_overview');
     if (!response.ok) throw new Error('Failed to fetch crypto market overview data');
     return response.json();
   },
@@ -207,7 +208,7 @@ export const cryptoChartsApi = {
       };
     }
 
-    const response = await fetch('/api/cripto/top_movers');
+    const response = await authenticatedGet('/api/cripto/top_movers');
     if (!response.ok) throw new Error('Failed to fetch crypto top movers data');
     return response.json();
   },

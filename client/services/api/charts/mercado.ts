@@ -1,5 +1,6 @@
 // Market Charts API Service
 import { developmentConfig, simulateApiDelay } from "../../config/development";
+import { authenticatedGet, authenticatedPost, authenticatedFetch } from '@/lib/authenticatedFetch';
 
 export interface FIIData {
   ticker: string;
@@ -108,7 +109,7 @@ export const marketChartsApi = {
     if (setor) params.append('setor', setor);
     if (orderBy) params.append('orderBy', orderBy);
 
-    const response = await fetch(`/api/mercado/fiis_lista?${params.toString()}`);
+    const response = await authenticatedGet('/api/mercado/fiis_lista?${params.toString()}');
     if (!response.ok) throw new Error('Failed to fetch FIIs lista data');
     return response.json();
   },
@@ -128,7 +129,7 @@ export const marketChartsApi = {
       ];
     }
 
-    const response = await fetch('/api/mercado/indicadores_economicos');
+    const response = await authenticatedGet('/api/mercado/indicadores_economicos');
     if (!response.ok) throw new Error('Failed to fetch indicadores econômicos data');
     return response.json();
   },
@@ -162,7 +163,7 @@ export const marketChartsApi = {
       };
     }
 
-    const response = await fetch(`/api/mercado/analise_ticker?ticker=${ticker}`);
+    const response = await authenticatedGet('/api/mercado/analise_ticker?ticker=${ticker}');
     if (!response.ok) throw new Error('Failed to fetch análise ticker data');
     return response.json();
   },
@@ -195,7 +196,7 @@ export const marketChartsApi = {
       ];
     }
 
-    const response = await fetch('/api/mercado/lista_desejos');
+    const response = await authenticatedGet('/api/mercado/lista_desejos');
     if (!response.ok) throw new Error('Failed to fetch lista desejos data');
     return response.json();
   },
@@ -217,7 +218,7 @@ export const marketChartsApi = {
       ];
     }
 
-    const response = await fetch(`/api/mercado/performance_setor?periodo=${periodo}`);
+    const response = await authenticatedGet('/api/mercado/performance_setor?periodo=${periodo}');
     if (!response.ok) throw new Error('Failed to fetch performance setor data');
     return response.json();
   },
@@ -241,7 +242,7 @@ export const marketChartsApi = {
       }
     }
 
-    const response = await fetch(`/api/mercado/ranking_fiis?criterio=${criterio}`);
+    const response = await authenticatedGet('/api/mercado/ranking_fiis?criterio=${criterio}');
     if (!response.ok) throw new Error('Failed to fetch ranking FIIs data');
     return response.json();
   },

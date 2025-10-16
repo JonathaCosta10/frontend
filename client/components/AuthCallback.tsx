@@ -95,6 +95,34 @@ const AuthCallback: React.FC = () => {
           
           if (authData.user) {
             localStorageManager.setUserData(authData.user);
+            
+            // Armazenar explicitamente o status premium como boolean
+            const isPaidUserBoolean = Boolean(authData.user.isPaidUser);
+            localStorageManager.set("isPaidUser", isPaidUserBoolean);
+            
+            console.log("📊 Status premium explicitamente armazenado:", {
+              valorOriginal: authData.user.isPaidUser,
+              tipoOriginal: typeof authData.user.isPaidUser,
+              valorArmazenado: isPaidUserBoolean,
+              tipoArmazenado: typeof isPaidUserBoolean
+            });
+          }
+          
+          // IMPORTANTE: Armazenar session_id e device_fingerprint da nova estrutura
+          if (authData.session) {
+            console.log("🔐 Salvando dados da sessão:", authData.session);
+            
+            if (authData.session.session_id) {
+              localStorageManager.setSessionId(authData.session.session_id);
+              console.log("🆔 Session ID armazenado:", authData.session.session_id);
+            }
+            
+            if (authData.session.device_fingerprint) {
+              localStorageManager.setDeviceFingerprint(authData.session.device_fingerprint);
+              console.log("👆 Device Fingerprint armazenado:", authData.session.device_fingerprint);
+            }
+          } else {
+            console.warn("⚠️ Dados de sessão não encontrados na resposta! Isso causará erros nas chamadas API.");
           }
           
           console.log("💾 Dados salvos no localStorage:", {
@@ -127,9 +155,65 @@ const AuthCallback: React.FC = () => {
           const redirectTo = authData.return_to || returnTo || '/dashboard';
           console.log("🔀 Redirecionando para:", redirectTo);
           
+          // Configurar flag para evitar dupla navegação durante o processo de autenticação
+          sessionStorage.setItem('auth_redirect_completed', 'true');
+          
+          // Verificar armazenamento completo antes de navegar
+          const accessToken = localStorageManager.getAuthToken();
+          const userData = localStorageManager.getUserData();
+          const isPaidStatus = localStorageManager.get("isPaidUser");
+          
+          console.log("✅ Verificação final antes do redirecionamento:", {
+            accessToken: !!accessToken,
+            userData: !!userData,
+            isPaidStatus: isPaidStatus,
+            redirectTo: redirectTo
+          });
+          
+          // Registrar a hora do login bem-sucedido
+          localStorage.setItem('recentLoginAttempt', Date.now().toString());
+          
+          // Registrar o status da autenticação
+          localStorage.setItem('authStatus', 'authenticated');
+          
+          // Disparar eventos adicionais para garantir sincronização entre componentes
+          try {
+            // Evento para notificar componentes sobre login bem-sucedido
+            const loginSuccessEvent = new CustomEvent('login:success', { 
+              detail: { 
+                timestamp: new Date().toISOString(),
+                user: authData.user
+              } 
+            });
+            window.dispatchEvent(loginSuccessEvent);
+            
+            // Evento adicional para componentes antigos
+            const authLoginEvent = new CustomEvent('authLogin', { 
+              detail: { 
+                success: true,
+                user: authData.user
+              } 
+            });
+            window.dispatchEvent(authLoginEvent);
+            
+            console.log("📡 Eventos de login bem-sucedido disparados");
+          } catch (eventError) {
+            console.warn("⚠️ Erro ao disparar eventos de login:", eventError);
+          }
+          
           setTimeout(() => {
-            window.location.replace(redirectTo);
-          }, 1500);
+            // Usar navigate do React Router para preservar o contexto da aplicação
+            navigate(redirectTo);
+            
+            // Em caso de problema com o React Router, forçar um fallback após 500ms
+            const fallbackTimer = setTimeout(() => {
+              console.log("⚠️ Fallback: usando window.location para redirecionamento");
+              window.location.href = redirectTo;
+            }, 500);
+            
+            // Limpar o timer se a navegação for bem-sucedida
+            return () => clearTimeout(fallbackTimer);
+          }, 1000);
           
         } else {
           throw new Error(authData.error || 'Falha na autenticação');

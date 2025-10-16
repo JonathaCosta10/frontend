@@ -8,7 +8,9 @@ import {
   Legend,
   Tooltip
 } from "chart.js";
+import { EyeOff } from "lucide-react";
 import { investmentsApi } from '@/services/api/investments';
+import { usePrivacy } from '@/contexts/PrivacyContext';
 import dayjs from "dayjs";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Legend, Tooltip);
@@ -24,6 +26,7 @@ const GraficoDividendosFII: React.FC<GraficoDividendosFIIProps> = ({
   ano = "",
   tipoSelecionado = "Fundos Imobiliários"
 }) => {
+  const { shouldHideCharts } = usePrivacy();
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState<any>(null);
 
@@ -127,47 +130,59 @@ const GraficoDividendosFII: React.FC<GraficoDividendosFIIProps> = ({
 
   return (
     <div className="w-full h-[300px]">
-      <Bar
-        data={chartData}
-        options={{
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              labels: {
-                color: 'currentColor',
+      {shouldHideCharts() ? (
+        <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <div className="text-center space-y-2">
+            <EyeOff className="h-8 w-8 text-gray-400 mx-auto" />
+            <p className="text-gray-500 text-sm">Gráfico oculto</p>
+          </div>
+        </div>
+      ) : (
+        <Bar
+          data={chartData}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: {
+                  color: 'currentColor',
+                },
               },
-            },
-            tooltip: {
-              callbacks: {
-                label: function (context) {
-                  const label = context.dataset.label || "";
-                  const value = context.parsed.y || 0;
-                  return `${label}: ${value.toFixed(2)}`;
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const label = context.dataset.label || "";
+                    const value = context.parsed.y || 0;
+                    return `${label}: ${shouldHideCharts() ? 'R$ ****' : value.toFixed(2)}`;
+                  },
                 },
               },
             },
-          },
-          scales: {
-            x: {
-              ticks: {
-                color: 'currentColor',
+            scales: {
+              x: {
+                ticks: {
+                  color: 'currentColor',
+                },
+                grid: {
+                  color: 'hsl(var(--border))',
+                }
               },
-              grid: {
-                color: 'hsl(var(--border))',
-              }
-            },
-            y: {
-              ticks: {
-                color: 'currentColor',
-              },
-              grid: {
-                color: 'hsl(var(--border))',
+              y: {
+                ticks: {
+                  color: 'currentColor',
+                  callback: function (value: any) {
+                    return shouldHideCharts() ? '****' : value;
+                  },
+                },
+                grid: {
+                  color: 'hsl(var(--border))',
+                }
               }
             }
-          }
-        }}
-      />
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -162,34 +162,22 @@ export const categoryColorMap: Record<string, string> = {
   "outros_investimento": "#CCCCCC",
 };
 
-// Formatos de moeda por idioma
+// Formatos de moeda - apenas português brasileiro
 export const currencyFormatMap: Record<string, { locale: string, currency: string }> = {
-  "pt-BR": { locale: "pt-BR", currency: "BRL" },
-  "en-US": { locale: "en-US", currency: "USD" },
-  "es-ES": { locale: "es-ES", currency: "EUR" },
+  "pt-BR": { locale: "pt-BR", currency: "BRL" }
 };
 
-// Meses do ano em diferentes idiomas
+// Meses do ano em português brasileiro
 export const monthsMap: Record<string, string[]> = {
   "pt-BR": [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-  ],
-  "en-US": [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ],
-  "es-ES": [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
   ]
 };
 
-// Formatos de data por idioma
+// Formatos de data - apenas português brasileiro
 export const dateFormatMap: Record<string, string> = {
-  "pt-BR": "dd/MM/yyyy",
-  "en-US": "MM/dd/yyyy",
-  "es-ES": "dd/MM/yyyy"
+  "pt-BR": "dd/MM/yyyy"
 };
 
 // Função helper para formatar valores de moeda
