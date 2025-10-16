@@ -2,6 +2,9 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 
+// Make React globally available for classic JSX runtime
+(window as any).React = React;
+
 // Get the root element
 const container = document.getElementById("root");
 
