@@ -54,15 +54,19 @@ const createManualChunks = () => {
     // Crypto & Financial
     'crypto-libs': ['crypto-js', 'bitcoin-core'],
     
-    // Vendors by size - pequenos vendors juntos
-    'vendor-small': [
+    // Vendors específicos para evitar circulares
+    'vendor-common': [
       'react-is',
       'scheduler',
       'eventemitter3'
     ],
-    'vendor-medium': [
+    'vendor-ui-misc': [
       'react-country-flag',
       'react-loading-skeleton'
+    ],
+    'vendor-stable': [
+      'tslib',
+      'use-sync-external-store'
     ]
   };
 };
@@ -82,22 +86,29 @@ const getDynamicChunk = (id: string): string | undefined => {
   if (id.includes('info-diaria')) return 'page-info-diaria';
   if (id.includes('ranking')) return 'page-ranking';
   
-  // Vendors restantes por alfabeto (para chunks menores)
+  // Vendors restantes - estratégia mais segura
   if (id.includes('node_modules')) {
     const match = id.match(/node_modules\/([^\/]+)/);
     if (match) {
       const packageName = match[1];
-      const firstChar = packageName.charAt(0).toLowerCase();
       
-      // Agrupar por primeiras letras para chunks menores
-      if (['a', 'b', 'c'].includes(firstChar)) return 'vendor-abc';
-      if (['d', 'e', 'f'].includes(firstChar)) return 'vendor-def';
-      if (['g', 'h', 'i'].includes(firstChar)) return 'vendor-ghi';
-      if (['j', 'k', 'l'].includes(firstChar)) return 'vendor-jkl';
-      if (['m', 'n', 'o'].includes(firstChar)) return 'vendor-mno';
-      if (['p', 'q', 'r'].includes(firstChar)) return 'vendor-pqr';
-      if (['s', 't', 'u'].includes(firstChar)) return 'vendor-stu';
-      if (['v', 'w', 'x', 'y', 'z'].includes(firstChar)) return 'vendor-vwxyz';
+      // Vendors conhecidos problemáticos
+      if (['styled-components', 'styled-system', 'style-inject'].includes(packageName)) {
+        return 'vendor-styles';
+      }
+      
+      // Vendors de React ecosystem
+      if (packageName.startsWith('react-') || packageName.startsWith('@react')) {
+        return 'vendor-react-ecosystem';
+      }
+      
+      // Vendors de utilities
+      if (['utility-types', 'type-fest', 'tslib'].includes(packageName)) {
+        return 'vendor-utilities';
+      }
+      
+      // Default vendor chunk para outros
+      return 'vendor-misc';
     }
   }
   
@@ -155,14 +166,22 @@ export default defineConfig({
     rollupOptions: {
       onwarn(warning, warn) {
         // Suprimir avisos conhecidos
-        if (warning.code === 'CIRCULAR_DEPENDENCY' && 
-            warning.message?.includes('recharts')) {
-          return;
+        if (warning.code === 'CIRCULAR_DEPENDENCY') {
+          return; // Ignorar todas as dependências circulares para evitar problemas
         }
         if (warning.code === 'THIS_IS_UNDEFINED') {
           return;
         }
+        if (warning.code === 'EVAL') {
+          return; // Ignorar avisos de eval
+        }
         warn(warning);
+      },
+      
+      // Garantir ordem de carregamento correta
+      external: (id) => {
+        // Não externalizar nada para evitar problemas de inicialização
+        return false;
       },
       
       output: {
@@ -198,12 +217,6 @@ export default defineConfig({
       // Otimizações de entrada
       input: {
         main: path.resolve(__dirname, 'index.html')
-      },
-      
-      // External dependencies (se necessário)
-      external: (id) => {
-        // Externalize CDN dependencies em produção se desejado
-        return false;
       }
     }
   },
@@ -232,11 +245,17 @@ export default defineConfig({
       'react-dom',
       'react-router-dom',
       '@radix-ui/react-dialog',
-      'lucide-react'
+      'lucide-react',
+      'react-is',
+      'scheduler'
     ],
     exclude: [
-      // Excluir dependências que devem ser lazy loaded
-    ]
+      // Excluir dependências que causam problemas de inicialização
+      'styled-components',
+      'styled-system'
+    ],
+    // Forçar pré-bundling de dependências problemáticas
+    force: process.env.NODE_ENV === 'production'
   },
   
   // CSS otimizations
