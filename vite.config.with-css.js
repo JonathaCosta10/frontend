@@ -26,9 +26,8 @@ export default {
     }
   },
   esbuild: {
-    jsx: 'transform',
-    jsxFactory: 'React.createElement',
-    jsxFragment: 'React.Fragment',
+    jsx: 'automatic',
+    jsxImportSource: 'react',
     define: {
       'process.env.NODE_ENV': '"production"'
     }
