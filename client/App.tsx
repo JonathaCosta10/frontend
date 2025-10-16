@@ -10,6 +10,7 @@ import { AuthProvider } from "@/core/auth/AuthContext";
 import { TranslationProvider } from './contexts/TranslationContext';
 import { PrivacyProvider } from './contexts/PrivacyContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SessionIsolationProvider } from './contexts/SessionIsolationContext';
 import ProtectedRoute from "@/core/auth/guards/ProtectedRoute";
 import { OptimizedSuspense, withOptimizedLazy } from "@/core/performance/components/OptimizedSuspense";
 
@@ -158,9 +159,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <TranslationProvider>
-            <PrivacyProvider>
-              <TooltipProvider>
+          <SessionIsolationProvider>
+            <TranslationProvider>
+              <PrivacyProvider>
+                <TooltipProvider>
               <Toaster />
               <Sonner />
                 <BrowserRouter>
@@ -564,9 +566,10 @@ function App() {
                 } />
               </Routes>
             </BrowserRouter>
-            </TooltipProvider>
-          </PrivacyProvider>
-        </TranslationProvider>
+              </TooltipProvider>
+            </PrivacyProvider>
+          </TranslationProvider>
+        </SessionIsolationProvider>
       </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

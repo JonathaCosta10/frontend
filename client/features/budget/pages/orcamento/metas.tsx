@@ -37,7 +37,6 @@ import { useTranslation } from '../../../../contexts/TranslationContext';
 import { usePrivacy } from '../../../../contexts/PrivacyContext';
 import { useToast } from '@/shared/hooks/use-toast';
 import { budgetApi } from "@/services/api/budget";
-import PremiumStatusTestSimulator from "@/testing/debug/PremiumStatusTestSimulator";
 // Optimized Chart.js import - import all components needed for doughnut charts
 import {
   Chart as ChartJS,
@@ -586,11 +585,6 @@ export default function Metas() {
 
   return (
     <div className="space-y-6">
-      {/* Simulador de Status Premium - APENAS PARA DEBUG */}
-      {process.env.NODE_ENV === 'development' && (
-        <PremiumStatusTestSimulator />
-      )}
-      
       {/* Cards de Resumo */}
       {!shouldHideCharts() && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
