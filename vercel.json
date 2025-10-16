@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build:react-simple",
+  "buildCommand": "npx vite@5.4.20 build --config vite.config.simple.js --mode production",
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": null,

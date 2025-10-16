@@ -1,53 +1,15 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
-// Plugin para corrigir problemas de ES Modules e React global
-function esModulesFix() {
-  return {
-    name: 'es-modules-fix',
-    config() {
-      console.log('🔧 ES Modules Fix Plugin ativo - REACT SIMPLE PRODUCTION');
-    },
-    transformIndexHtml(html: string) {
-      // Injetar React globalmente no HTML
-      return html.replace(
-        '<head>',
-        '<head>\n  <script>window.React = {};</script>'
-      );
-    }
-  };
-}
-
-// Plugin para garantir que React esteja disponível globalmente
-function reactGlobalPlugin() {
-  return {
-    name: 'react-global',
-    generateBundle(options: any, bundle: { [x: string]: any; }) {
-      // Adicionar React como global no início do bundle principal
-      Object.keys(bundle).forEach(fileName => {
-        if (fileName.includes('index') && fileName.endsWith('.js')) {
-          const chunk = bundle[fileName];
-          if (chunk.type === 'chunk') {
-            chunk.code = `import * as React from 'react';\nwindow.React = React;\n${chunk.code}`;
-          }
-        }
-      });
-    }
-  };
-}
-
 export default defineConfig({
+  mode: 'production',
   plugins: [
     react({
-      jsxRuntime: 'classic',
-      include: ['**/*.tsx', '**/*.ts', '**/*.jsx', '**/*.js'],
-      exclude: ['node_modules/**']
-    }),
-    esModulesFix(),
-    reactGlobalPlugin()
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react'
+    })
   ],
-  
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './client'),
@@ -81,7 +43,9 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    target: 'es2015',
+    cssCodeSplit: true
   },
 
   server: {
@@ -96,12 +60,30 @@ export default defineConfig({
   },
 
   define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+    'process.env.NODE_ENV': '"production"',
     __DEV__: false,
+    'global': 'globalThis',
+    'import.meta.env.DEV': false,
+    'import.meta.env.PROD': true,
+    'import.meta.env.MODE': '"production"'
   },
 
   optimizeDeps: {
-    include: ['react', 'react-dom'],
-    force: true
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
+    force: true,
+    esbuildOptions: {
+      define: {
+        'process.env.NODE_ENV': '"production"'
+      }
+    }
+  },
+  
+  esbuild: {
+    define: {
+      'process.env.NODE_ENV': '"production"'
+    },
+    minifyIdentifiers: true,
+    minifySyntax: true,
+    minifyWhitespace: true
   }
 });
